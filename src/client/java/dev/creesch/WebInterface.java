@@ -101,13 +101,22 @@ public class WebInterface {
                 connections.remove(ctx);
             });
         });
+    }
 
-        server.events(event -> {
-            event.serverStopped(() -> {
-                LOGGER.info("Web interface stopped. Cleaning up resources...");
-                connections.clear();
-            });
+    public void shutdown() {
+        // Try to avoid log spam from connections that are not gracefully closed.
+        connections.forEach(ctx -> {
+            try {
+                ctx.session.close(); // Close the WebSocket session
+            } catch (Exception e) {
+                LOGGER.warn("Failed to close WebSocket connection: {}", ctx.session.getRemoteAddress(), e);
+            }
         });
+        connections.clear();
+        if (server != null) {
+            LOGGER.info("Shutting down web interface");
+            server.stop();
+        }
     }
 
     private String sanitizeMessage(String message) {
