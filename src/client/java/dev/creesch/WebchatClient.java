@@ -4,6 +4,7 @@ package dev.creesch;
 import dev.creesch.config.ModConfig;
 import dev.creesch.util.NamedLogger;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
@@ -60,6 +61,14 @@ public class WebchatClient implements ClientModInitializer {
 					client.player.sendMessage(message, false);
 				}
 			});
+		});
+
+		// Properly handle minecraft shutting down
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			if (webInterface != null && webInterface.getServer() != null) {
+				LOGGER.info("Shutting down web interface");
+				webInterface.getServer().stop();
+			}
 		});
 
 

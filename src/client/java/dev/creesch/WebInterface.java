@@ -5,6 +5,7 @@ import dev.creesch.util.NamedLogger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsContext;
+import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
@@ -16,6 +17,7 @@ import java.util.regex.Pattern;
 
 public class WebInterface {
     // Server related things
+    @Getter
     private final Javalin server;
     private final Set<WsContext> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
