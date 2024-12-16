@@ -46,17 +46,15 @@ dependencies {
 	annotationProcessor "org.projectlombok:lombok:${project.lombok_version}"
 	compileOnly "org.projectlombok:lombok:${project.lombok_version}"
 
-	// Included
 	implementation "io.javalin:javalin:${project.javalin_version}"
-	include "io.javalin:javalin:${project.javalin_version}"
 
-	implementation "org.java-websocket:Java-WebSocket:${project.java_websocket_version}"
-	include("org.java-websocket:Java-WebSocket:${project.java_websocket_version}")
-	implementation "org.nanohttpd:nanohttpd:${nanohttpd_version}"
-	include("org.nanohttpd:nanohttpd:${nanohttpd_version}")
+	// For future reference. Loom can do "shadow jar" like stuff through this syntax.
+	// Simply include implementation
+	include implementation("io.javalin:javalin:${project.javalin_version}");
+
 	implementation "com.google.code.gson:gson:${project.gson_version}"
-	include("com.google.code.gson:gson:${project.gson_version}")
-	
+	include "com.google.code.gson:gson:${project.gson_version}"
+
 }
 
 processResources {
