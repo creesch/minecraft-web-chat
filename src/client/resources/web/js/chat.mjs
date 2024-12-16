@@ -3,6 +3,7 @@
 
 import { faviconCounter } from './util.mjs';
 import { parseMinecraftText, initializeObfuscation } from './message_parsing.mjs';
+/** @typedef {import('./message_parsing.mjs').Component} Component */
 
 /** @type {WebSocket | null} */
 let ws = null;
@@ -27,7 +28,7 @@ document.addEventListener('visibilitychange', () => {
 function loadStoredMessages() {
     const stored = localStorage.getItem('chatMessagesJSON');
     if (stored) {
-        /** @type {any[]} */
+        /** @type {Component[]} */
         const messages = JSON.parse(stored);
         // Reverse the array to show messages in correct order
         messages.reverse().forEach(msg => addMessage(msg, false));
@@ -36,14 +37,15 @@ function loadStoredMessages() {
 
 /**
  * Store messages in localStorage.
- * @param {any[]} json
+ * @param {Component} json
  */
 function storeMessage(json) {
     try {
+        /** @type {Component[]} */
         let messages = [];
         const stored = localStorage.getItem('chatMessagesJSON');
         if (stored) {
-            messages = /** @type {any[]} */ (JSON.parse(stored));
+            messages = JSON.parse(stored);
         }
 
         messages.unshift(json); // Add new message at start
@@ -61,7 +63,7 @@ function storeMessage(json) {
 
 /**
  * Add a message to the chat.
- * @param {any} json
+ * @param {Component} json
  * @param {boolean} store
  */
 function addMessage(json, store = true) {
