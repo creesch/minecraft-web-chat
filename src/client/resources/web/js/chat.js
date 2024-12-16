@@ -3,7 +3,6 @@
 
 /** @type {WebSocket | null} */
 let ws = null;
-const wsPort = parseInt(location.port, 10) + 1;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 
@@ -78,7 +77,7 @@ function addMessage(json, store = true) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://localhost:${wsPort}`);
+    ws = new WebSocket(`ws://${location.host}/chat`);
 
     ws.onopen = function () {
         console.log('Connected to server');
@@ -122,7 +121,6 @@ function connect() {
 }
 
 function sendMessage() {
-    // TODO: cut message up if it is too long and send in parts. Possibly do this server side... 
     const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
     if (!input) return;
 
