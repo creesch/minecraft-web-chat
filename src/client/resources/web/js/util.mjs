@@ -16,7 +16,7 @@ export function faviconCounter(count) {
         if (!ctx) return;
 
         const img = new Image();
-        img.src = `icon_${size}.png`;
+        img.src = `img/icon_${size}.png`;
         img.onload = () => {
             ctx.drawImage(img, 0, 0, size, size);
 
