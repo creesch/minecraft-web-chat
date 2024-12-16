@@ -2,155 +2,150 @@ package dev.creesch;
 
 import dev.creesch.config.ModConfig;
 import dev.creesch.util.NamedLogger;
-import fi.iki.elonen.NanoHTTPD;
+import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
+import io.javalin.websocket.WsContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import org.java_websocket.server.WebSocketServer;
-import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.WebSocket;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class WebInterface {
-    private final WebServer webServer;
-    private final ChatWebSocketServer websocketServer;
-    private final Set<WebSocket> connections = new HashSet<>();
-
-    ModConfig config = ModConfig.HANDLER.instance();
+    // Server related things
+    private final Javalin server;
+    private final Set<WsContext> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
+    ModConfig config = ModConfig.HANDLER.instance();
 
+    private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile("[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]");
     public WebInterface() {
-        webServer = new WebServer(config.httpPortNumber);
-        websocketServer = new ChatWebSocketServer(config.httpPortNumber + 1);
+        server = createServer();
+        setupWebSocket();
 
-        try {
-            webServer.start();
-            websocketServer.start();
-        } catch (IOException e) {
-            LOGGER.error("Error with webserver connection", e);
-        }
+        server.start(config.httpPortNumber);
+        LOGGER.info("Web interface started on port {}", config.httpPortNumber);
     }
 
-    // HTTP server for static files
-    private class WebServer extends NanoHTTPD {
-        public WebServer(int port) {
-            super(port);
-        }
+    private Javalin createServer() {
+        return Javalin.create(config -> {
+            config.staticFiles.add("/web", Location.CLASSPATH);
+            config.http.defaultContentType = "text/plain";
+        }).before(ctx -> {
+            // Note, most things that are set here are overkill as users are _supposed_ to only uses this on their local machine through localhost.
+            // Or if we are being generous through a device on their own network.
+            // But, as we can't be sure that someone doesn't (accidentally) opens this up to the internet we take the better safe than sorry route.
+            String uri = ctx.path();
 
-        private static final Map<String, String> MIME_TYPES = Map.of(
-                ".html", "text/html",
-                ".css", "text/css",
-                ".js", "application/javascript",
-                ".png", "image/png",
-                ".webmanifest", "application/manifest+json"
-        );
-
-        @Override
-        public Response serve(IHTTPSession session) {
-            String uri = session.getUri();
-            LOGGER.info("Attempting to serve request: {}", uri);
-            // Serve index.html as default
-            if (uri.equals("/")) {
-                uri = "/index.html";
+            // Allow access to the root directory ("/") but block subdirectories ending with "/"
+            if (!uri.equals("/") && uri.endsWith("/")) {
+                LOGGER.warn("Unauthorized attempt to access subdirectory: " + uri);
+                ctx.status(401).result("Unauthorized access");
+                return;
             }
 
-            // If we still have a / at the end someone is trying to get the contents of subdirectory. We are not doing that.
-            if (uri.endsWith("/")) {
-                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, MIME_PLAINTEXT, "Unauthorized access");
-            }
-
-            // Not really a factor in this context, but just in case anyone exposes this to the wider world we want to be a little bit safe.
+            // Reject requests containing `..` (path traversal attack)
+            // Javelin also does this, this is just to be extra secure
             if (uri.contains("..")) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "Invalid path");
+                LOGGER.warn("Invalid path detected: " + uri);
+                ctx.status(400).result("Invalid path");
+                return;
             }
 
-            try {
-                InputStream inputStream = WebchatClient.class.getResourceAsStream("/web" + uri);
-                if (inputStream == null) {
-                    return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "File not found");
-                }
-
-                String extension = uri.substring(uri.lastIndexOf('.'));
-                String mimeType = MIME_TYPES.getOrDefault(extension, "application/octet-stream");
-
-                return newChunkedResponse(Response.Status.OK, mimeType, inputStream);
-            } catch (Exception e) {
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Error loading file");
-            }
-        }
+            // Security headers
+            ctx.header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'");
+            ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
+            ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
+        });
     }
 
-    // WebSocket server for chat
-    private class ChatWebSocketServer extends WebSocketServer {
-        public ChatWebSocketServer(int port) {
-            super(new InetSocketAddress(port));
-            LOGGER.info("Starting WebSocket server on port " + port);
-        }
+    private void setupWebSocket() {
+        server.ws("/chat", ws -> {
+            ws.onConnect(ctx -> {
+                // For localhost connections pinging likely isn't needed.
+                // But if someone wants to use the mod on their phone or something it might be useful to include it.
+                ctx.enableAutomaticPings(15, TimeUnit.SECONDS);
+                LOGGER.info("New WebSocket connection from {}", ctx.session.getRemoteAddress() != null ? ctx.session.getRemoteAddress() : "unknown remote address");
+                connections.add(ctx);
+            });
 
-        @Override
-        public void onOpen(WebSocket conn, ClientHandshake handshake) {
-            LOGGER.info("New connection from " + conn.getRemoteSocketAddress());
-            connections.add(conn);
-        }
+            ws.onClose(ctx -> {
+                LOGGER.info("WebSocket connection closed: {} with status {} and reason: {}", ctx.session.getRemoteAddress(), ctx.status(), ctx.reason());
+                connections.remove(ctx);
+            });
 
-        @Override
-        public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-            LOGGER.info("Closed connection to " + conn.getRemoteSocketAddress() + " with code " + code + " for reason: " + reason);
-            connections.remove(conn);
-        }
+            ws.onMessage(ctx -> {
+                String message = ctx.message();
 
-        private void sendMinecraftMessage(String message) {
-            MinecraftClient client = MinecraftClient.getInstance();
-            // Need to schedule on the main thread since we're coming from websocket thread
-            client.execute(() -> {
-                ClientPlayerEntity player = client.player;
-                if (player != null) {
+                if (message.trim().isEmpty()) {
+                    LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
+                    return;
+                }
+                LOGGER.info("Received WebSocket message: {}", message);
+
+                // Sanitize the message
+                message = sanitizeMessage(message);
+
+                // Send the sanitized message to Minecraft chat
+                sendMinecraftMessage(message);
+            });
+
+            ws.onError(ctx -> {
+                LOGGER.error("WebSocket error: ", ctx.error());
+                connections.remove(ctx);
+            });
+        });
+
+        server.events(event -> {
+            event.serverStopped(() -> {
+                LOGGER.info("Web interface stopped. Cleaning up resources...");
+                connections.clear();
+            });
+        });
+    }
+
+    private String sanitizeMessage(String message) {
+        // Replace known illegal characters like linebreaks, control characters, zero width characters, etc
+        return ILLEGAL_CHARACTERS.matcher(message).replaceAll("");
+    }
+
+    private void sendMinecraftMessage(String message) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        // Probably an edge case, if even possible but client can potentially be null
+        if (client == null) {
+            LOGGER.warn("MinecraftClient instance is null. Cannot send message.");
+            return;
+        }
+        client.execute(() -> {
+            ClientPlayerEntity player = client.player;
+            if (player != null) {
+                // Break long messages into smaller chunks
+                int maxLength = 256;
+                if (message.length() > maxLength) {
+                    for (int i = 0; i < message.length(); i += maxLength) {
+                        int end = Math.min(i + maxLength, message.length());
+                        player.networkHandler.sendChatMessage(message.substring(i, end));
+                    }
+                } else {
                     player.networkHandler.sendChatMessage(message);
                 }
-            });
-        }
-
-        @Override
-        public void onMessage(WebSocket conn, String message) {
-            LOGGER.info("Received message from " + conn.getRemoteSocketAddress() + ": " + message);
-            // Replace known illegal characters like linebreaks, control characters, zero width characters, etc
-            message = message.replaceAll("[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]", "");
-            int maxLength = 256;
-            if (message.length() > maxLength) {
-                for (int i = 0; i < message.length(); i += maxLength) {
-                    int end = Math.min(i + maxLength, message.length());
-                    sendMinecraftMessage(message.substring(i, end));
-                }
             } else {
-                sendMinecraftMessage(message);
+                LOGGER.warn("Player value is null. Cannot send message.");
             }
-        }
-
-        @Override
-        public void onError(WebSocket conn, Exception ex) {
-            LOGGER.error("WebSocket error: ", ex);
-            if (conn != null) {
-                connections.remove(conn);
-            }
-        }
-
-        @Override
-        public void onStart() {
-            LOGGER.info("WebSocket server started successfully");
-            setConnectionLostTimeout(30);
-        }
+        });
     }
 
-    // Method to broadcast messages to all web clients
     public void broadcastMessage(String message) {
-        for (WebSocket conn : connections) {
-            conn.send(message);
-        }
+        connections.forEach(ctx -> {
+            try {
+                ctx.send(message);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to send message to connection: {}", ctx.session.getRemoteAddress(), e);
+            }
+        });
     }
 }

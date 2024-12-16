@@ -47,6 +47,9 @@ dependencies {
 	compileOnly "org.projectlombok:lombok:${project.lombok_version}"
 
 	// Included
+	implementation "io.javalin:javalin:${project.javalin_version}"
+	include "io.javalin:javalin:${project.javalin_version}"
+
 	implementation "org.java-websocket:Java-WebSocket:${project.java_websocket_version}"
 	include("org.java-websocket:Java-WebSocket:${project.java_websocket_version}")
 	implementation "org.nanohttpd:nanohttpd:${nanohttpd_version}"
