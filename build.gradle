@@ -1,6 +1,7 @@
 plugins {
 	id 'fabric-loom' version '1.9-SNAPSHOT'
 	id 'maven-publish'
+	id 'com.gradleup.shadow' version '8.3.5' 
 }
 
 version = project.mod_version
@@ -11,11 +12,6 @@ base {
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
 	maven { url "https://maven.terraformersmc.com/releases/" } // Mod Menu
 	maven { url "https://maven.isxander.dev/releases" } // YACL
 }
@@ -32,6 +28,11 @@ loom {
 
 }
 
+configurations {
+    shadow // Define a shadow configuration
+    implementation.extendsFrom shadow // Extend implementation to include shadow dependencies
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
@@ -46,14 +47,9 @@ dependencies {
 	annotationProcessor "org.projectlombok:lombok:${project.lombok_version}"
 	compileOnly "org.projectlombok:lombok:${project.lombok_version}"
 
+	// Implementation and included in shadow
 	implementation "io.javalin:javalin:${project.javalin_version}"
-
-	// For future reference. Loom can do "shadow jar" like stuff through this syntax.
-	// Simply include implementation
-	include implementation("io.javalin:javalin:${project.javalin_version}");
-
-	implementation "com.google.code.gson:gson:${project.gson_version}"
-	include "com.google.code.gson:gson:${project.gson_version}"
+	shadow "io.javalin:javalin:${project.javalin_version}"
 
 }
 
@@ -79,12 +75,37 @@ java {
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
+
+
 jar {
 	from("LICENSE") {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 
 }
+
+shadowJar {
+	// Make sure we are actually including relevant references
+	from sourceSets.main.output 
+    from sourceSets.client.output
+    configurations = [project.configurations.shadow] // Include shadow dependencies
+    archiveClassifier.set("") // Make sure we end up with just one unified jar
+
+    // Relocate dependencies to avoid conflicts
+    relocate "io.javalin", "dev.creesch.shadow.io.javalin"
+    relocate "org.eclipse.jetty", "dev.creesch.shadow.jetty"
+
+	minimize()
+	
+}
+
+remapJar {
+    dependsOn shadowJar
+    inputFile.set(shadowJar.archiveFile)
+    archiveClassifier.set("") // Produce the final remapped JAR without classifier
+}
+
+tasks.assemble.dependsOn remapJar
 
 // configure the maven publication
 publishing {
