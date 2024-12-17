@@ -59,7 +59,7 @@ public class WebInterface {
             }
 
             // Security headers
-            ctx.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self';");
+            ctx.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
             ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
             ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
         });
