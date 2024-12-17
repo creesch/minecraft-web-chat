@@ -124,3 +124,20 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+task checkGitStatus {
+    doLast {
+        def currentBranch = "git rev-parse --abbrev-ref HEAD".execute().text.trim()
+        if (currentBranch != "main") {
+            println "\u001B[33mWarning: You're building on branch '$currentBranch' instead of 'main'\u001B[0m"
+        }
+
+        def status = "git status -sb".execute().text
+        if (status.contains("[behind")) {
+            println "\u001B[33mWarning: Your branch is behind the remote origin\u001B[0m"
+        }
+    }
+}
+
+// Hook it into your build process
+build.dependsOn checkGitStatus
