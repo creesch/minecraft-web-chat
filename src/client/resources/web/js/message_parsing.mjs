@@ -31,37 +31,233 @@ const VALID_COLORS = [
     'reset'
 ];
 
+const VALID_HOVER_EVENTS = [
+    'show_text',
+    'show_item',
+    'show_entity'
+];
+
 /**
- * @typedef {Object} BaseComponent
+ * @typedef {Object} Component
  * @property {string} [text] - Text content
  * @property {string} [translate] - Translation key
- * @property {Array<string|Component>} [with] - Translation parameters
- * @property {Array<Component>} [extra] - Additional components to append
+ * @property {Component[]} [with] - Translation parameters
+ * @property {(string | Component)[]} [extra] - Additional components to append
  * @property {string} [color] - Text color - can be a named color or hex value
  * @property {boolean} [bold] - Whether text should be bold
  * @property {boolean} [italic] - Whether text should be italic
  * @property {boolean} [underlined] - Whether text should be underlined
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
+ * @property {HoverEvent} [hoverEvent] - Hover event
  */
 
 /**
- * @typedef {BaseComponent & {
- *   name: string
- * }} HoverEventContents
+ * @typedef {ShowTextHoverEvent | ShowItemHoverEvent | ShowEntityHoverEvent} HoverEvent
  */
 
 /**
- * @typedef {Object} HoverEvent
- * @property {HoverEventContents} [contents] - The hover event contents
- * @property {string} [value] - Legacy hover value
+ * @typedef {Object} ShowTextHoverEvent
+ * @property {'show_text'} action - Displays a text tooltip
+ * @property {string | Component | (string | Component)[]} contents - The text content to show in the tooltip
  */
 
 /**
- * @typedef {BaseComponent & {
- *   hoverEvent?: HoverEvent
- * }} Component
+ * @typedef {Object} ShowItemHoverEvent
+ * @property {'show_item'} action - Displays an item's tooltip
+ * @property {{ id: string, count?: number, tag?: string }} contents - The item data to show
  */
+
+/**
+ * @typedef {Object} ShowEntityHoverEvent
+ * @property {'show_entity'} action - Displays entity information
+ * @property {{ type: string, id: unknown, name?: string }} contents - The entity data to show
+ */
+
+/**
+ * Error class for component validation errors.
+ * @class
+ * @extends {Error}
+ */
+export class ComponentError extends Error {
+    /**
+     * @param {string} message
+     * @param {string[]} path
+     */
+    constructor(message, path) {
+        super(message);
+        this.path = path;
+    }
+
+    /**
+     * @override
+     * @returns {string}
+     */
+    toString() {
+        return `${this.message} at .${this.path.join('.')}`;
+    }
+}
+
+/**
+ * Type guard to check if a value is a valid Component object.
+ * @param {unknown} component - The value to check
+ * @param {string[]} path - The current path into the component
+ * @throws If the component is not a valid {@link Component} object.
+ */
+export function assertIsComponent(component, path = []) {
+    // Depth tracking prevents stack overflow from circular references in malicious messages
+    if (path.length > MAX_CHAT_DEPTH) {
+        throw new ComponentError('Maximum chat depth exceeded', path);
+    }
+
+    if (!component || typeof component !== 'object') {
+        throw new ComponentError('Component is not an object', path);
+    }
+
+    /**
+     * Checks if a value is a valid HoverEvent object.
+     * @param {unknown} hoverEvent
+     * @param {string[]} path
+     * @throws If the hoverEvent is not a valid {@link HoverEvent} object.
+     */
+    function assertIsHoverEvent(hoverEvent, path) {
+        if (!hoverEvent || typeof hoverEvent !== 'object') {
+            throw new ComponentError("HoverEvent is not an object", path);
+        }
+
+        if (!('action' in hoverEvent)) {
+            throw new ComponentError("HoverEvent.action is not present", path);
+        }
+
+        if (typeof hoverEvent.action !== 'string') {
+            throw new ComponentError("HoverEvent.action is not a string", [...path, 'action']);
+        }
+
+        if (!VALID_HOVER_EVENTS.includes(hoverEvent.action)) {
+            throw new ComponentError(`HoverEvent.action is not a valid hover event: ${hoverEvent.action}`, [...path, 'action']);
+        }
+
+        if (!('contents' in hoverEvent)) {
+            throw new ComponentError("HoverEvent.contents is not present", path);
+        }
+
+        switch (hoverEvent.action) {
+            case 'show_text':
+                if (typeof hoverEvent.contents === 'string') return;
+                if (Array.isArray(hoverEvent.contents)) {
+                    hoverEvent.contents.forEach(component => {
+                        if (typeof component === 'string') return;
+                        assertIsComponent(component, [...path, 'contents']);
+                    });
+                } else {
+                    assertIsComponent(hoverEvent.contents, [...path, 'contents']);
+                }
+                break;
+            case 'show_item':
+                if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
+                    throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+                }
+
+                if (!('id' in hoverEvent.contents)) {
+                    throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+                }
+
+                if (typeof hoverEvent.contents.id !== 'string') {
+                    throw new ComponentError("HoverEvent.contents.id is not a string", [...path, 'contents', 'id']);
+                }
+
+                if ('count' in hoverEvent.contents && typeof hoverEvent.contents.count !== 'number') {
+                    throw new ComponentError("HoverEvent.contents.count is not a number", [...path, 'contents', 'count']);
+                }
+
+                if ('tag' in hoverEvent.contents && typeof hoverEvent.contents.tag !== 'string') {
+                    throw new ComponentError("HoverEvent.contents.tag is not a string", [...path, 'contents', 'tag']);
+                }
+                break;
+            case 'show_entity':
+                if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
+                    throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+                }
+
+                if (!('type' in hoverEvent.contents)) {
+                    throw new ComponentError("HoverEvent.contents.type is not present", [...path, 'contents', 'type']);
+                }
+
+                if (typeof hoverEvent.contents.type !== 'string') {
+                    throw new ComponentError("HoverEvent.contents.type is not a string", [...path, 'contents', 'type']);
+                }
+
+                if (!('id' in hoverEvent.contents)) {
+                    throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+                }
+
+                if ('name' in hoverEvent.contents && typeof hoverEvent.contents.name !== 'string') {
+                    throw new ComponentError("HoverEvent.contents.name is not a string", [...path, 'contents', 'name']);
+                }
+                break;
+        }
+    }
+
+    if (!('text' in component) && !('translate' in component) && !('extra' in component)) {
+        throw new ComponentError("Component does not have a text, translate, or extra property", path);
+    }
+
+    if ('text' in component && typeof component.text !== 'string') {
+        throw new ComponentError("Component.text is not a string", [...path, 'text']);
+    }
+
+    if ('translate' in component && typeof component.translate !== 'string') {
+        throw new ComponentError("Component.translate is not a string", [...path, 'translate']);
+    }
+
+    if ('color' in component && typeof component.color !== 'string') {
+        throw new ComponentError("Component.color is not a string", [...path, 'color']);
+    }
+
+    if ('bold' in component && typeof component.bold !== 'boolean') {
+        throw new ComponentError("Component.bold is not a boolean", [...path, 'bold']);
+    }
+
+    if ('italic' in component && typeof component.italic !== 'boolean') {
+        throw new ComponentError("Component.italic is not a boolean", [...path, 'italic']);
+    }
+
+    if ('underlined' in component && typeof component.underlined !== 'boolean') {
+        throw new ComponentError("Component.underlined is not a boolean", [...path, 'underlined']);
+    }
+
+    if ('strikethrough' in component && typeof component.strikethrough !== 'boolean') {
+        throw new ComponentError("Component.strikethrough is not a boolean", [...path, 'strikethrough']);
+    }
+
+    if ('obfuscated' in component && typeof component.obfuscated !== 'boolean') {
+        throw new ComponentError("Component.obfuscated is not a boolean", [...path, 'obfuscated']);
+    }
+
+    if ('extra' in component) {
+        if (!Array.isArray(component.extra)) {
+            throw new ComponentError("Component.extra is not an array", [...path, 'extra']);
+        }
+
+        component.extra.forEach((component, index) => {
+            if (typeof component === 'string') return;
+
+            assertIsComponent(component, [...path, 'extra', index.toString()]);
+        })
+    }
+
+    if ('with' in component) {
+        if (!Array.isArray(component.with)) {
+            throw new ComponentError("Component.with is not an array", [...path, 'with']);
+        }
+
+        component.with.forEach((component, index) => assertIsComponent(component, [...path, 'with', index.toString()]));
+    }
+
+    if ('hoverEvent' in component) {
+        assertIsHoverEvent(component.hoverEvent, [...path, 'hoverEvent']);
+    }
+}
 
 /**
  * Supports both legacy named colors and modern hex colors while preventing XSS via color values.
@@ -72,31 +268,14 @@ function isValidColor(color) {
     if (!color) {
         return false;
     }
+
     color = color.toLowerCase();
     if (VALID_COLORS.includes(color)) {
         return true;
     }
+
     return /^#[0-9a-fA-F]{6}$/.test(color); // Allow valid hex colors (e.g., #FF0000)
 } 
-
-/**
- * HTML escaping including backticks and backslashes to prevent template literal and escape sequence exploits.
- * @param {unknown} unsafe
- * @returns {string}
- */
-function escapeHtml(unsafe) {
-    if (typeof unsafe !== 'string') {
-        return '';
-    }
-    return unsafe
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;')
-        .replaceAll('`', '&#x60;')
-        .replaceAll('\\', '&#x5c;');
-}
 
 // Imitates Minecraft's obfuscated text. 
 export function initializeObfuscation() {
@@ -127,7 +306,7 @@ export function initializeObfuscation() {
         // Uses requestAnimationFrame with timestamp checking for efficient rate limiting
         // that automatically pauses when tab is inactive
         if (timestamp - lastUpdate >= updateInterval) {
-            const elements = document.getElementsByClassName('minecraft-obfuscated');
+            const elements = document.getElementsByClassName('mc-obfuscated');
             const elementsToProcess = Math.min(elements.length, maxElements);
 
             for (let i = 0; i < elementsToProcess; i++) {
@@ -162,79 +341,160 @@ export function initializeObfuscation() {
 /**
  * Handles URL detection and conversion while maintaining XSS protection.
  * @param {string} text
- * @returns {string}
+ * @returns {(Element | Text)[]}
  */
 function linkifyText(text) {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, url => {
-        try {
-            // Basic URL validation, if it can't parse it as a url it will throw an error landing us in the catch block. 
-            new URL(url);
-            const sanitizedUrl = escapeHtml(url);
-            return `<a href="${sanitizedUrl}" 
-                      target="_blank" 
-                      rel="noopener noreferrer">${sanitizedUrl}</a>`;
-        } catch {
-            return escapeHtml(url);
+    const result = [];
+    const regex = /(https?:\/\/[^\s]+)/g;
+    let lastIndex = 0;
+    let match = regex.exec(text);
+
+    while (match !== null) {
+        // Add text before the URL
+        if (lastIndex < match.index) {
+            result.push(document.createTextNode(text.slice(lastIndex, match.index)));
         }
-    });
+
+        const url = /** @type {string} */(match[1]);
+        const a = document.createElement('a');
+        a.href = url;
+        a.rel = 'noopener noreferrer';
+        a.target = '_blank';
+        a.textContent = url;
+        result.push(a);
+
+        lastIndex = regex.lastIndex;
+        match = regex.exec(text);
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+        result.push(document.createTextNode(text.slice(lastIndex)));
+    }
+
+    return result;
+}
+
+/**
+ * Handles numbered substitution (%1$s, %2$s, etc.)
+ * @param {string} template
+ * @param {Component[]} args
+ * @returns {(Element | Text)[]}
+ */
+function numberedSubstitution(template, args) {
+    /** @type {(Element | Text)[]} */
+    const result = [];
+    const regex = /%(\d+)\$s/g;
+    let lastIndex = 0;
+    let match = regex.exec(template);
+
+    while (match !== null) {
+        // Add text before the placeholder
+        if (lastIndex < match.index) {
+            result.push(document.createTextNode(template.slice(lastIndex, match.index)));
+        }
+
+        const index = parseInt(/** @type {string} */(match[1])) - 1;
+        const value = args[index];
+        if (!value) {
+            console.warn(`Missing argument ${index} for template "${template}"`);
+            result.push(document.createTextNode(match[0]));
+        } else {
+            result.push(formatComponent(value));
+        }
+
+        lastIndex = regex.lastIndex;
+        match = regex.exec(template);
+    }
+
+    // Add remaining text
+    if (lastIndex < template.length) {
+        result.push(document.createTextNode(template.slice(lastIndex)));
+    }
+
+    return result;
+}
+
+/**
+ * Handles simple %s placeholders.
+ * @param {string} template
+ * @param {Component[]} args
+ * @returns {(Element | Text)[]}
+ */
+function simpleSubstitution(template, args) {
+    /** @type {(Element | Text)[]} */
+    const result = [];
+    const regex = /%s/g;
+    /** Index into template */
+    let lastIndex = 0;
+
+    let match = regex.exec(template);
+
+    /** Index into args */
+    let index = 0;
+    while (match !== null) {
+        // Add text before the placeholder
+        if (lastIndex < match.index) {
+            result.push(document.createTextNode(template.slice(lastIndex, match.index)));
+        }
+
+        const value = args[index++];
+        if (!value) {
+            console.warn(`Missing argument ${index} for template "${template}"`);
+            result.push(document.createTextNode('%s'));
+        } else {
+            result.push(formatComponent(value));
+        }
+
+        lastIndex = regex.lastIndex;
+        match = regex.exec(template);
+    }
+
+    // Add remaining text
+    if (lastIndex < template.length) {
+        result.push(document.createTextNode(template.slice(lastIndex)));
+    }
+
+    return result;
 }
 
 /**
  * Supports both numbered (%1$s) and sequential (%s) placeholder formats.
  * @param {string} key
- * @param {any[]} args
- * @returns {string}
+ * @param {Component[]} args
+ * @returns {(Element | Text)[]}
  */
 function formatTranslation(key, args) {
     if (!key) {
         console.warn('Translation key is missing');
-        return '';
+        return [document.createTextNode(key)];
     }
 
     // Handle placeholder keys like "%s" directly
     if (key === '%s') {
-        if (!Array.isArray(args) || args.length === 0) {
+        if (args.length === 0) {
             console.warn(`Missing arguments for placeholder key: ${key}`);
-            return key;
+            return [document.createTextNode(key)];
         }
 
-        return args.map(formatComponent).join('');
+        return args.map(formatComponent);
     }
 
-    /** @type {string} */
-    const template = translations[key] || key;
+    const template = translations[key];
     if (!template) {
         console.warn(`Missing translation for key: ${key}`);
-        return key;
-    }
-
-    if (!Array.isArray(args)) {
-        console.warn(`Invalid arguments for translation key ${key}: `, args);
-        return template;
+        return [document.createTextNode(key)];
     }
 
     try {
-        // Handle numbered placeholders (%1$s, %2$s, etc.)
         if (template.includes('$s')) {
-            return template.replace(/%(\d+)\$s/g, (match, num) => {
-                const index = parseInt(num) - 1;
-                return index < args.length ? formatComponent(args[index]) : match;
-            });
+            return numberedSubstitution(template, args);
         }
 
-        // Handle simple %s placeholders
-        let index = 0;
-        return template.replace(/%s/g, () => {
-            if (index >= args.length) {
-                console.warn(`Missing argument ${index} for translation ${key}`);
-                    return '%s';
-            }
-            return formatComponent(args[index++]);
-        });
+        return simpleSubstitution(template, args);
     } catch (error) {
-        console.error(`Error formatting translation ${key}:`, error);
-        return key;
+        console.error(`Error formatting translation for key: ${key}`, error);
+        return [document.createTextNode(key)];
     }
 }
 
@@ -244,26 +504,17 @@ function formatTranslation(key, args) {
  * @returns {string}
  */
 function formatComponentPlainText(component) {
-    if (typeof component === 'string') {
-        return component;
-    }
-
-    if (!component || typeof component !== 'object') {
-        return '';
-    }
-
     let result = '';
 
     if (component.text) {
         result += component.text;
     } else if (component.translate) {
-        const params = Array.isArray(component.with) ? component.with : [];
-        result += formatTranslation(component.translate, params);
+        result += formatTranslation(component.translate, component.with || []).map(e => e.textContent || '').join('');
     }
 
-    if (Array.isArray(component.extra)) {
+    if (component.extra) {
         result += component.extra
-            .map(formatComponentPlainText)
+            .map(e => typeof e === 'string' ? e : formatComponentPlainText(e))
             .join('');
     }
 
@@ -271,29 +522,43 @@ function formatComponentPlainText(component) {
 }
 
 /**
- * Formats a Minecraft component into HTML.
- * @param {Component} component
- * @param {number} depth
+ * Formats a hover event into a string.
+ * @param {HoverEvent} hoverEvent
  * @returns {string}
  */
-function formatComponent(component, depth = 0) {
-    // Depth tracking prevents stack overflow from circular references in malicious messages
-    if (depth > MAX_CHAT_DEPTH) {
-        console.warn('Maximum chat depth exceeded, truncating');
-        return '';
-    }
+function formatHoverEvent(hoverEvent) {
+    switch (hoverEvent.action) {
+        case 'show_text':
+            if (typeof hoverEvent.contents === 'string') {
+                return hoverEvent.contents;
+            }
 
-    if (typeof component === 'string') {
-        return linkifyText(escapeHtml(component)).slice(0, MAX_CHAT_LENGTH);
-    }
+            if (Array.isArray(hoverEvent.contents)) {
+                return hoverEvent.contents.map(component => {
+                    if (typeof component === 'string') return component;
+                    return formatComponentPlainText(component);
+                }).join('');
+            }
 
-    if (!component || typeof component !== 'object') {
-        return '';
-    }
+            return formatComponentPlainText(hoverEvent.contents);
+        case 'show_item':
+            if (hoverEvent.contents.count) {
+                return `${hoverEvent.contents.count}x ${hoverEvent.contents.id}`;
+            }
 
-    let result = '';
-    let classes = [];
-    let attributes = '';
+            return hoverEvent.contents.id;
+        case 'show_entity':
+            return hoverEvent.contents.name || "Unnamed Entity";
+    }
+}
+
+/**
+ * Formats a Minecraft component into HTML.
+ * @param {Component} component
+ * @returns {Element | Text}
+ */
+export function formatComponent(component) {
+    const result = document.createElement('span');
 
     try {
         // Using CSS classes for standard colors for consistency with Minecrafts palette
@@ -302,101 +567,55 @@ function formatComponent(component, depth = 0) {
             if (!isValidColor(component.color)) {
                 console.warn('Invalid color format:', component.color);
             } else if (component.color.startsWith('#')) {
-                attributes += ` style="color: ${component.color}"`;
+                result.style.color = component.color;
             } else {
-                classes.push(`mc-${component.color.replace(/_/g, '-')}`);
+                result.classList.add(`mc-${component.color.replace(/_/g, '-')}`);
             }
         }
 
         if (component.bold) {
-            classes.push('mc-bold');
+            result.classList.add('mc-bold');
         }
         if (component.italic) {
-            classes.push('mc-italic');
+            result.classList.add('mc-italic');
         }
         if (component.underlined) {
-            classes.push('mc-underlined');
+            result.classList.add('mc-underlined');
         }
         if (component.strikethrough) {
-            classes.push('mc-strikethrough');
+            result.classList.add('mc-strikethrough');
         }
         if (component.obfuscated) {
-            classes.push('minecraft-obfuscated');
-        }
-
-        if (classes.length > 0) {
-            attributes += ` class="${classes.join(' ')}"`;
+            result.classList.add('mc-obfuscated');
         }
 
         // Hover events are implemented as titles for simplicity and broad browser compatibility
         if (component.hoverEvent) {
-            let hoverContent = '';
-            if (component.hoverEvent.contents) {
-                if (component.hoverEvent.contents.name) {
-                    hoverContent = typeof component.hoverEvent.contents.name === 'string' 
-                        ? component.hoverEvent.contents.name 
-                        : formatComponentPlainText(component.hoverEvent.contents.name);
-                } else if (typeof component.hoverEvent.contents === 'object') {
-                    // Handle translation objects in hover content
-                    hoverContent = formatComponentPlainText(component.hoverEvent.contents);
-                } else {
-                    hoverContent = JSON.stringify(component.hoverEvent.contents);
-                }
-            } else if (component.hoverEvent.value) {
-                hoverContent = component.hoverEvent.value;
-            }
-            if (hoverContent) {
-                attributes += ` title="${escapeHtml(hoverContent)}"`;
-            }
+            result.title = formatHoverEvent(component.hoverEvent);
         }
-
-        result = `<span${attributes}>`;
 
         if (component.text) {
-            result += linkifyText(escapeHtml(component.text));
+            linkifyText(component.text)
+                .forEach(e => result.appendChild(e));
         } else if (component.translate) {
-            const params = Array.isArray(component.with) ? component.with : [];
-            result += formatTranslation(component.translate, params);
+            formatTranslation(component.translate, component.with || [])
+                .forEach(e => result.appendChild(e));
         }
 
-        if (Array.isArray(component.extra)) {
-            result += component.extra
-                .map(e => formatComponent(e, depth + 1))
-                .join('');
+        if (component.extra) {
+            component.extra
+                .map(e => typeof e === 'string' ? document.createTextNode(e) : formatComponent(e))
+                .forEach(e => result.appendChild(e));
         }
-
-        result += '</span>';
-
-        if (result.length > MAX_CHAT_LENGTH) {
+    
+        if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
             console.warn('Chat message exceeded maximum length, truncating');
-            return escapeHtml(component.text || '').slice(0, MAX_CHAT_LENGTH);
+            result.textContent = result.textContent.slice(0, MAX_CHAT_LENGTH);
         }
 
         return result;
     } catch (error) {
         console.error('Error formatting component:', error);
-        return escapeHtml(String(component.text || '')).slice(0, MAX_CHAT_LENGTH);
-    }
-}
-
-/**
- * Main entry point that handles both string and object inputs for flexibility.
- * @param {string | Component} json
- * @returns {string}
- */
-export function parseMinecraftText(json) {
-    try {
-        /** @type {Component} */
-        const component = (typeof json === 'string' ? JSON.parse(json) : json);
-        const result = formatComponent(component);
-
-        if (result.length > MAX_CHAT_LENGTH) {
-            return escapeHtml(String(component.text || '')).slice(0, MAX_CHAT_LENGTH);
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Error parsing Minecraft text:', error);
-        return escapeHtml(String(json)).slice(0, MAX_CHAT_LENGTH);
+        return document.createTextNode(String(component.text || '').slice(0, MAX_CHAT_LENGTH));
     }
 }

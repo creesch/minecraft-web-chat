@@ -2,7 +2,7 @@
 'use strict';
 
 import { faviconCounter } from './util.mjs';
-import { parseMinecraftText, initializeObfuscation } from './message_parsing.mjs';
+import { assertIsComponent, ComponentError, formatComponent, initializeObfuscation } from './message_parsing.mjs';
 /** @typedef {import('./message_parsing.mjs').Component} Component */
 
 /** @type {WebSocket | null} */
@@ -26,28 +26,28 @@ document.addEventListener('visibilitychange', () => {
 // Load previous messages when page loads
 function loadStoredMessages() {
     const stored = localStorage.getItem('chatMessagesJSON');
-    if (stored) {
-        /** @type {Component[]} */
-        const messages = JSON.parse(stored);
-        // Reverse the array to show messages in correct order
-        messages.reverse().forEach(msg => addMessage(msg, false));
-    }
+    if (!stored) return;
+
+    /** @type {string[]} */
+    const messages = JSON.parse(stored);
+    // Reverse the array to show messages in correct order
+    messages.reverse().forEach(rawJson => displayMessage(rawJson));
 }
 
 /**
  * Store messages in localStorage.
- * @param {Component} json
+ * @param {string} rawJson
  */
-function storeMessage(json) {
+function storeMessage(rawJson) {
     try {
-        /** @type {Component[]} */
+        /** @type {string[]} */
         let messages = [];
         const stored = localStorage.getItem('chatMessagesJSON');
         if (stored) {
             messages = JSON.parse(stored);
         }
 
-        messages.unshift(json); // Add new message at start
+        messages.unshift(rawJson); // Add new message at start
 
         // Keep only the last maxStoredMessages messages
         if (messages.length > maxStoredMessages) {
@@ -56,29 +56,48 @@ function storeMessage(json) {
 
         localStorage.setItem('chatMessagesJSON', JSON.stringify(messages));
     } catch (e) {
-        console.warn('Failed to store message:', e);
+        console.error('Failed to store message:', e);
     }
 }
 
 /**
  * Add a message to the chat.
- * @param {Component} json
- * @param {boolean} store
+ * @param {string} rawJson
  */
-function addMessage(json, store = true) {
-    console.log(json);
+function displayMessage(rawJson) {
+    console.log(rawJson);
     const div = document.createElement('div');
     div.className = 'message';
-    div.innerHTML = parseMinecraftText(json);
+
+    /** @type {unknown} */
+    const json = JSON.parse(rawJson);
+    try {
+        assertIsComponent(json);
+        div.appendChild(formatComponent(/** @type {Component} */ (json)));
+    } catch (e) {
+        if (e instanceof ComponentError) {
+            console.error('Invalid component:', e.toString());
+            div.appendChild(
+                formatComponent({
+                    text: 'Invalid message received from server',
+                    color: 'red',
+                })
+            );
+        } else {
+            console.error('Error parsing message:', e);
+            div.appendChild(
+                formatComponent({
+                    text: 'Error parsing message',
+                    color: 'red',
+                })
+            );
+        }
+    }
+
     const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
     if (!messages) return;
 
     messages.insertBefore(div, messages.firstChild);
-
-    if (store) {
-        // Note, we store the original text as on reload all messages go through this function again anyway. 
-        storeMessage(json);
-    }
 }
 
 function connect() {
@@ -121,7 +140,11 @@ function connect() {
             messageCount++;
             faviconCounter(messageCount);
         }
-        addMessage(event.data);
+
+        /** @type {string} */
+        const rawJson = event.data;
+        storeMessage(rawJson);
+        displayMessage(rawJson);
     };
 }
 
