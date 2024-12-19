@@ -1,6 +1,5 @@
 package dev.creesch.config;
 
-
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
@@ -8,7 +7,6 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import com.google.gson.GsonBuilder;
 import net.minecraft.util.Identifier;
-
 
 public class ModConfig {
     public static ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler.createBuilder(ModConfig.class)
@@ -26,5 +24,4 @@ public class ModConfig {
     public static void init() {
         HANDLER.load();
     }
-
 }
