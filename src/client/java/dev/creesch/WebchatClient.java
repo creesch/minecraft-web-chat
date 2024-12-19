@@ -51,7 +51,7 @@ public class WebchatClient implements ClientModInitializer {
             client.execute(() -> {
                 if (client.player != null) {
                     String webchatPort = String.valueOf(config.httpPortNumber);
-                    Text message = Text.literal("Web chat:")
+                    Text message = Text.literal("Web chat: ")
                             .append(Text.literal("http://localhost:" + webchatPort)
                                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
                                 .styled(style -> style.withClickEvent(
