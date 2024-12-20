@@ -5,7 +5,7 @@ import { assertIsComponent, formatComponent } from '~/message_parsing.mjs';
  */
 
 /**
- * @type {[string, unknown, string | undefined][]}
+ * @type {readonly [string, unknown, string | undefined][]}
  */
 const COMPONENT_VALIDATION_TESTS = [
     // Basic validation
@@ -158,7 +158,7 @@ for (const [name, component, expectedError] of COMPONENT_VALIDATION_TESTS) {
 }
 
 /**
- * @type {[string, Component, string][]}
+ * @type {readonly [string, Component, string][]}
  */
 const COMPONENT_FORMATTING_TESTS = [
     // Basic text formatting
