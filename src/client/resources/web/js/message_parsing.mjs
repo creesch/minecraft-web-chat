@@ -165,10 +165,15 @@ export function assertIsComponent(component, path = []) {
         }
 
         const contents = 'contents' in hoverEvent ? hoverEvent.contents : hoverEvent.value;
-        if (typeof contents === 'string') return;
+        if (typeof contents === 'string') {
+            return;
+        }
+
         if (Array.isArray(contents)) {
             contents.forEach((component, index) => {
-                if (typeof component === 'string') return;
+                if (typeof component === 'string') {
+                    return;
+                }
 
                 assertIsComponent(component, [...path, 'contents', index.toString()]);
             });
@@ -299,7 +304,9 @@ export function assertIsComponent(component, path = []) {
         }
 
         component.extra.forEach((component, index) => {
-            if (typeof component === 'string') return;
+            if (typeof component === 'string') {
+                return;
+            }
 
             assertIsComponent(component, [...path, 'extra', index.toString()]);
         })
@@ -311,7 +318,9 @@ export function assertIsComponent(component, path = []) {
         }
 
         component.with.forEach((component, index) =>{
-            if (typeof component === 'string') return;
+            if (typeof component === 'string') {
+                return;
+            }
 
             assertIsComponent(component, [...path, 'with', index.toString()]);
         });

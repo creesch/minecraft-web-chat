@@ -13,7 +13,9 @@ export function faviconCounter(count) {
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            return;
+        }
 
         const img = new Image();
         img.src = `img/icon_${size}.png`;

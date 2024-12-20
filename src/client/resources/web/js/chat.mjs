@@ -26,7 +26,9 @@ document.addEventListener('visibilitychange', () => {
 // Load previous messages when page loads
 function loadStoredMessages() {
     const stored = localStorage.getItem('chatMessagesJSON');
-    if (!stored) return;
+    if (!stored) {
+        return;
+    }
 
     /** @type {string[]} */
     const messages = JSON.parse(stored);
@@ -95,7 +97,9 @@ function displayMessage(rawJson) {
     }
 
     const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
-    if (!messages) return;
+    if (!messages) {
+        return;
+    }
 
     messages.insertBefore(div, messages.firstChild);
 }
@@ -106,7 +110,9 @@ function connect() {
     ws.onopen = function () {
         console.log('Connected to server');
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-        if (!status) return;
+        if (!status) {
+            return;
+        }
 
         status.textContent = 'Connected';
         status.className = 'status-connected';
@@ -115,7 +121,9 @@ function connect() {
 
     ws.onclose = function () {
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-        if (!status) return;
+        if (!status) {
+            return;
+        }
 
         status.textContent = 'Disconnected';
         status.className = 'status-disconnected';
@@ -130,7 +138,9 @@ function connect() {
     ws.onerror = function (error) {
         console.error('WebSocket error:', error);
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-        if (!status) return;
+        if (!status) {
+            return;
+        }
 
         status.textContent = 'Error: ' + error;
     };
@@ -151,7 +161,9 @@ function connect() {
 function sendMessage() {
     // TODO: cut message up if it is too long and send in parts. Possibly do this server side... 
     const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
-    if (!input) return;
+    if (!input) {
+        return;
+    }
 
     console.log(ws);
     console.log(ws?.readyState);
@@ -164,7 +176,9 @@ function sendMessage() {
     } else {
         console.log('WebSocket is not connected');
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-        if (!status) return;
+        if (!status) {
+            return;
+        }
 
         status.textContent = 'Not connected - message not sent';
         status.className = 'status-disconnected';
