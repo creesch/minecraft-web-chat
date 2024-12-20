@@ -1,8 +1,8 @@
-name: TypeCheck
+name: Test JavaScript
 on: [pull_request, push]
 
 jobs:
-  typecheck:
+  test:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -19,3 +19,6 @@ jobs:
 
       - name: Run TypeScript check
         run: npx tsc
+
+      - name: Run tests
+        run: npm run test -- run
