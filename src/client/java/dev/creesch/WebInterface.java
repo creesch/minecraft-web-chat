@@ -113,10 +113,13 @@ public class WebInterface {
             }
         });
         connections.clear();
-        if (server != null) {
-            LOGGER.info("Shutting down web interface");
-            server.stop();
+
+        if (server == null) {
+            return;
         }
+
+        LOGGER.info("Shutting down web interface");
+        server.stop();
     }
 
     private String sanitizeMessage(String message) {
@@ -131,21 +134,24 @@ public class WebInterface {
             LOGGER.warn("MinecraftClient instance is null. Cannot send message.");
             return;
         }
+
         client.execute(() -> {
             ClientPlayerEntity player = client.player;
-            if (player != null) {
-                // Break long messages into smaller chunks
-                int maxLength = 256;
-                if (message.length() > maxLength) {
-                    for (int i = 0; i < message.length(); i += maxLength) {
-                        int end = Math.min(i + maxLength, message.length());
-                        player.networkHandler.sendChatMessage(message.substring(i, end));
-                    }
-                } else {
-                    player.networkHandler.sendChatMessage(message);
-                }
-            } else {
+            if (player == null) {
                 LOGGER.warn("Player value is null. Cannot send message.");
+                return;
+            }
+
+            int maxLength = 256;
+            if (message.length() <= maxLength) {
+                player.networkHandler.sendChatMessage(message);
+                return;
+            }
+
+            // Break long messages into smaller chunks
+            for (int i = 0; i < message.length(); i += maxLength) {
+                int end = Math.min(i + maxLength, message.length());
+                player.networkHandler.sendChatMessage(message.substring(i, end));
             }
         });
     }
