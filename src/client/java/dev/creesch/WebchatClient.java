@@ -1,20 +1,63 @@
 package dev.creesch;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dev.creesch.config.ModConfig;
+import dev.creesch.model.WebsocketJsonMessage;
+import dev.creesch.model.WebsocketJsonMessage.ChatServerInfo;
+import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.ClickEvent;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.time.Clock;
+import java.time.Instant;
+
 public class WebchatClient implements ClientModInitializer {
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private WebInterface webInterface;
+
+    /**
+     * Processes both chat and game messages, converting them to the appropriate format
+     * and broadcasting them to connected web clients.
+     *
+     * @param message The Minecraft text message to process
+     * @param client The Minecraft client instance
+     */
+    private void handleMessage(Text message, MinecraftClient client) {
+        if (client.world == null) {
+            return;
+        }
+
+        // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
+        String minecraftChatJson = Text.Serialization.toJsonString(message, client.world.getRegistryManager());
+        // Explicitly use UTC time for consistency across different timezones
+        long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
+        ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        String minecraftVersion = SharedConstants.getGameVersion().getName();
+
+        WebsocketJsonMessage chatMessage = WebsocketJsonMessage.createChatMessage(
+                timestamp,
+                serverInfo,
+                minecraftChatJson,
+                minecraftVersion
+        );
+
+        Gson gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .create();
+
+        LOGGER.info(gson.toJson(chatMessage));
+        webInterface.broadcastMessage(minecraftChatJson);
+    }
 
     @Override
     public void onInitializeClient() {
@@ -25,31 +68,16 @@ public class WebchatClient implements ClientModInitializer {
         LOGGER.info("web chat loaded");
 
         // Chat messages from users.
-        // TODO: extract more information, put in object serialize to json
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.world == null) {
-                return;
-            }
-
-            String json = Text.Serialization.toJsonString(message, client.world.getRegistryManager());
-            LOGGER.info("Got chat message as JSON: {}", json);
-            webInterface.broadcastMessage(json);
+            handleMessage(message, MinecraftClient.getInstance());
         });
 
         // System messages (joins, leaves, deaths, etc.)
-        // TODO: extract more information, put in object serialize to json
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.world == null) {
-                return;
-            }
-
-            String json = Text.Serialization.toJsonString(message, client.world.getRegistryManager());
-            LOGGER.info("Got game message as JSON: {}", json);
-            webInterface.broadcastMessage(json);
+            handleMessage(message, MinecraftClient.getInstance());
         });
 
+        // When joining a server, send a clickable message with the web interface URL
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             client.execute(() -> {
                 if (client.player == null) {
@@ -67,7 +95,7 @@ public class WebchatClient implements ClientModInitializer {
             });
         });
 
-        // Properly handle minecraft shutting down
+        // Properly handle minecraft shutting down.
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             if (webInterface == null) {
                 return;
