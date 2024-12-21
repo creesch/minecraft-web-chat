@@ -1,17 +1,15 @@
 // @ts-check
 'use strict';
 
-import { faviconCounter } from './util.mjs';
+import { faviconCounter, formatTimestamp } from './util.mjs';
 import { assertIsComponent, ComponentError, formatComponent, initializeObfuscation } from './message_parsing.mjs';
+import { parseModServerMessage } from './message_types.mjs';
 /** @typedef {import('./message_parsing.mjs').Component} Component */
 
 /** @type {WebSocket | null} */
 let ws = null;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
-
-// TODO: probably make max stored messages a config
-const maxStoredMessages = 5000; // Max number of messages to keep in storage. 
 
 // Used for the favicon
 let messageCount = 0;
@@ -23,60 +21,30 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Load previous messages when page loads
-function loadStoredMessages() {
-    const stored = localStorage.getItem('chatMessagesJSON');
-    if (!stored) {
-        return;
-    }
-
-    /** @type {string[]} */
-    const messages = JSON.parse(stored);
-    // Reverse the array to show messages in correct order
-    messages.reverse().forEach(rawJson => displayMessage(rawJson));
-}
-
 /**
- * Store messages in localStorage.
- * @param {string} rawJson
+ * Add a message to chat
+ * @param {Component} chatComponent 
+ * @param {number} timestamp
  */
-function storeMessage(rawJson) {
-    try {
-        /** @type {string[]} */
-        let messages = [];
-        const stored = localStorage.getItem('chatMessagesJSON');
-        if (stored) {
-            messages = JSON.parse(stored);
-        }
-
-        messages.unshift(rawJson); // Add new message at start
-
-        // Keep only the last maxStoredMessages messages
-        if (messages.length > maxStoredMessages) {
-            messages = messages.slice(0, maxStoredMessages);
-        }
-
-        localStorage.setItem('chatMessagesJSON', JSON.stringify(messages));
-    } catch (e) {
-        console.error('Failed to store message:', e);
-    }
-}
-
-/**
- * Add a message to the chat.
- * @param {string} rawJson
- */
-function displayMessage(rawJson) {
-    console.log(rawJson);
+function displayChatMessage(chatComponent, timestamp) {
+    
     const div = document.createElement('div');
     div.className = 'message';
 
-    /** @type {unknown} */
-    const json = JSON.parse(rawJson);
+    // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen. 
+    const { timeString, fullDateTime } = formatTimestamp(timestamp);
+    const timeElement = document.createElement('time');
+    timeElement.dateTime = new Date(timestamp).toISOString();
+    timeElement.textContent = timeString;
+    timeElement.title = fullDateTime;
+    timeElement.className = 'message-time';
+    div.appendChild(timeElement);
+
     try {
-        assertIsComponent(json);
-        div.appendChild(formatComponent(/** @type {Component} */ (json)));
-    } catch (e) {
+        // Format the chat message - this uses the Component format from message_parsing
+        const chatContent = formatComponent(chatComponent);      
+        div.appendChild(chatContent);
+    } catch (e) {       
         if (e instanceof ComponentError) {
             console.error('Invalid component:', e.toString());
             div.appendChild(
@@ -100,7 +68,7 @@ function displayMessage(rawJson) {
     if (!messages) {
         return;
     }
-
+    
     messages.insertBefore(div, messages.firstChild);
 }
 
@@ -153,13 +121,20 @@ function connect() {
 
         /** @type {string} */
         const rawJson = event.data;
-        storeMessage(rawJson);
-        displayMessage(rawJson);
+        console.log(rawJson);
+		try {
+			const message = parseModServerMessage(rawJson);
+			// For now we only handle chat messages
+			if (message.type === 'chatMessage') {
+				displayChatMessage(message.payload, message.timestamp);
+			}
+		} catch (e) {
+			console.error('Error processing message:', e);
+		}
     };
 }
 
 function sendMessage() {
-    // TODO: cut message up if it is too long and send in parts. Possibly do this server side... 
     const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
     if (!input) {
         return;
@@ -188,7 +163,6 @@ function sendMessage() {
 // Start connection and load stored messages when page loads
 connect();
 initializeObfuscation();
-loadStoredMessages();
 
 // Allow Enter key to send messages
 const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));

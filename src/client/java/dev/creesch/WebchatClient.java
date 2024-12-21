@@ -24,6 +24,7 @@ import java.time.Instant;
 public class WebchatClient implements ClientModInitializer {
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private WebInterface webInterface;
+    private final Gson gson = new Gson();
 
     /**
      * Processes both chat and game messages, converting them to the appropriate format
@@ -51,12 +52,9 @@ public class WebchatClient implements ClientModInitializer {
                 minecraftVersion
         );
 
-        Gson gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .create();
-
-        LOGGER.info(gson.toJson(chatMessage));
-        webInterface.broadcastMessage(minecraftChatJson);
+        String jsonChatMessage = gson.toJson(chatMessage);
+        LOGGER.info(jsonChatMessage);
+        webInterface.broadcastMessage(jsonChatMessage);
     }
 
     @Override
