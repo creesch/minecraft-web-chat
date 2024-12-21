@@ -25,6 +25,8 @@ public class WebInterface {
     ModConfig config = ModConfig.HANDLER.instance();
 
     private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile("[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]");
+    private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
+
     public WebInterface() {
         server = createServer();
         setupWebSocket();
@@ -124,7 +126,10 @@ public class WebInterface {
 
     private String sanitizeMessage(String message) {
         // Replace known illegal characters like linebreaks, control characters, zero width characters, etc
-        return ILLEGAL_CHARACTERS.matcher(message).replaceAll("");
+        String cleanedMessage = ILLEGAL_CHARACTERS.matcher(message).replaceAll("");
+        // Remove multiple spaces as well
+        cleanedMessage = MULTIPLE_SPACES.matcher(cleanedMessage).replaceAll(" ");
+        return cleanedMessage;
     }
 
     private void sendMinecraftMessage(String message) {
