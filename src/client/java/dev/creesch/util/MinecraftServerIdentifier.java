@@ -28,11 +28,11 @@ public class MinecraftServerIdentifier {
      * Gets information about the current server or world the player is connected to.
      *
      * For singleplayer worlds (including LAN):
-     * - name: The world save folder name
+     * - name: The world name
      * - identifier: UUID generated from relative path to world save
      *
      * For multiplayer servers:
-     * - name: Server name or address if name is not available
+     * - name: Server label or address if label is not available
      * - identifier: UUID generated from server address
      *
      * @return ChatServerInfo containing the name and unique identifier of the current server/world.
@@ -45,25 +45,21 @@ public class MinecraftServerIdentifier {
             return DISCONNECTED;
         }
 
-        // For single player the most straightforward method seems to be use the relative safe path.
-        // Even more unique would be the absolute path.
-        // But that would potentially mess with people restoring minecraft on a different computer.
+        // For single player we can use the levelname for the name.
+        // But to ensure a unique identifier we are using the save path as worlds can have the same name.
         if (client.isInSingleplayer()) {
             IntegratedServer server = client.getServer();
             if (server == null) {
                 return DISCONNECTED;
             }
 
+            String worldName = server.getSaveProperties().getLevelName();
 
+            // To create a unique identifier use the save path as world names are not unique.
+            // Use relative path so users can still move minecraft directories to a different location.
             Path minecraftDir = client.runDirectory.toPath();
-            LOGGER.info("Minecraft dir: {}", minecraftDir);
             Path savePath = server.getSavePath(WorldSavePath.ROOT);
-            LOGGER.info("savePath : {}", savePath);
-
-            String worldName = savePath.getFileName().toString();
-            LOGGER.info("worldName : {}", worldName);
             String rawIdentifier = minecraftDir.relativize(savePath).toString();
-            LOGGER.info("rawIdentifier : {}", rawIdentifier);
 
             return new WebsocketJsonMessage.ChatServerInfo(
                     worldName,
@@ -76,9 +72,12 @@ public class MinecraftServerIdentifier {
                 return DISCONNECTED;
             }
 
+            // It is very unlikely that label is null for servers. But just in case fall back to the server address.
+            String serverName = serverInfo.label != null ? serverInfo.label.getString() : serverInfo.address;
+            String serverIdentifier = UUID.nameUUIDFromBytes((serverName + serverInfo.address).getBytes()).toString();
             return new WebsocketJsonMessage.ChatServerInfo(
-                    serverInfo.name != null ? serverInfo.name : serverInfo.address,
-                    UUID.nameUUIDFromBytes(serverInfo.address.getBytes()).toString()
+                    serverName,
+                    serverIdentifier
             );
         }
     }
