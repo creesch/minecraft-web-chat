@@ -41,9 +41,7 @@ export function isModServerMessage(message) {
         return false;
     }
 
-    /** @type {any} */
-    const messageWithType = message;
-    return messageWithType.type === 'chatMessage';
+    return message.type === 'chatMessage';
 }
 
 /**

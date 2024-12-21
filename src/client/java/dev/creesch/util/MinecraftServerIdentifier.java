@@ -14,7 +14,6 @@ import java.util.UUID;
  * Provides consistent identification for singleplayer (LAN) worlds and multiplayer servers.
  */
 public class MinecraftServerIdentifier {
-    private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     /**
      * Default server info returned when not connected to any world/server.
      * Should not happen in the current mod setup. But better to account for it.
@@ -74,7 +73,7 @@ public class MinecraftServerIdentifier {
 
             // It is very unlikely that label is null for servers. But just in case fall back to the server address.
             String serverName = serverInfo.label != null ? serverInfo.label.getString() : serverInfo.address;
-            String serverIdentifier = UUID.nameUUIDFromBytes((serverName + serverInfo.address).getBytes()).toString();
+            String serverIdentifier = UUID.nameUUIDFromBytes(serverInfo.address.getBytes()).toString();
             return new WebsocketJsonMessage.ChatServerInfo(
                     serverName,
                     serverIdentifier

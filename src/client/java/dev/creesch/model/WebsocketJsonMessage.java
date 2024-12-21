@@ -14,7 +14,6 @@ public class WebsocketJsonMessage {
     private long timestamp;
     private ChatServerInfo server;
     private MessageType type;
-    @SerializedName("minecraftVersion")
     private String minecraftVersion;
     private Object payload;
 
@@ -34,7 +33,13 @@ public class WebsocketJsonMessage {
     }
 
     // Private constructor to force use of factory methods
-    private WebsocketJsonMessage(long timestamp, ChatServerInfo server, MessageType type, Object payload, String minecraftVersion) {
+    private WebsocketJsonMessage(
+            long timestamp,
+            ChatServerInfo server,
+            MessageType type,
+            Object payload,
+            String minecraftVersion
+    ) {
         this.timestamp = timestamp;
         this.server = server;
         this.type = type;
@@ -42,10 +47,12 @@ public class WebsocketJsonMessage {
         this.minecraftVersion = minecraftVersion;
     }
 
-    public static WebsocketJsonMessage createChatMessage(long timestamp,
-                                                         ChatServerInfo server,
-                                                         String message,
-                                                         String minecraftVersion) {
+    public static WebsocketJsonMessage createChatMessage(
+            long timestamp,
+            ChatServerInfo server,
+            String message,
+            String minecraftVersion
+    ) {
         // Because we need to serialize the Text object with mine
         JsonElement parsedMessage = JsonParser.parseString(message);
         return new WebsocketJsonMessage(timestamp, server, MessageType.CHAT_MESSAGE, parsedMessage, minecraftVersion);
