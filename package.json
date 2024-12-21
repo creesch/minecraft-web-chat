@@ -1,4 +1,6 @@
 {
+  "name": "minecraft-web-chat",
+  "displayName": "minecraft-web-chat",
   "scripts": {
     "test": "vitest"
   },
