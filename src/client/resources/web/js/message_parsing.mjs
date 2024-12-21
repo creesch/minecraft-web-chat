@@ -41,8 +41,8 @@ const VALID_HOVER_EVENTS = [
  * @typedef {Object} Component
  * @property {string} [text] - Text content
  * @property {string} [translate] - Translation key
- * @property {(string | Component)[]} [with] - Translation parameters
- * @property {(string | Component)[]} [extra] - Additional components to append
+ * @property {(number | string | Component)[]} [with] - Translation parameters
+ * @property {(number | string | Component)[]} [extra] - Additional components to append
  * @property {string} [color] - Text color - can be a named color or hex value
  * @property {boolean} [bold] - Whether text should be bold
  * @property {boolean} [italic] - Whether text should be italic
@@ -59,8 +59,8 @@ const VALID_HOVER_EVENTS = [
 /**
  * @typedef {Object} ShowTextHoverEvent
  * @property {'show_text'} action - Displays a text tooltip
- * @property {string | Component | (string | Component)[]} [contents] - The text content to show in the tooltip
- * @property {string | Component | (string | Component)[]} [value] - Deprecated: The text content to show in the tooltip
+ * @property {number | string | Component | (number | string | Component)[]} [contents] - The text content to show in the tooltip
+ * @property {number | string | Component | (number | string | Component)[]} [value] - Deprecated: The text content to show in the tooltip
  */
 
 /**
@@ -168,10 +168,16 @@ export function assertIsComponent(component, path = []) {
         if (typeof contents === 'string') {
             return;
         }
+        if (typeof contents === 'number') {
+            return;
+        }
 
         if (Array.isArray(contents)) {
             contents.forEach((component, index) => {
                 if (typeof component === 'string') {
+                    return;
+                }
+                if (typeof component === 'number') {
                     return;
                 }
 
@@ -307,6 +313,9 @@ export function assertIsComponent(component, path = []) {
             if (typeof component === 'string') {
                 return;
             }
+            if (typeof component === 'number') {
+                return;
+            }
 
             assertIsComponent(component, [...path, 'extra', index.toString()]);
         })
@@ -319,6 +328,9 @@ export function assertIsComponent(component, path = []) {
 
         component.with.forEach((component, index) =>{
             if (typeof component === 'string') {
+                return;
+            }
+            if (typeof component === 'number') {
                 return;
             }
 
@@ -450,7 +462,7 @@ function linkifyText(text) {
 /**
  * Handles numbered substitution (%1$s, %2$s, etc.)
  * @param {string} template
- * @param {(string | Component)[]} args
+ * @param {(number | string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function numberedSubstitution(template, args) {
@@ -473,6 +485,8 @@ function numberedSubstitution(template, args) {
             result.push(document.createTextNode(match[0]));
         } else if (typeof value === 'string') {
             result.push(document.createTextNode(value));
+        } else if (typeof value === 'number') {
+            result.push(document.createTextNode(String(value)));
         } else {
             result.push(formatComponent(value));
         }
@@ -492,7 +506,7 @@ function numberedSubstitution(template, args) {
 /**
  * Handles simple %s placeholders.
  * @param {string} template
- * @param {(string | Component)[]} args
+ * @param {(number | string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function simpleSubstitution(template, args) {
@@ -518,6 +532,8 @@ function simpleSubstitution(template, args) {
             result.push(document.createTextNode('%s'));
         } else if (typeof value === 'string') {
             result.push(document.createTextNode(value));
+        } else if (typeof value === 'number') {
+            result.push(document.createTextNode(String(value)));
         } else {
             result.push(formatComponent(value));
         }
@@ -537,7 +553,7 @@ function simpleSubstitution(template, args) {
 /**
  * Supports both numbered (%1$s) and sequential (%s) placeholder formats.
  * @param {string} key
- * @param {(string | Component)[]} args
+ * @param {(number | string | Component)[]} args
  * @returns {(Element | Text)[]}
  */
 function formatTranslation(key, args) {
@@ -556,6 +572,9 @@ function formatTranslation(key, args) {
         return args.map(value => {
             if (typeof value === 'string') {
                 return document.createTextNode(value);
+            }
+            if (typeof value === 'number') {
+                return document.createTextNode(String(value));
             }
 
             return formatComponent(value);
@@ -591,12 +610,23 @@ function formatComponentPlainText(component) {
     if (component.text) {
         result += component.text;
     } else if (component.translate) {
-        result += formatTranslation(component.translate, component.with ?? []).map(e => e.textContent ?? '').join('');
+        result += formatTranslation(component.translate, component.with ?? [])
+            .map(component => component.textContent ?? '')
+            .join('');
     }
 
     if (component.extra) {
         result += component.extra
-            .map(e => typeof e === 'string' ? e : formatComponentPlainText(e))
+            .map(component => {
+                if (typeof component === 'string') {
+                    return component;
+                }
+                if (typeof component === 'number') {
+                    return String(component);
+                }
+
+                return formatComponentPlainText(component);
+            })
             .join('');
     }
 
@@ -620,10 +650,19 @@ function formatHoverEvent(hoverEvent) {
             if (typeof contents === 'string') {
                 return contents;
             }
+            if (typeof contents === 'number') {
+                return String(contents);
+            }
 
             if (Array.isArray(contents)) {
                 return contents.map(component => {
-                    if (typeof component === 'string') return component;
+                    if (typeof component === 'string') {
+                        return component;
+                    }
+                    if (typeof component === 'number') {
+                        return String(component);
+                    }
+
                     return formatComponentPlainText(component);
                 }).join('');
             }
@@ -696,16 +735,25 @@ export function formatComponent(component) {
 
         if (component.text) {
             linkifyText(component.text)
-                .forEach(e => result.appendChild(e));
+                .forEach(component => result.appendChild(component));
         } else if (component.translate) {
             formatTranslation(component.translate, component.with ?? [])
-                .forEach(e => result.appendChild(e));
+                .forEach(component => result.appendChild(component));
         }
 
         if (component.extra) {
             component.extra
-                .map(e => typeof e === 'string' ? document.createTextNode(e) : formatComponent(e))
-                .forEach(e => result.appendChild(e));
+                .map(component => {
+                    if (typeof component === 'string') {
+                        return document.createTextNode(component);
+                    }
+                    if (typeof component === 'number') {
+                        return document.createTextNode(String(component));
+                    }
+
+                    return formatComponent(component);
+                })
+                .forEach(component => result.appendChild(component));
         }
     
         if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {

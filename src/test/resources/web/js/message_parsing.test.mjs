@@ -40,6 +40,7 @@ const COMPONENT_VALIDATION_TESTS = [
     ['extra cannot contain invalid components',
         { text: 'test', extra: [{ invalid: true }] },
         "Component does not have a text, translate, or extra property"],
+    ['extra can contain numbers', { text: 'test', extra: [42] }, undefined],
 
     // With array validation
     ['with must be array', { translate: 'test', with: 'not array' }, "Component.with is not an array"],
@@ -48,6 +49,7 @@ const COMPONENT_VALIDATION_TESTS = [
     ['with cannot contain invalid components',
         { translate: 'test', with: [{ invalid: true }] },
         "Component does not have a text, translate, or extra property"],
+    ['with can contain numbers', { translate: 'test', with: [42] }, undefined],
 
     // Hover event validation
     ['hoverEvent must be object', { text: 'test', hoverEvent: 'not object' }, "HoverEvent is not an object"],
@@ -78,6 +80,12 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined],
     ['show_text value can be an array',
         { text: 'test', hoverEvent: { action: 'show_text', value: ['hover', 'test'] } },
+        undefined],
+    ['show_text contents can be number',
+        { text: 'test', hoverEvent: { action: 'show_text', contents: 42 } },
+        undefined],
+    ['show_text value can be number',
+        { text: 'test', hoverEvent: { action: 'show_text', value: 42 } },
         undefined],
 
     // show_item hover event validation
@@ -197,6 +205,10 @@ const COMPONENT_FORMATTING_TESTS = [
         { text: 'main', extra: [{ text: '1', bold: true }, { text: '2', italic: true }] },
         '<span>main<span class="mc-bold">1</span><span class="mc-italic">2</span></span>'
     ],
+    ['extra number',
+        { text: 'main', extra: [42] },
+        '<span>main42</span>'
+    ],
 
     // Translation with parameters
     ['translation with string param',
@@ -206,6 +218,10 @@ const COMPONENT_FORMATTING_TESTS = [
     ['translation with component param',
         { translate: 'argument.id.unknown', with: [{ text: 'test', bold: true }] },
         '<span>Unknown ID: <span class="mc-bold">test</span></span>'
+    ],
+    ['translation with number param',
+        { translate: 'argument.id.unknown', with: [42] },
+        '<span>Unknown ID: 42</span>'
     ],
 
     // URLs in text
@@ -231,6 +247,11 @@ const COMPONENT_FORMATTING_TESTS = [
         { text: 'entity', hoverEvent: { action: 'show_entity', contents: { type: 'minecraft:pig', id: '123', name: 'Mr. Pig' } } },
         '<span title="Mr. Pig">entity</span>'
     ],
+    ['hover text with number',
+        { text: 'hover', hoverEvent: { action: 'show_text', contents: 42 } },
+        '<span title="42">hover</span>'
+    ],
+
 
     // Complex nested components
     ['complex nested',
@@ -345,7 +366,7 @@ const COMPONENT_FORMATTING_TESTS = [
                 'Only one player is allowed, but the provided selector allows more than one' +
             '</span>' +
         '</span>'
-    ]
+    ],
 ];
 
 for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
