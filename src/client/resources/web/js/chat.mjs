@@ -25,11 +25,14 @@ document.addEventListener('visibilitychange', () => {
  * Add a message to chat
  * @param {Component} chatComponent 
  * @param {number} timestamp
+ * @param {boolean} ping
  */
-function displayChatMessage(chatComponent, timestamp) {
-    
+function displayChatMessage(chatComponent, timestamp, ping) {
     const div = document.createElement('div');
-    div.className = 'message';
+    div.classList.add('message');
+    if (ping) {
+        div.classList.add('ping');
+    }
 
     // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen. 
     const { timeString, fullDateTime } = formatTimestamp(timestamp);
@@ -126,7 +129,7 @@ function connect() {
 			const message = parseModServerMessage(rawJson);
 			// For now we only handle chat messages
 			if (message.type === 'chatMessage') {
-				displayChatMessage(message.payload, message.timestamp);
+				displayChatMessage(message.payload.component, message.timestamp, message.payload.ping);
 			}
 		} catch (e) {
 			console.error('Error processing message:', e);

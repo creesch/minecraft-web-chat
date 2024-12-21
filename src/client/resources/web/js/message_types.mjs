@@ -1,5 +1,8 @@
 // @ts-check
 'use strict';
+/**
+ * @typedef {import('./message_parsing.mjs').Component} Component
+ */
 
 /**
  * Server information matching ChatServerInfo on server
@@ -20,7 +23,7 @@
  * Chat message from Minecraft
  * @typedef {Object} ChatMessage
  * @property {'chatMessage'} type
- * @property {import('./message_parsing.mjs').Component} payload
+ * @property {{ ping: boolean, component: Component }} payload
  */
 
 /**

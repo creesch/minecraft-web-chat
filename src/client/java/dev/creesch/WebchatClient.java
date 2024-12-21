@@ -1,7 +1,8 @@
 package dev.creesch;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
 import dev.creesch.config.ModConfig;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketJsonMessage.ChatServerInfo;
@@ -20,6 +21,7 @@ import net.minecraft.util.Formatting;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.regex.Pattern;
 
 public class WebchatClient implements ClientModInitializer {
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
@@ -39,22 +41,80 @@ public class WebchatClient implements ClientModInitializer {
         }
 
         // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
-        String minecraftChatJson = Text.Serialization.toJsonString(message, client.world.getRegistryManager());
+        JsonObject minecraftChatJsonObject = gson.fromJson(
+            Text.Serialization.toJsonString(message, client.world.getRegistryManager()),
+            JsonObject.class
+        );
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
         ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().getName();
 
+        String playerName = client.player != null ? client.player.getName().getString() : "";
+        JsonObject messageObject = new JsonObject();
+        messageObject.addProperty("ping", isPing(message, playerName));
+        messageObject.add("component", minecraftChatJsonObject);
+        String jsonMessage = gson.toJson(messageObject);
+
         WebsocketJsonMessage chatMessage = WebsocketJsonMessage.createChatMessage(
                 timestamp,
                 serverInfo,
-                minecraftChatJson,
+                jsonMessage,
                 minecraftVersion
         );
 
         String jsonChatMessage = gson.toJson(chatMessage);
         LOGGER.info(jsonChatMessage);
         webInterface.broadcastMessage(jsonChatMessage);
+    }
+
+    /**
+     * Checks if the message is a ping.
+     * 
+     * @param message The minecraft text message to process
+     * @param playerName The name of the player
+     * @return True if the message is a ping, false otherwise   
+     */
+    private boolean isPing(Text message, String playerName) {
+        String messageString = message.getString();
+        ModConfig config = ModConfig.HANDLER.instance();
+
+        if (config.pingOnUsername && pingPattern(playerName).matcher(messageString).find()) {
+            return true;
+        }
+
+        for (String pingKeyword : config.pingKeywords) {
+            if (pingPattern(pingKeyword).matcher(messageString).find()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates a pattern for a ping keyword.
+     * 
+     * @param pingKeyword The keyword to ping for
+     * @return The pattern for the ping keyword
+     */
+    private Pattern pingPattern(String pingKeyword) {
+        StringBuilder patternBuilder = new StringBuilder();
+        // Eats the standard minecraft chat formatting which starts with <username>.
+        // We don't want to ping based on usernames in that metadata, otherwise users
+        // will be pinged when they send messages because their messages are echoed back
+        // to them.
+        patternBuilder.append("^<[^>]+>");
+        // Allow for any amount of characters before the ping keyword.
+        patternBuilder.append(".*");
+        // Check for a word boundary before the ping keyword.
+        patternBuilder.append("\\b");
+        // Add the ping keyword.
+        patternBuilder.append(Pattern.quote(pingKeyword));
+        // Check for a word boundary after the ping keyword.
+        patternBuilder.append("\\b");
+
+        return Pattern.compile(patternBuilder.toString());
     }
 
     @Override

@@ -36,6 +36,10 @@ body {
     word-wrap: break-word;
 }
 
+.message.ping {
+    border-left: 0.25rem solid #FF00FF;
+}
+
 .message a {
     color: #5555FF;
     text-decoration: none;

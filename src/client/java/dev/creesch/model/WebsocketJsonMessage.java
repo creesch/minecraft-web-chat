@@ -17,7 +17,6 @@ public class WebsocketJsonMessage {
     private String minecraftVersion;
     private Object payload;
 
-
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -25,7 +24,6 @@ public class WebsocketJsonMessage {
         private String name;
         private String identifier;
     }
-
 
     public enum MessageType {
         @SerializedName("chatMessage")
