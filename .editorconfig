@@ -1,0 +1,21 @@
+# top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# By default spaces for indentation, 4 of them.
+indent_style = space
+indent_size = 4
+
+# Config files can have 2 of them.
+[*.{json,webmanifest,yml,yaml}]
+indent_size = 2
+
+# Markdown files might need their trailing whitespaces for markup
+[*.md]
+trim_trailing_whitespace = false
