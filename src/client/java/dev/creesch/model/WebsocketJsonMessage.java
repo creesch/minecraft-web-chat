@@ -20,7 +20,7 @@ public class WebsocketJsonMessage {
 
 
     @Data
-    @Builder
+    @AllArgsConstructor
     public static class ChatServerInfo {
         private String name;
         private String identifier;
