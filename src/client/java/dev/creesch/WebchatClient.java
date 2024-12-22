@@ -31,14 +31,14 @@ public class WebchatClient implements ClientModInitializer {
 
         // Chat messages from users.
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
-            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createChatMessage(message, MinecraftClient.getInstance());
+            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createLiveChatMessage(message, MinecraftClient.getInstance());
             messageRepository.saveMessage(chatMessage);
             webInterface.broadcastMessage(chatMessage);
         });
 
         // System messages (joins, leaves, deaths, etc.)
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createChatMessage(message, MinecraftClient.getInstance());
+            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createLiveChatMessage(message, MinecraftClient.getInstance());
             messageRepository.saveMessage(chatMessage);
             webInterface.broadcastMessage(chatMessage);
         });

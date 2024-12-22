@@ -11,7 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static dev.creesch.model.WebsocketMessageBuilder.createHistoricChatMessage;
 
 public class ChatMessageRepository {
     private final SQLiteDataSource dataSource;
@@ -43,16 +48,16 @@ public class ChatMessageRepository {
     private void initializeDatabase() {
         try (Connection conn = dataSource.getConnection()) {
             conn.createStatement().execute("""
-                CREATE TABLE IF NOT EXISTS messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp BIGINT NOT NULL,
-                    server_id TEXT NOT NULL,
-                    server_name TEXT NOT NULL,
-                    message_id TEXT NOT NULL,
-                    message_json TEXT NOT NULL,
-                    minecraft_version TEXT
-                )
-            """);
+                    CREATE TABLE IF NOT EXISTS messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp BIGINT NOT NULL,
+                        server_id TEXT NOT NULL,
+                        server_name TEXT NOT NULL,
+                        message_id TEXT NOT NULL,
+                        message_json TEXT NOT NULL,
+                        minecraft_version TEXT
+                    )
+                """);
 
             // Create composite index for server_id + timestamp queries
             conn.createStatement().execute(
@@ -61,10 +66,10 @@ public class ChatMessageRepository {
 
             // Version table
             conn.createStatement().execute("""
-                CREATE TABLE IF NOT EXISTS schema_version (
-                    version INTEGER PRIMARY KEY
-                )
-            """);
+                    CREATE TABLE IF NOT EXISTS schema_version (
+                        version INTEGER PRIMARY KEY
+                    )
+                """);
 
             // Check schema
             checkSchemaVersion(conn);
@@ -91,8 +96,7 @@ public class ChatMessageRepository {
 
             // Mod was likely downgraded from a version with a newer schema.
             if (dbVersion > CURRENT_SCHEMA_VERSION) {
-                LOGGER.error("Database schema version " + dbVersion +
-                    " is newer than supported version " + CURRENT_SCHEMA_VERSION);
+                LOGGER.error("Database schema version {} is newer than supported version {}", dbVersion, CURRENT_SCHEMA_VERSION);
                 throw new RuntimeException("Database schema version " + dbVersion +
                     " is newer than supported version " + CURRENT_SCHEMA_VERSION);
             }
@@ -101,8 +105,7 @@ public class ChatMessageRepository {
             // If they are messing with the database it likely isn't good. Throw an error.
             // TODO: put in actual migration in the future when needed.
             if (dbVersion < CURRENT_SCHEMA_VERSION) {
-                LOGGER.error("Database schema version " + dbVersion +
-                    " is older than supported version " + CURRENT_SCHEMA_VERSION + ". Timetravel?");
+                LOGGER.error("Database schema version {} is older than supported version {}. Time travel?", dbVersion, CURRENT_SCHEMA_VERSION);
                 throw new RuntimeException("Database schema version " + dbVersion +
                     " is older than supported version " + CURRENT_SCHEMA_VERSION);
             }
@@ -124,7 +127,7 @@ public class ChatMessageRepository {
             """;
 
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement statement = conn.prepareStatement(sql)) {
+             PreparedStatement statement = conn.prepareStatement(sql)) {
 
             // Cast payload to JsonObject since we need to access some info
             // TODO: Implement payload specific object instead of it being a json object.
@@ -144,5 +147,49 @@ public class ChatMessageRepository {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save chat message", e);
         }
+    }
+
+    public List<WebsocketJsonMessage> getMessages(String serverId, int limit) {
+        List<WebsocketJsonMessage> messages = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("""
+                 SELECT
+                     timestamp,
+                     server_id,
+                     server_name,
+                     message_id,
+                     message_json,
+                     minecraft_version
+                 FROM
+                     messages
+                 WHERE
+                     server_id = ?
+                 ORDER BY
+                     timestamp DESC
+                 LIMIT
+                     ?
+                 """)) {
+            stmt.setString(1, serverId);
+            stmt.setInt(2, limit);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    long timestamp = rs.getLong("timestamp");
+                    String serverName = rs.getString("server_name");
+                    String messageId = rs.getString("message_id");
+                    String messageJson = rs.getString("message_json");
+                    String minecraftVersion = rs.getString("minecraft_version");
+
+                    messages.add(
+                        createHistoricChatMessage(timestamp, serverId, serverName, messageId, messageJson, minecraftVersion)
+                    );
+
+                }
+            }
+        } catch (SQLException e) {
+            // Just throw an error here, no reason to crash the game over this.
+            LOGGER.error("Failed to retrieve chat messages for server: {}", serverId);
+        }
+        return messages;
     }
 }

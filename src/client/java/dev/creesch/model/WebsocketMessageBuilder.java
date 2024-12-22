@@ -2,9 +2,7 @@ package dev.creesch.model;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.creesch.WebInterface;
 import dev.creesch.util.MinecraftServerIdentifier;
-import dev.creesch.util.NamedLogger;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
@@ -22,7 +20,7 @@ public class WebsocketMessageBuilder {
      * @param message The Minecraft text message to process
      * @param client The Minecraft client instance
      */
-    public static WebsocketJsonMessage createChatMessage(Text message, MinecraftClient client) {
+    public static WebsocketJsonMessage createLiveChatMessage(Text message, MinecraftClient client) {
         if (client.world == null) {
             throw new MessageBuildException("Cannot create chat message: client world is null");
         }
@@ -45,6 +43,38 @@ public class WebsocketMessageBuilder {
             minecraftChatJson,
             JsonObject.class
         ));
+
+        return WebsocketJsonMessage.createChatMessage(
+            timestamp,
+            serverInfo,
+            messageObject,
+            minecraftVersion
+        );
+    }
+
+    /**
+     * Processes both chat and game messages, converting them to the appropriate format
+     *
+
+     */
+    public static WebsocketJsonMessage createHistoricChatMessage(
+            long timestamp,
+            String serverId,
+            String serverName,
+            String messageId,
+            String messageJson,
+            String minecraftVersion
+        ) {
+
+        JsonObject messageObject = new JsonObject();
+        messageObject.addProperty("history", true);
+        messageObject.addProperty("uuid", messageId);
+        messageObject.add("component", gson.fromJson(
+            messageJson,
+            JsonObject.class
+        ));
+
+        WebsocketJsonMessage.ChatServerInfo serverInfo = new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);
 
         return WebsocketJsonMessage.createChatMessage(
             timestamp,

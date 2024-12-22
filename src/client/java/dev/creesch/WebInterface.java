@@ -14,6 +14,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -93,9 +94,10 @@ public class WebInterface {
                     return;
                 }
                 // Got a world, use JOIN state to communicate this
+                WebsocketJsonMessage joinMessage = WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN);
 
                 String jsonMessage = gson.toJson(
-                    WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN)
+                    joinMessage
                 );
                 LOGGER.info(jsonMessage);
                 try {
@@ -104,6 +106,13 @@ public class WebInterface {
                     LOGGER.warn("Failed to send JOIN message to connection: {}", ctx.session.getRemoteAddress(), e);
                 }
 
+                List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(joinMessage.getServer().getIdentifier(), 50);
+                historyMessages.forEach(historicMessage -> {
+                    ctx.send(gson.toJson(
+                        historicMessage
+                    ));
+
+                });
             });
 
             ws.onClose(ctx -> {
