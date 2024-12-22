@@ -4,13 +4,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder
 public class WebsocketJsonMessage {
     private long timestamp;
     private ChatServerInfo server;
@@ -20,8 +20,7 @@ public class WebsocketJsonMessage {
 
 
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Builder
     public static class ChatServerInfo {
         private String name;
         private String identifier;
@@ -65,10 +64,16 @@ public class WebsocketJsonMessage {
     public static WebsocketJsonMessage createChatMessage(
             long timestamp,
             ChatServerInfo server,
-            JsonObject message,
+            ChatMessagePayload message,
             String minecraftVersion
     ) {
-        return new WebsocketJsonMessage(timestamp, server, MessageType.CHAT_MESSAGE, message, minecraftVersion);
+        return WebsocketJsonMessage.builder()
+            .timestamp(timestamp)
+            .server(server)
+            .type(MessageType.CHAT_MESSAGE)
+            .payload(message)
+            .minecraftVersion(minecraftVersion)
+            .build();
     }
 
     public static WebsocketJsonMessage createServerConnectionStateMessage(
@@ -77,6 +82,12 @@ public class WebsocketJsonMessage {
         ServerConnectionStates state,
         String minecraftVersion
     ) {
-        return new WebsocketJsonMessage(timestamp, server, MessageType.SERVER_CONNECTION_STATE, state, minecraftVersion);
+        return WebsocketJsonMessage.builder()
+            .timestamp(timestamp)
+            .server(server)
+            .type(MessageType.SERVER_CONNECTION_STATE)
+            .payload(state)
+            .minecraftVersion(minecraftVersion)
+            .build();
     }
 }

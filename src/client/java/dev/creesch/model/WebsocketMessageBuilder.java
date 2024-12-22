@@ -36,13 +36,14 @@ public class WebsocketMessageBuilder {
         String messageUUID = UUID.nameUUIDFromBytes((timestamp + minecraftChatJson).getBytes()).toString();
 
         // Back to objects we go
-        JsonObject messageObject = new JsonObject();
-        messageObject.addProperty("history", false);
-        messageObject.addProperty("uuid", messageUUID);
-        messageObject.add("component", gson.fromJson(
-            minecraftChatJson,
-            JsonObject.class
-        ));
+        ChatMessagePayload messageObject = ChatMessagePayload.builder()
+            .history(false)
+            .uuid(messageUUID)
+            .component(gson.fromJson(
+                minecraftChatJson,
+                JsonObject.class
+            ))
+            .build();
 
         return WebsocketJsonMessage.createChatMessage(
             timestamp,
@@ -66,13 +67,15 @@ public class WebsocketMessageBuilder {
             String minecraftVersion
         ) {
 
-        JsonObject messageObject = new JsonObject();
-        messageObject.addProperty("history", true);
-        messageObject.addProperty("uuid", messageId);
-        messageObject.add("component", gson.fromJson(
-            messageJson,
-            JsonObject.class
-        ));
+        // Back to objects we go
+        ChatMessagePayload messageObject = ChatMessagePayload.builder()
+            .history(true)
+            .uuid(messageId)
+            .component(gson.fromJson(
+                messageJson,
+                JsonObject.class
+            ))
+            .build();
 
         WebsocketJsonMessage.ChatServerInfo serverInfo = new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);
 
