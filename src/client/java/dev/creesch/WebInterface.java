@@ -2,6 +2,8 @@ package dev.creesch;
 
 import com.google.gson.Gson;
 import dev.creesch.config.ModConfig;
+import dev.creesch.model.IncomingWebsocketJsonMessage;
+import dev.creesch.model.IncomingWebsocketJsonMessage.HistoryPayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.storage.ChatMessageRepository;
@@ -105,14 +107,6 @@ public class WebInterface {
                 } catch (Exception e) {
                     LOGGER.warn("Failed to send JOIN message to connection: {}", ctx.session.getRemoteAddress(), e);
                 }
-
-                List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(joinMessage.getServer().getIdentifier(), 50);
-                historyMessages.forEach(historicMessage -> {
-                    ctx.send(gson.toJson(
-                        historicMessage
-                    ));
-
-                });
             });
 
             ws.onClose(ctx -> {
@@ -120,21 +114,45 @@ public class WebInterface {
                 connections.remove(ctx);
             });
 
-            // TODO: parse message here to some format tbd so we can see what we need to do with it
+
             ws.onMessage(ctx -> {
-                String message = ctx.message();
+                LOGGER.info(ctx.message());
+                // Parse received message from json
+                IncomingWebsocketJsonMessage receivedMessage = gson.fromJson(
+                    ctx.message(), IncomingWebsocketJsonMessage.class
+                );
 
-                if (message.trim().isEmpty()) {
-                    LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
-                    return;
+                switch (receivedMessage.getType()) {
+                    case CHAT -> {
+                        String message = gson.fromJson(receivedMessage.getPayload(), String.class);
+                        if (message.trim().isEmpty()) {
+                            LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
+                            return;
+                        }
+                        LOGGER.info("Received WebSocket message: {}", message);
+
+                        // Sanitize the message
+                        message = sanitizeMessage(message);
+
+                        // Send the sanitized message to Minecraft chat
+                        sendMinecraftMessage(message);
+                    }
+                    case HISTORY -> {
+                        HistoryPayload historyPayload =
+                            gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
+                        LOGGER.info("Received history request: {}", historyPayload.getServerId());
+                        List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(
+                            historyPayload.getServerId(),
+                            historyPayload.getLimit()
+                        );
+                        historyMessages.forEach(historicMessage -> {
+                            ctx.send(gson.toJson(
+                                historicMessage
+                            ));
+
+                        });
+                    }
                 }
-                LOGGER.info("Received WebSocket message: {}", message);
-
-                // Sanitize the message
-                message = sanitizeMessage(message);
-
-                // Send the sanitized message to Minecraft chat
-                sendMinecraftMessage(message);
             });
 
             ws.onError(ctx -> {

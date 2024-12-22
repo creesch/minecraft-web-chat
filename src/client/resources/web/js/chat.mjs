@@ -9,6 +9,8 @@ import { parseModServerMessage } from './message_types.mjs';
 /** @type {WebSocket | null} */
 let ws = null;
 let reconnectAttempts = 0;
+let serverName;
+let serverId;
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 
 // Store the page title on load so we can manipulate it based on events and always restore it.
@@ -119,8 +121,8 @@ function updateConnectionStatus(connectionStatus) {
 }
 
 /**
- * Update server name value in status element and page title with
- * @param {String} [addition=null]
+ * Update server name value in status element and page title
+ * @param {string} [addition=null]
  */
 function updateServerName(addition) {
     document.title = addition ? `${baseTitle} - ${addition}` : baseTitle;
@@ -131,7 +133,6 @@ function updateServerName(addition) {
     }
     serverNameElement.textContent = addition ? ` to ${addition}` : 'No server';
 }
-
 
 function connect() {
     ws = new WebSocket(`ws://${location.host}/chat`);
@@ -179,21 +180,34 @@ function connect() {
             if (message.type === 'serverConnectionState') {
                 switch (message.payload) {
                     case 'init':
-                        // TODO: got to clear message history here.
-                        console.log('it is something, init?');
+                        console.log('Received init event. It is something, init?');
+                        // empty previously seen messages.
+                        displayedMessageIds.clear();
+                        const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
+                        if (!messages) {
+                            return;
+                        }
+                        messages.replaceChildren();
+
                         break;
                     case 'join':
-                        // TODO: Request history
-                        // TODO: update server indicator somewhere. at the very least update page title to include server name.
-                        console.log('welcome welcome!');
+                        console.log('Receive join event. Welcome welcome!');
                         updateServerName(message.server.name);
+                        serverName = message.server.name
+                        serverId = message.server.identifier;
+
+                        sendWebsocketMessage('history', {
+                            serverId,
+                            limit: 50
+                        });
+
                         break;
                     case 'disconnect':
-                        // TODO:
-                        console.log('sad to see you go');
-
+                        console.log('Receive disconnect event. Sad to see you go.')
                         // Clear title
                         updateServerName();
+                        serverId = message.server.name
+                        serverName = message.server.identifier;
                         break;
                 }
                 console.log(message);
@@ -204,21 +218,24 @@ function connect() {
     };
 }
 
-function sendMessage() {
-    const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
-    if (!input) {
-        return;
-    }
+/**
+ * History request parameters
+ * @typedef {Object} HistoryRequest
+ * @property {string} serverId - Unix timestamp
+ * @property {number} limit - Number of messages to return
+ * @property {number} [before] - Message ID to fetch history before
+ */
 
+/**
+ * Send a message back to minecraft.
+ * @param {'chat' | 'history' } type
+ * @param {string | HistoryRequest} payload
+ */
+function sendWebsocketMessage(type, payload) {
     console.log(ws);
     console.log(ws?.readyState);
-    console.log(input.value);
-    if (ws && ws.readyState === WebSocket.OPEN && input.value.trim()) {
-        ws.send(input.value);
-        input.value = '';
-    } else if (!input.value.trim()) {
-        return;
-    } else {
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
         console.log('WebSocket is not connected');
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
         if (!status) {
@@ -227,7 +244,25 @@ function sendMessage() {
 
         status.textContent = 'Not connected - message not sent';
         status.className = 'status-disconnected';
+
+        return;
     }
+
+    ws.send(JSON.stringify({
+        type,
+        payload
+    }));
+}
+
+function sendChatMessage() {
+    const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
+    if (!input || !input.value.trim()) {
+        return;
+    }
+    console.log(input.value);
+
+    sendWebsocketMessage('chat', input.value);
+    input.value = '';
 }
 
 // Start connection and load stored messages when page loads
@@ -243,7 +278,7 @@ if (input) {
     input.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            sendMessage();
+            sendChatMessage();
         }
     });
 }
