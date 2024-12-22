@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import dev.creesch.config.ModConfig;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketMessageBuilder;
+import dev.creesch.storage.ChatMessageRepository;
 import dev.creesch.util.NamedLogger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -28,11 +29,15 @@ public class WebInterface {
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     ModConfig config = ModConfig.HANDLER.instance();
-
+    private final ChatMessageRepository messageRepository;
     private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile("[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]");
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
 
-    public WebInterface() {
+    public WebInterface(ChatMessageRepository messageRepository) {
+        if (messageRepository == null) {
+            throw new IllegalArgumentException("MessageRepository cannot be null");
+        }
+        this.messageRepository = messageRepository;
         server = createServer();
         setupWebSocket();
 

@@ -1,7 +1,7 @@
 plugins {
 	id 'fabric-loom' version '1.9-SNAPSHOT'
 	id 'maven-publish'
-	id 'com.gradleup.shadow' version '8.3.5' 
+	id 'com.gradleup.shadow' version '8.3.5'
 }
 
 version = project.mod_version
@@ -51,6 +51,9 @@ dependencies {
 	implementation "io.javalin:javalin:${project.javalin_version}"
 	shadow "io.javalin:javalin:${project.javalin_version}"
 
+    implementation "org.xerial:sqlite-jdbc:${project.xerial_version}"
+    include "org.xerial:sqlite-jdbc:${project.xerial_version}"
+
 }
 
 processResources {
@@ -86,7 +89,7 @@ jar {
 
 shadowJar {
 	// Make sure we are actually including relevant references
-	from sourceSets.main.output 
+	from sourceSets.main.output
     from sourceSets.client.output
     configurations = [project.configurations.shadow] // Include shadow dependencies
     archiveClassifier.set("") // Make sure we end up with just one unified jar
@@ -96,7 +99,7 @@ shadowJar {
     relocate "org.eclipse.jetty", "dev.creesch.shadow.jetty"
 
 	minimize()
-	
+
 }
 
 remapJar {
