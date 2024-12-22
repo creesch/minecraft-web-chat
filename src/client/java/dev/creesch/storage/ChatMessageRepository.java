@@ -1,6 +1,7 @@
 package dev.creesch.storage;
 
 import com.google.gson.JsonObject;
+import dev.creesch.model.ChatMessagePayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.util.NamedLogger;
 import net.fabricmc.loader.api.FabricLoader;
@@ -129,18 +130,17 @@ public class ChatMessageRepository {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
 
-            // Cast payload to JsonObject since we need to access some info
-            // TODO: Implement payload specific object instead of it being a json object.
+            // Cast payload to ChatMessagePayload since we need to access some info
             Object rawPayload = message.getPayload();
-            if (!(rawPayload instanceof JsonObject payload)) {
-                throw new IllegalArgumentException("Message payload is not a JsonObject");
+            if (!(rawPayload instanceof ChatMessagePayload payload)) {
+                throw new IllegalArgumentException("Message payload is not a ChatMessagePayload");
             }
 
             statement.setLong(1, message.getTimestamp());
             statement.setString(2, message.getServer().getIdentifier());
             statement.setString(3, message.getServer().getName());
-            statement.setString(4, payload.get("uuid").getAsString());
-            statement.setString(5, payload.get("component").toString());
+            statement.setString(4, payload.getUuid());
+            statement.setString(5, payload.getComponent().toString());
             statement.setString(6, message.getMinecraftVersion());
 
             statement.executeUpdate();
