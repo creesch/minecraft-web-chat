@@ -2,6 +2,7 @@ package dev.creesch.storage;
 
 import com.google.gson.JsonObject;
 import dev.creesch.model.WebsocketJsonMessage;
+import dev.creesch.util.NamedLogger;
 import net.fabricmc.loader.api.FabricLoader;
 import org.sqlite.SQLiteDataSource;
 
@@ -16,6 +17,10 @@ public class ChatMessageRepository {
     private final SQLiteDataSource dataSource;
     private static final String DB_NAME = "chat_messages.db";
     private static final String DATA_DIR = "web-chat";
+
+    private static final int CURRENT_SCHEMA_VERSION = 1;
+
+    private static final NamedLogger LOGGER = new NamedLogger("web-chat");
 
     public ChatMessageRepository() {
         Path databasePath = FabricLoader.getInstance()
@@ -53,8 +58,54 @@ public class ChatMessageRepository {
             conn.createStatement().execute(
                 "CREATE INDEX IF NOT EXISTS idx_server_id_timestamp ON messages(server_id, timestamp DESC)"
             );
+
+            // Version table
+            conn.createStatement().execute("""
+                CREATE TABLE IF NOT EXISTS schema_version (
+                    version INTEGER PRIMARY KEY
+                )
+            """);
+
+            // Check schema
+            checkSchemaVersion(conn);
         } catch (SQLException e) {
+            LOGGER.error("Failed to initialize chat storage database", e);
             throw new RuntimeException("Failed to initialize chat storage database", e);
+        }
+    }
+
+    private void checkSchemaVersion(Connection conn) throws SQLException {
+        try (var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT version FROM schema_version")) {
+
+            if (!rs.next()) {
+                // New database, set current version
+                try (var insertStmt = conn.prepareStatement("INSERT INTO schema_version (version) VALUES (?)")) {
+                    insertStmt.setInt(1, CURRENT_SCHEMA_VERSION);
+                    insertStmt.execute();
+                }
+                return; // Don't need to do anything else here.
+            }
+
+            int dbVersion = rs.getInt("version");
+
+            // Mod was likely downgraded from a version with a newer schema.
+            if (dbVersion > CURRENT_SCHEMA_VERSION) {
+                LOGGER.error("Database schema version " + dbVersion +
+                    " is newer than supported version " + CURRENT_SCHEMA_VERSION);
+                throw new RuntimeException("Database schema version " + dbVersion +
+                    " is newer than supported version " + CURRENT_SCHEMA_VERSION);
+            }
+
+            // Unless someone is messing with the database manually this should not happen yet.
+            // If they are messing with the database it likely isn't good. Throw an error.
+            // TODO: put in actual migration in the future when needed.
+            if (dbVersion < CURRENT_SCHEMA_VERSION) {
+                LOGGER.error("Database schema version " + dbVersion +
+                    " is older than supported version " + CURRENT_SCHEMA_VERSION + ". Timetravel?");
+                throw new RuntimeException("Database schema version " + dbVersion +
+                    " is older than supported version " + CURRENT_SCHEMA_VERSION);
+            }
         }
     }
 
