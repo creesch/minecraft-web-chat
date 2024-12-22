@@ -42,7 +42,7 @@ body {
 }
 
 .message-time {
-    color: #b7b7b7; 
+    color: #b7b7b7;
     font-size: 0.75rem;
     margin-right: 0.3rem;
 }
@@ -88,9 +88,9 @@ button:hover {
 
 #status {
     position: fixed;
-    top: 1rem; 
-    right: 1rem; 
-    padding: 0.3rem 0.6rem; 
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.6rem;
     border-radius: 0.3rem;
     background-color: rgba(0, 0, 0, 0.5);
     font-size: 0.8rem;
@@ -102,4 +102,8 @@ button:hover {
 
 .status-disconnected {
     color: #f44336;
+}
+
+.status-error {
+    color: #ff9800;
 }

@@ -1,6 +1,9 @@
 package dev.creesch;
 
+import com.google.gson.Gson;
 import dev.creesch.config.ModConfig;
+import dev.creesch.model.WebsocketJsonMessage;
+import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.util.NamedLogger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -19,6 +22,8 @@ public class WebInterface {
     // Server related things
     @Getter
     private final Javalin server;
+
+    private final Gson gson = new Gson();
     private final Set<WsContext> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
@@ -75,6 +80,25 @@ public class WebInterface {
                 ctx.enableAutomaticPings(15, TimeUnit.SECONDS);
                 LOGGER.info("New WebSocket connection from {}", ctx.session.getRemoteAddress() != null ? ctx.session.getRemoteAddress() : "unknown remote address");
                 connections.add(ctx);
+
+                // If minecraft is connected to a server the client needs to know.
+                // Client should never be null, but again better safe than sorry.
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client == null || client.world == null) {
+                    return;
+                }
+                // Got a world, use JOIN state to communicate this
+
+                String jsonMessage = gson.toJson(
+                    WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN)
+                );
+                LOGGER.info(jsonMessage);
+                try {
+                    ctx.send(jsonMessage);
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to send JOIN message to connection: {}", ctx.session.getRemoteAddress(), e);
+                }
+
             });
 
             ws.onClose(ctx -> {
@@ -82,6 +106,7 @@ public class WebInterface {
                 connections.remove(ctx);
             });
 
+            // TODO: parse message here to some format tbd so we can see what we need to do with it
             ws.onMessage(ctx -> {
                 String message = ctx.message();
 
@@ -161,10 +186,13 @@ public class WebInterface {
         });
     }
 
-    public void broadcastMessage(String message) {
+    public void broadcastMessage(WebsocketJsonMessage message) {
+        String jsonMessage = gson.toJson(message);
+        LOGGER.info(jsonMessage);
+
         connections.forEach(ctx -> {
             try {
-                ctx.send(message);
+                ctx.send(jsonMessage);
             } catch (Exception e) {
                 LOGGER.warn("Failed to send message to connection: {}", ctx.session.getRemoteAddress(), e);
             }

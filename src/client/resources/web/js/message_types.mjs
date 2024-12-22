@@ -1,5 +1,8 @@
 // @ts-check
 'use strict';
+/**
+ * @typedef {import('./message_parsing.mjs').Component} Component
+ */
 
 /**
  * Server information matching ChatServerInfo on server
@@ -18,13 +21,29 @@
 
 /**
  * Chat message from Minecraft
+ * TODO: Use history boolean to act on once ping PR is done and merged.
  * @typedef {Object} ChatMessage
  * @property {'chatMessage'} type
- * @property {import('./message_parsing.mjs').Component} payload
+ * @property {{
+ *   history?: boolean,
+ *   component: Component,
+ *   uuid: string,
+ * }} payload
  */
 
 /**
- * @typedef {BaseModServerMessage & ChatMessage} ModServerMessage
+ * @typedef {'init'| 'join' | 'disconnect'} ServerConnectionStates
+ */
+
+/**
+ * Server join or leave message from Minecraft
+ * @typedef {Object} ServerConnectionState
+ * @property {'serverConnectionState'} type
+ * @property {ServerConnectionStates} payload
+*/
+
+/**
+ * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState)} ModServerMessage
  */
 
 /**
@@ -41,7 +60,7 @@ export function isModServerMessage(message) {
         return false;
     }
 
-    return message.type === 'chatMessage';
+    return message.type === 'chatMessage' || message.type === 'serverConnectionState';
 }
 
 /**
@@ -51,10 +70,10 @@ export function isModServerMessage(message) {
  */
 export function parseModServerMessage(rawMessage) {
     const message = JSON.parse(rawMessage);
-    
+
     if (!isModServerMessage(message)) {
         throw new Error('Invalid message type');
     }
-    
+
     return message;
 }

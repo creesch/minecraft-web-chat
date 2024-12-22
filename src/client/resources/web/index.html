@@ -19,7 +19,11 @@
         <button onclick="sendMessage()">Send</button>
     </div>
 </div>
-<div id="status" class="status-disconnected">Disconnected</div>
+<div id="status" class="status-disconnected">
+    <span class="connection-status">Disconnected</span>
+    -
+    <span class="server-name">No server</span>
+</div>
 
 <script type="module" src="js/chat.mjs"></script>
 </body>
