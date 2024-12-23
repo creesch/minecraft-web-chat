@@ -9,6 +9,7 @@ import net.minecraft.text.Text;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class WebsocketMessageBuilder {
@@ -101,6 +102,34 @@ public class WebsocketMessageBuilder {
             timestamp,
             serverInfo,
             state,
+            minecraftVersion
+        );
+    }
+
+    public static WebsocketJsonMessage createHistoryMetaDataMessage(List<WebsocketJsonMessage> historyMessages, int requestedLimit) {
+        boolean moreHistoryAvailable = false;
+        if (historyMessages.size() > requestedLimit) {
+            moreHistoryAvailable = true;
+            // Array index, so -1 is the original limit
+            historyMessages.remove(requestedLimit);
+        }
+
+        // Get oldest timestamp
+        int lastIndex = historyMessages.size() - 1;
+        long oldestTimestamp = historyMessages.isEmpty()
+            ? 0L
+            : historyMessages.get(lastIndex).getTimestamp();
+
+        // Explicitly use UTC time for consistency across different timezones
+        long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
+        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        String minecraftVersion = SharedConstants.getGameVersion().getName();
+
+        return WebsocketJsonMessage.createHistoryMetaDataMessage(
+            timestamp,
+            serverInfo,
+            oldestTimestamp,
+            moreHistoryAvailable,
             minecraftVersion
         );
     }
