@@ -10,23 +10,81 @@ import org.sqlite.SQLiteDataSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 import static dev.creesch.model.WebsocketMessageBuilder.createHistoricChatMessage;
 
 public class ChatMessageRepository {
+    private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private final SQLiteDataSource dataSource;
+
+    // DB constants
     private static final String DB_NAME = "chat_messages.db";
     private static final String DATA_DIR = "web-chat";
-
     private static final int CURRENT_SCHEMA_VERSION = 1;
 
-    private static final NamedLogger LOGGER = new NamedLogger("web-chat");
+    // SQL queries
+    private static final String CREATE_MESSAGES_TABLE_QUERY = """
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp BIGINT NOT NULL,
+                server_id TEXT NOT NULL,
+                server_name TEXT NOT NULL,
+                message_id TEXT NOT NULL,
+                message_json TEXT NOT NULL,
+                minecraft_version TEXT
+            )
+            """;
+
+    private static final String CREATE_INDEX_QUERY = """
+            CREATE INDEX IF NOT EXISTS idx_server_id_timestamp ON messages(server_id, timestamp DESC)
+            """;
+
+    private static final String CREATE_VERSION_TABLE_QUERY = """
+            CREATE TABLE IF NOT EXISTS schema_version (
+                version INTEGER PRIMARY KEY
+            )
+            """;
+
+    private static final String SELECT_SCHEMA_VERSION_QUERY = """
+            SELECT version FROM schema_version
+            """;
+
+    private static final String INSERT_SCHEMA_VERSION_QUERY = """
+            INSERT INTO schema_version (version) VALUES (?)
+            """;
+
+    private static final String INSERT_MESSAGE_QUERY = """
+            INSERT INTO messages (
+                timestamp,
+                server_id,
+                server_name,
+                message_id,
+                message_json,
+                minecraft_version
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """;
+
+    private static final String BASE_GET_MESSAGE_QUERY = """
+             SELECT
+                 timestamp,
+                 server_id,
+                 server_name,
+                 message_id,
+                 message_json,
+                 minecraft_version
+             FROM
+                 messages
+             WHERE
+                 server_id = ?
+             %s
+             ORDER BY
+                 timestamp DESC
+             LIMIT
+                 ?
+             """;
 
     public ChatMessageRepository() {
         Path databasePath = FabricLoader.getInstance()
@@ -48,29 +106,13 @@ public class ChatMessageRepository {
 
     private void initializeDatabase() {
         try (Connection conn = dataSource.getConnection()) {
-            conn.createStatement().execute("""
-                    CREATE TABLE IF NOT EXISTS messages (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp BIGINT NOT NULL,
-                        server_id TEXT NOT NULL,
-                        server_name TEXT NOT NULL,
-                        message_id TEXT NOT NULL,
-                        message_json TEXT NOT NULL,
-                        minecraft_version TEXT
-                    )
-                """);
+            conn.createStatement().execute(CREATE_MESSAGES_TABLE_QUERY);
 
             // Create composite index for server_id + timestamp queries
-            conn.createStatement().execute(
-                "CREATE INDEX IF NOT EXISTS idx_server_id_timestamp ON messages(server_id, timestamp DESC)"
-            );
+            conn.createStatement().execute(CREATE_INDEX_QUERY);
 
             // Version table
-            conn.createStatement().execute("""
-                    CREATE TABLE IF NOT EXISTS schema_version (
-                        version INTEGER PRIMARY KEY
-                    )
-                """);
+            conn.createStatement().execute(CREATE_VERSION_TABLE_QUERY);
 
             // Check schema
             checkSchemaVersion(conn);
@@ -81,12 +123,12 @@ public class ChatMessageRepository {
     }
 
     private void checkSchemaVersion(Connection conn) throws SQLException {
-        try (var stmt = conn.createStatement();
-             var rs = stmt.executeQuery("SELECT version FROM schema_version")) {
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(SELECT_SCHEMA_VERSION_QUERY)) {
 
             if (!rs.next()) {
                 // New database, set current version
-                try (var insertStmt = conn.prepareStatement("INSERT INTO schema_version (version) VALUES (?)")) {
+                try (PreparedStatement insertStmt = conn.prepareStatement(INSERT_SCHEMA_VERSION_QUERY)) {
                     insertStmt.setInt(1, CURRENT_SCHEMA_VERSION);
                     insertStmt.execute();
                 }
@@ -116,19 +158,8 @@ public class ChatMessageRepository {
     // TODO: keep eye on performance.
     // If needed implement a queuing mechanism to do messages in chuncks and transactions.
     public void saveMessage(WebsocketJsonMessage message) {
-        String sql = """
-            INSERT INTO messages (
-                timestamp,
-                server_id,
-                server_name,
-                message_id,
-                message_json,
-                minecraft_version
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """;
-
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+             PreparedStatement statement = conn.prepareStatement(INSERT_MESSAGE_QUERY)) {
 
             // Cast payload to ChatMessagePayload since we need to access some info
             Object rawPayload = message.getPayload();
@@ -150,27 +181,22 @@ public class ChatMessageRepository {
     }
 
     public List<WebsocketJsonMessage> getMessages(String serverId, int limit) {
+        return getMessages(serverId, limit, null);
+    }
+
+    public List<WebsocketJsonMessage> getMessages(String serverId, int limit, Long beforeTimestamp) {
         List<WebsocketJsonMessage> messages = new ArrayList<>();
+
+        String query = String.format(BASE_GET_MESSAGE_QUERY, beforeTimestamp != null ? "AND timestamp < ?" : "");
+
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("""
-                 SELECT
-                     timestamp,
-                     server_id,
-                     server_name,
-                     message_id,
-                     message_json,
-                     minecraft_version
-                 FROM
-                     messages
-                 WHERE
-                     server_id = ?
-                 ORDER BY
-                     timestamp DESC
-                 LIMIT
-                     ?
-                 """)) {
+             PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, serverId);
             stmt.setInt(2, limit);
+
+            if (beforeTimestamp != null) {
+                stmt.setLong(3, beforeTimestamp);
+            }
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
