@@ -67,6 +67,7 @@ public class ChatMessageRepository {
             ) VALUES (?, ?, ?, ?, ?, ?)
             """;
 
+    // Base query, needs formatting
     private static final String BASE_GET_MESSAGE_QUERY = """
              SELECT
                  timestamp,
@@ -187,7 +188,7 @@ public class ChatMessageRepository {
     public List<WebsocketJsonMessage> getMessages(String serverId, int limit, Long beforeTimestamp) {
         List<WebsocketJsonMessage> messages = new ArrayList<>();
 
-        String query = String.format(BASE_GET_MESSAGE_QUERY, beforeTimestamp != null ? "AND timestamp < ?" : "");
+        String query = BASE_GET_MESSAGE_QUERY.formatted(beforeTimestamp != null ? "AND timestamp < ?" : "");
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
