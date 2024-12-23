@@ -264,9 +264,12 @@ function sendChatMessage() {
     input.value = '';
 }
 
-// Start connection and load stored messages when page loads
-connect();
-initializeObfuscation();
+const sendButton = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('sendButton'));
+if (sendButton) {
+    sendButton.addEventListener('click', () => {
+        sendChatMessage();
+    });
+}
 
 // Allow Enter key to send messages
 const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
@@ -281,3 +284,7 @@ if (input) {
         }
     });
 }
+
+// Start connection and load stored messages when page loads
+connect();
+initializeObfuscation();
