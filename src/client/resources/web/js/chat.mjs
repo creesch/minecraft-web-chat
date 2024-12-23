@@ -176,8 +176,7 @@ function connect() {
                 }
                 displayedMessageIds.add(message.payload.uuid);
                 displayChatMessage(message.payload.component, message.timestamp, message.payload.history);
-            }
-            if (message.type === 'serverConnectionState') {
+            } else  if (message.type === 'serverConnectionState') {
                 switch (message.payload) {
                     case 'init':
                         console.log('Received init event. It is something, init?');
@@ -235,7 +234,7 @@ function sendWebsocketMessage(type, payload) {
     console.log(ws);
     console.log(ws?.readyState);
 
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
+    if (ws?.readyState !== WebSocket.OPEN) {
         console.log('WebSocket is not connected');
         const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
         if (!status) {
