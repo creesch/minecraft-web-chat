@@ -13,6 +13,9 @@ let serverName;
 let serverId;
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 
+// Max amount of history to fetch.
+const messageHistoryLimit = 50;
+
 // Store the page title on load so we can manipulate it based on events and always restore it.
 const baseTitle = document.title;
 
@@ -120,6 +123,16 @@ function updateConnectionStatus(connectionStatus) {
     }
 }
 
+function clearMessageHistory() {
+    // empty previously seen messages.
+    displayedMessageIds.clear();
+    const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
+    if (!messages) {
+        return;
+    }
+    messages.replaceChildren();
+}
+
 /**
  * Update server name value in status element and page title
  * @param {string} [addition=null]
@@ -132,6 +145,45 @@ function updateServerName(addition) {
         return;
     }
     serverNameElement.textContent = addition ? ` to ${addition}` : 'No server';
+}
+
+/**
+ * Handle different minecraft server connection states
+ * @param {import('./message_types.mjs').ModServerMessage} message
+ */
+function handleMinecraftServerConnectionState(message) {
+    switch (message.payload) {
+        case 'init':
+            // TODO: turns out that init events can also be send when already on a server. So it seems like they are off limited use. Should this case be removed (also from the java side)?
+            console.log('Received init event. It is something, init?');
+            break;
+        case 'join':
+            console.log('Receive join event. Welcome welcome!');
+
+            // First we clear whatever is in history so we have a clean slate.
+            clearMessageHistory();
+
+            // Then we update server info.
+            // TODO: not really happy with all of this. Reorganize slightly, possibly add helper function
+            updateServerName(message.server.name);
+            serverName = message.server.name
+            serverId = message.server.identifier;
+
+            // Finally request message history
+            sendWebsocketMessage('history', {
+                serverId,
+                limit: messageHistoryLimit
+            });
+
+            break;
+        case 'disconnect':
+            console.log('Receive disconnect event. Sad to see you go.')
+            // Clear title
+            updateServerName();
+            serverId = message.server.name
+            serverName = message.server.identifier;
+            break;
+    }
 }
 
 function connect() {
@@ -177,39 +229,8 @@ function connect() {
                 displayedMessageIds.add(message.payload.uuid);
                 displayChatMessage(message.payload.component, message.timestamp, message.payload.history);
             } else  if (message.type === 'serverConnectionState') {
-                switch (message.payload) {
-                    case 'init':
-                        console.log('Received init event. It is something, init?');
-                        // empty previously seen messages.
-                        displayedMessageIds.clear();
-                        const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
-                        if (!messages) {
-                            return;
-                        }
-                        messages.replaceChildren();
+                handleMinecraftServerConnectionState(message);
 
-                        break;
-                    case 'join':
-                        console.log('Receive join event. Welcome welcome!');
-                        updateServerName(message.server.name);
-                        serverName = message.server.name
-                        serverId = message.server.identifier;
-
-                        sendWebsocketMessage('history', {
-                            serverId,
-                            limit: 50
-                        });
-
-                        break;
-                    case 'disconnect':
-                        console.log('Receive disconnect event. Sad to see you go.')
-                        // Clear title
-                        updateServerName();
-                        serverId = message.server.name
-                        serverName = message.server.identifier;
-                        break;
-                }
-                console.log(message);
             }
         } catch (e) {
             console.error('Error processing message:', e);
