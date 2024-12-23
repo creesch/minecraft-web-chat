@@ -32,6 +32,14 @@
  */
 
 /**
+ * HistoryMetaData message from Minecraft
+ * @typedef {Object} HistoryMetaData
+ * @property {'historyMetaData'} type
+ * @property {number} oldestTimestamp
+ * @property {boolean} moreHistoryAvailable
+*/
+
+/**
  * @typedef {'init'| 'join' | 'disconnect'} ServerConnectionStates
  */
 
@@ -43,7 +51,7 @@
 */
 
 /**
- * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState)} ModServerMessage
+ * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState | HistoryMetaData)} ModServerMessage
  */
 
 /**
@@ -60,7 +68,9 @@ export function isModServerMessage(message) {
         return false;
     }
 
-    return message.type === 'chatMessage' || message.type === 'serverConnectionState';
+    return  message.type === 'chatMessage' ||
+            message.type === 'serverConnectionState' ||
+            message.type === 'historyMetaData';
 }
 
 /**

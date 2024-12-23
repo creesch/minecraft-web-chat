@@ -7,14 +7,18 @@ import dev.creesch.model.IncomingWebsocketJsonMessage.HistoryPayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.storage.ChatMessageRepository;
+import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsContext;
 import lombok.Getter;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -140,11 +144,45 @@ public class WebInterface {
                     case HISTORY -> {
                         HistoryPayload historyPayload =
                             gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
+                        int requestedLimit = historyPayload.getLimit();
                         LOGGER.info("Received history request: {}", historyPayload.getServerId());
                         List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(
                             historyPayload.getServerId(),
-                            historyPayload.getLimit()
+                            requestedLimit + 1 // Used further down to determine if there are more messages available in history.
                         );
+
+                        // Let's build metadata
+                        // TODO: move to builder
+                        boolean moreHistoryAvailable = false;
+                        if (historyMessages.size() > requestedLimit) {
+                            moreHistoryAvailable = true;
+                            // Array index, so -1 is the original limit
+                            historyMessages.remove(requestedLimit);
+                        }
+
+                        // Get oldest timestamp
+                        int lastIndex = historyMessages.size() - 1;
+                        long oldestTimestamp = historyMessages.isEmpty()
+                            ? 0L
+                            : historyMessages.get(lastIndex).getTimestamp();
+
+                        // Explicitly use UTC time for consistency across different timezones
+                        long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
+                        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+                        String minecraftVersion = SharedConstants.getGameVersion().getName();
+
+                        WebsocketJsonMessage historyMetaDataMessage = WebsocketJsonMessage.createHistoryMetaDataMessage(
+                            timestamp,
+                            serverInfo,
+                            oldestTimestamp,
+                            moreHistoryAvailable,
+                            minecraftVersion
+                        );
+
+                        ctx.send(gson.toJson(
+                            historicMessage
+                        ));
+
                         historyMessages.forEach(historicMessage -> {
                             ctx.send(gson.toJson(
                                 historicMessage

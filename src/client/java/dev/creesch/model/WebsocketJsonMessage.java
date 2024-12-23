@@ -30,7 +30,7 @@ public class WebsocketJsonMessage {
         CHAT_MESSAGE,
         @SerializedName("serverConnectionState")
         SERVER_CONNECTION_STATE,
-        @SerializedName("historyMetadata")
+        @SerializedName("historyMetaData")
         HISTORY_META_DATA
     }
 
