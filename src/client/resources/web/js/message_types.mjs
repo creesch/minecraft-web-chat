@@ -35,9 +35,11 @@
  * HistoryMetaData message from Minecraft
  * @typedef {Object} HistoryMetaData
  * @property {'historyMetaData'} type
- * @property {number} oldestTimestamp
- * @property {boolean} moreHistoryAvailable
-*/
+ * @property {{
+ *   oldestTimestamp: number,
+ *   moreHistoryAvailable: boolean,
+ * }} payload
+ */
 
 /**
  * @typedef {'init'| 'join' | 'disconnect'} ServerConnectionStates
