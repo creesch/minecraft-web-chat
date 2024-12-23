@@ -144,7 +144,7 @@ function updateServerName(addition) {
     if (!serverNameElement) {
         return;
     }
-    serverNameElement.textContent = addition ? ` to ${addition}` : 'No server';
+    serverNameElement.textContent = addition ? addition: 'No server';
 }
 
 /**

@@ -1,8 +1,5 @@
 package dev.creesch.model;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,7 +29,9 @@ public class WebsocketJsonMessage {
         @SerializedName("chatMessage")
         CHAT_MESSAGE,
         @SerializedName("serverConnectionState")
-        SERVER_CONNECTION_STATE
+        SERVER_CONNECTION_STATE,
+        @SerializedName("historyMetadata")
+        HISTORY_META_DATA
     }
 
     /**
@@ -78,5 +77,21 @@ public class WebsocketJsonMessage {
         String minecraftVersion
     ) {
         return new WebsocketJsonMessage(timestamp, server, MessageType.SERVER_CONNECTION_STATE, state, minecraftVersion);
+    }
+
+    public static WebsocketJsonMessage createHistoryMetaDataMessage (
+        long timestamp,
+        ChatServerInfo server,
+        long oldestMessageTimestamp,
+        boolean moreHistoryAvailable,
+        String minecraftVersion
+    ) {
+
+        HistoryMetaDataPayload historyMetaDataPayload = HistoryMetaDataPayload.builder()
+            .moreHistoryAvailable(moreHistoryAvailable)
+            .oldestMessageTimestamp(oldestMessageTimestamp)
+            .build();
+
+        return new WebsocketJsonMessage(timestamp, server, MessageType.CHAT_MESSAGE, historyMetaDataPayload, minecraftVersion);
     }
 }
