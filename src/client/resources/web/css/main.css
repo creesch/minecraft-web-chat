@@ -30,6 +30,30 @@ body {
     scrollbar-gutter: stable;
 }
 
+#load-more-container {
+    display: none;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+#load-more-button {
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 0.3rem;
+    background-color: #4CAF50;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+#load-more-button:hover {
+    background-color: #45a049;
+}
+
 .message {
     margin: 0.25rem 0;
     padding: 0.25rem 0;
@@ -54,35 +78,35 @@ body {
     gap: 0.5rem;
 }
 
-#messageInput {
+#message-input {
     flex: 1;
     padding: 0.5rem;
     border: none;
     border-radius: 0.3rem;
     background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: #ffffff;
     font-size: 1rem;
     resize: none;
     line-height: 1.25rem;
     font-family: inherit;
 }
 
-#messageInput:focus {
+#message-input:focus {
     outline: none;
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-button {
+#message-send-button {
     padding: 0.6rem 1.5rem;
     border: none;
     border-radius: 0.3rem;
     background-color: #4CAF50;
-    color: white;
+    color: #ffffff;
     cursor: pointer;
     font-size: 1rem;
 }
 
-button:hover {
+#message-send-button:hover {
     background-color: #45a049;
 }
 

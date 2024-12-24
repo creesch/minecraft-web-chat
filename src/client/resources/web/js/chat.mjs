@@ -4,20 +4,32 @@
 import { faviconCounter, formatTimestamp } from './util.mjs';
 import { assertIsComponent, ComponentError, formatComponent, initializeObfuscation } from './message_parsing.mjs';
 import { parseModServerMessage } from './message_types.mjs';
-/** @typedef {import('./message_parsing.mjs').Component} Component */
 
+/**
+ * Import all types we might need
+ * @typedef {import('./message_parsing.mjs').Component} Component
+ * @typedef {import('./message_types.mjs').ChatMessage} ChatMessage
+ * @typedef {import('./message_types.mjs').HistoryMetaData} HistoryMetaData
+ * @typedef {import('./message_types.mjs').ServerConnectionState} ServerConnectionState
+ */
+
+/**
+ * ======================
+ *  Constants & Globals
+ * ======================
+ */
+
+// WebSocket Management
+/** @type {number} */
+const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 /** @type {WebSocket | null} */
 let ws = null;
+/** @type {number} */
 let reconnectAttempts = 0;
-let serverName;
-let serverId;
-const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 
-// Max amount of history to fetch.
+// Message History Management
 const messageHistoryLimit = 50;
-
-// Store the page title on load so we can manipulate it based on events and always restore it.
-const baseTitle = document.title;
+let isLoadingHistory = false;
 
 // Used for the favicon
 let messageCount = 0;
@@ -26,6 +38,102 @@ let messageCount = 0;
 /** @type {Set<string>} */
 const displayedMessageIds = new Set();
 
+/**
+ * Server information and related methods.
+ * @type {{
+ *   name: string | undefined;
+ *   id: string | undefined;
+ *   baseTitle: string;
+ *   update: (name: string , id: string) => void;
+ *   clear: () => void;
+ *   getId: () => string | undefined;
+ *   getName: () => string | undefined;
+ * }}
+ */
+const serverInfo = {
+    name: undefined,
+    id: undefined,
+    baseTitle: document.title, // Store the page title on load so we can manipulate it based on events and always restore it.
+
+    /**
+     * Updates server information and UI elements.
+     * @param {string} name - The server's name.
+     * @param {string} id - The server's identifier.
+     */
+    update(name, id) {
+        if (!name || !id) {
+            console.error('Invalid server information: Both name and id must be provided.');
+            return;
+        }
+
+        this.name = name;
+        this.id = id;
+
+        // Update the page title
+        document.title = `${this.baseTitle} - ${name}`;
+
+        // Update the status element
+        if (serverNameElement) {
+            serverNameElement.textContent = name;
+        }
+    },
+
+    /**
+     * Clears the current server information from both variables and UI.
+     */
+    clear() {
+        this.name = undefined;
+        this.id = undefined;
+        document.title = this.baseTitle;
+        if (serverNameElement) {
+            serverNameElement.textContent = 'No server';
+        }
+
+    },
+
+    /**
+     * Retrieves the server's ID.
+     * @returns {string | undefined} The server's ID.
+     */
+    getId() {
+        return this.id;
+    },
+
+    /**
+     * Retrieves the server's name.
+     * @returns {string | undefined} The server's name.
+     */
+    getName() {
+        return this.name;
+    }
+};
+
+
+/**
+ * ======================
+ *  HTML elements
+ * ======================
+ */
+
+const statusContainerElement = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
+const statusTextElement = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .connection-status'));
+const serverNameElement = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .server-name'));
+
+const messagesElement = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
+const loadMoreContainerElement = /** @type {HTMLDivElement | null} */ (document.getElementById('load-more-container'));
+const loadMoreButtonElement = /** @type {HTMLDivElement | null} */ (document.getElementById('load-more-button'));
+
+const chatInputElement = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('message-input'));
+const messageSendButtonElement = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('message-send-button'));
+
+
+/**
+ * ======================
+ *  Event listeners and handlers
+ * ======================
+ */
+
+// Favicon updates if tab is not in focus
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         messageCount = 0;
@@ -33,21 +141,106 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+// Clicked send button
+if (messageSendButtonElement) {
+    messageSendButtonElement.addEventListener('click', () => {
+        sendChatMessage();
+    });
+}
+
+// Allow Enter key to send messages
+if (chatInputElement) {
+    // Focus input on load
+    chatInputElement.focus();
+
+    chatInputElement.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+}
+
+// Load more button clicked
+if (loadMoreContainerElement && loadMoreButtonElement) {
+    loadMoreButtonElement.addEventListener('click', () => {
+         // No matter what, always hide the element.
+        loadMoreContainerElement.style.display = 'none';
+
+        // If set to true it means we haven't received new history meta data yet.
+        if (isLoadingHistory) {
+            return;
+        }
+
+        // Make sure we have a number and everything.
+        const maybeTimestamp = Number(loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '');
+        if (isFinite(maybeTimestamp)) {
+            requestHistory(messageHistoryLimit, maybeTimestamp);
+        }
+    });
+}
+
 
 /**
- * Add a message to chat
- * @param {Component} chatComponent
- * @param {number} timestamp
+ * ======================
+ *  Chat related functions
+ * ======================
  */
-function displayChatMessage(chatComponent, timestamp, history = false) {
+
+/**
+ * Request chat history from the server
+ * @param {number} limit
+ * @param {number} [before]
+ */
+function requestHistory(limit, before) {
+    if (isLoadingHistory) {
+        console.log('Already loading history, skipping request.');
+        return;
+    }
+
+    // Probably disconnected, do nothing.
+    const serverId = serverInfo.getId();
+    if (!serverId) {
+        return;
+    }
+
+    isLoadingHistory = true;
+
+    sendWebsocketMessage('history', {
+        serverId,
+        limit,
+        before
+    });
+}
+
+/**
+ * Handle minecraft chat messages
+ * @param {ChatMessage} message
+ */
+function handleChatMessage(message) {
+    if (!messagesElement) {
+        return;
+    }
+    // Skip if we've already seen this message
+    if (displayedMessageIds.has(message.payload.uuid)) {
+        return;
+    }
+
+    displayedMessageIds.add(message.payload.uuid);
+
+    if (document.visibilityState !== 'visible') {
+        messageCount++;
+        faviconCounter(messageCount);
+    }
+
     requestAnimationFrame(() => {
         const div = document.createElement('div');
         div.className = 'message';
 
         // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen.
-        const { timeString, fullDateTime } = formatTimestamp(timestamp);
+        const { timeString, fullDateTime } = formatTimestamp(message.timestamp);
         const timeElement = document.createElement('time');
-        timeElement.dateTime = new Date(timestamp).toISOString();
+        timeElement.dateTime = new Date(message.timestamp).toISOString();
         timeElement.textContent = timeString;
         timeElement.title = fullDateTime;
         timeElement.className = 'message-time';
@@ -55,9 +248,10 @@ function displayChatMessage(chatComponent, timestamp, history = false) {
 
         try {
             // Format the chat message - this uses the Component format from message_parsing
-            const chatContent = formatComponent(chatComponent);
+            const chatContent = formatComponent(message.payload.component);
             div.appendChild(chatContent);
         } catch (e) {
+            console.error(message);
             if (e instanceof ComponentError) {
                 console.error('Invalid component:', e.toString());
                 div.appendChild(
@@ -77,30 +271,104 @@ function displayChatMessage(chatComponent, timestamp, history = false) {
             }
         }
 
-        const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
-        if (!messages) {
-            return;
-        }
-
-        // Starting with naive approach
-        if (history) {
-            messages.appendChild(div);
+        if (message.payload.history && loadMoreContainerElement) {
+            // Insert the message after the load-more button
+            loadMoreContainerElement.before(div);
         } else {
-            messages.insertBefore(div, messages.firstChild);
+            // For new messages, insert at the start
+            messagesElement.insertBefore(div, messagesElement.firstChild);
         }
     });
 }
+
+function clearMessageHistory() {
+    console.log('clearing history.');
+    // empty previously seen messages.
+    displayedMessageIds.clear();
+    if (!messagesElement) {
+        return;
+    }
+    // Reset the load more button
+    if (loadMoreContainerElement) {
+        loadMoreContainerElement.style.display = 'none';
+        loadMoreContainerElement.dataset['oldestMessageTimestamp'] = '';
+    }
+
+    // Only remove messages, leaving the load more button alone.
+    const messageElements = messagesElement.querySelectorAll('.message');
+    messageElements.forEach(element => {
+        element.remove();
+    });
+}
+
+/**
+ * Handle history meta data
+ * @param {HistoryMetaData} message
+ */
+function handleHistoryMetaData(message) {
+    isLoadingHistory = false;
+
+    if (!messagesElement || !loadMoreContainerElement) {
+        return;
+    }
+
+    if (message.payload.moreHistoryAvailable) {
+        loadMoreContainerElement.dataset['oldestMessageTimestamp'] = message.payload.oldestMessageTimestamp.toString();
+        // Show button after delay so people can't spam it and cause issue.
+        setTimeout(() => {
+            loadMoreContainerElement.style.display = 'block';
+        }, 200);
+    } else {
+        loadMoreContainerElement.style.display = 'none';
+    }
+}
+
+/**
+ * Handle different minecraft server connection states
+ * @param {ServerConnectionState} message
+ */
+function handleMinecraftServerConnectionState(message) {
+    switch (message.payload) {
+        case 'init':
+            // Note: Initially used to clear messageHistory. As it turns out init events can also happen when already on a server.
+            // Leaving this message in for potential debugging purposes because it can indicate minecraft server or connection issues.
+            console.log('Received init event. It is something, init?');
+            break;
+        case 'join':
+            console.log('Received join event. Welcome welcome!');
+
+            // First clear whatever is in history so the slate is clean.
+            // Note: the join event often comes after the client already received messages.
+            // This is not a problem as they are stored in the message history and will loaded again once history is requested.
+            // Doing it in a different way would make things more complex than needed.
+            clearMessageHistory();
+
+            // Then we update server info.
+            serverInfo.update(message.server.name, message.server.identifier)
+
+            // Finally request message history
+            requestHistory(messageHistoryLimit);
+
+            break;
+        case 'disconnect':
+            console.log('Received disconnect event. Sad to see you go.');
+            serverInfo.clear();
+            break;
+    }
+}
+
+/**
+ * ======================
+ *  Websocket related functions
+ * ======================
+ */
 
 /**
  * Update status elements
  * @param {'connected' | 'disconnected' | 'error'} connectionStatus
  */
-function updateConnectionStatus(connectionStatus) {
-    const statusContainer = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-    const statusText = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .connection-status'));
-
-
-    if (!statusContainer || !statusText) {
+function updateWebsocketConnectionStatus(connectionStatus) {
+    if (!statusContainerElement || !statusTextElement) {
         return;
     }
 
@@ -108,81 +376,20 @@ function updateConnectionStatus(connectionStatus) {
     if (connectionStatus) {
         switch (connectionStatus) {
             case 'connected':
-                statusContainer.className = 'status-connected';
-                statusText.textContent = 'Connected';
+                statusContainerElement.className = 'status-connected';
+                statusTextElement.textContent = 'Connected';
                 break;
             case 'disconnected':
-                statusContainer.className = 'status-disconnected';
-                statusText.textContent = 'Disconnected';
+                serverInfo.clear();
+                statusContainerElement.className = 'status-disconnected';
+                statusTextElement.textContent = 'Disconnected';
                 break;
             case 'error':
-                statusContainer.className = 'status-disconnected';
-                statusText.textContent = 'Error: see browser console';
+                serverInfo.clear();
+                statusContainerElement.className = 'status-disconnected';
+                statusTextElement.textContent = 'Error: see browser console';
                 break;
         }
-    }
-}
-
-function clearMessageHistory() {
-    // empty previously seen messages.
-    displayedMessageIds.clear();
-    const messages = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
-    if (!messages) {
-        return;
-    }
-    messages.replaceChildren();
-}
-
-/**
- * Update server name value in status element and page title
- * @param {string} [addition=null]
- */
-function updateServerName(addition) {
-    document.title = addition ? `${baseTitle} - ${addition}` : baseTitle;
-
-    const serverNameElement = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .server-name'));
-    if (!serverNameElement) {
-        return;
-    }
-    serverNameElement.textContent = addition ? addition: 'No server';
-}
-
-/**
- * Handle different minecraft server connection states
- * @param {import('./message_types.mjs').ModServerMessage} message
- */
-function handleMinecraftServerConnectionState(message) {
-    switch (message.payload) {
-        case 'init':
-            // TODO: turns out that init events can also be send when already on a server. So it seems like they are off limited use. Should this case be removed (also from the java side)?
-            console.log('Received init event. It is something, init?');
-            break;
-        case 'join':
-            console.log('Receive join event. Welcome welcome!');
-
-            // First we clear whatever is in history so we have a clean slate.
-            clearMessageHistory();
-
-            // Then we update server info.
-            // TODO: not really happy with all of this. Reorganize slightly, possibly add helper function
-            updateServerName(message.server.name);
-            serverName = message.server.name
-            serverId = message.server.identifier;
-
-            // Finally request message history
-            sendWebsocketMessage('history', {
-                serverId,
-                limit: messageHistoryLimit
-            });
-
-            break;
-        case 'disconnect':
-            console.log('Receive disconnect event. Sad to see you go.')
-            // Clear title
-            updateServerName();
-            serverId = message.server.name
-            serverName = message.server.identifier;
-            break;
     }
 }
 
@@ -190,13 +397,14 @@ function connect() {
     ws = new WebSocket(`ws://${location.host}/chat`);
 
     ws.onopen = function () {
-        console.log('Connected to server');
-        updateConnectionStatus('connected');
+        console.log('Connected to websocket server');
+        updateWebsocketConnectionStatus('connected');
+        reconnectAttempts = 0; // Reset attempts
     };
 
     ws.onclose = function () {
-        updateConnectionStatus('disconnected');
-        console.log('Connection closed. Attempting to reconnect...');
+        console.log('Websocket connection closed. Attempting to reconnect...');
+        updateWebsocketConnectionStatus('disconnected');
 
         if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
@@ -206,31 +414,24 @@ function connect() {
 
     ws.onerror = function (error) {
         console.error('WebSocket error:', error);
-        updateConnectionStatus('error');
+        updateWebsocketConnectionStatus('error');
     };
 
     ws.onmessage = function (event) {
-        if (document.visibilityState !== 'visible') {
-            messageCount++;
-            faviconCounter(messageCount);
-        }
-
         /** @type {string} */
         const rawJson = event.data;
-        console.log(rawJson);
+        console.log('Got websocket message:', rawJson);
         try {
             const message = parseModServerMessage(rawJson);
-            // For now we only handle chat messages
-            if (message.type === 'chatMessage') {
-                // Skip if we've already seen this message
-                if (displayedMessageIds.has(message.payload.uuid)) {
-                    return;
-                }
-                displayedMessageIds.add(message.payload.uuid);
-                displayChatMessage(message.payload.component, message.timestamp, message.payload.history);
-            } else  if (message.type === 'serverConnectionState') {
-                handleMinecraftServerConnectionState(message);
-
+            switch(message.type) {
+                case 'chatMessage':
+                    handleChatMessage(message);
+                    break;
+                case 'historyMetaData':
+                    handleHistoryMetaData(message);
+                    break;
+                case 'serverConnectionState':
+                    handleMinecraftServerConnectionState(message);
             }
         } catch (e) {
             console.error('Error processing message:', e);
@@ -252,19 +453,9 @@ function connect() {
  * @param {string | HistoryRequest} payload
  */
 function sendWebsocketMessage(type, payload) {
-    console.log(ws);
-    console.log(ws?.readyState);
-
     if (ws?.readyState !== WebSocket.OPEN) {
         console.log('WebSocket is not connected');
-        const status = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-        if (!status) {
-            return;
-        }
-
-        status.textContent = 'Not connected - message not sent';
-        status.className = 'status-disconnected';
-
+        updateWebsocketConnectionStatus('disconnected');
         return;
     }
 
@@ -275,37 +466,21 @@ function sendWebsocketMessage(type, payload) {
 }
 
 function sendChatMessage() {
-    const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
-    if (!input || !input.value.trim()) {
+    if (!chatInputElement || !chatInputElement.value.trim()) {
         return;
     }
-    console.log(input.value);
+    console.log(`Sending chat message: ${chatInputElement.value}`);
 
-    sendWebsocketMessage('chat', input.value);
-    input.value = '';
+    sendWebsocketMessage('chat', chatInputElement.value);
+    chatInputElement.value = '';
 }
 
-const sendButton = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('sendButton'));
-if (sendButton) {
-    sendButton.addEventListener('click', () => {
-        sendChatMessage();
-    });
-}
 
-// Allow Enter key to send messages
-const input = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('messageInput'));
-if (input) {
-    // Focus input on load
-    input.focus();
+/**
+ * ======================
+ *  Init
+ * ======================
+ */
 
-    input.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
-}
-
-// Start connection and load stored messages when page loads
 connect();
 initializeObfuscation();

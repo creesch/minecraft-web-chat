@@ -21,24 +21,25 @@
 
 /**
  * Chat message from Minecraft
- * TODO: Use history boolean to act on once ping PR is done and merged.
- * @typedef {Object} ChatMessage
- * @property {'chatMessage'} type
- * @property {{
- *   history?: boolean,
- *   component: Component,
- *   uuid: string,
- * }} payload
+ * @typedef {BaseModServerMessage & {
+ *   type: 'chatMessage',
+ *   payload: {
+ *     history?: boolean,
+ *     component: Component,
+ *     uuid: string,
+ *   }
+ * }} ChatMessage
  */
 
 /**
  * HistoryMetaData message from Minecraft
- * @typedef {Object} HistoryMetaData
- * @property {'historyMetaData'} type
- * @property {{
- *   oldestTimestamp: number,
- *   moreHistoryAvailable: boolean,
- * }} payload
+ * @typedef {BaseModServerMessage & {
+ *   type: 'historyMetaData',
+ *   payload: {
+ *     oldestMessageTimestamp: number,
+ *     moreHistoryAvailable: boolean,
+ *   }
+ * }} HistoryMetaData
  */
 
 /**
@@ -47,10 +48,11 @@
 
 /**
  * Server join or leave message from Minecraft
- * @typedef {Object} ServerConnectionState
- * @property {'serverConnectionState'} type
- * @property {ServerConnectionStates} payload
-*/
+ * @typedef {BaseModServerMessage & {
+ *   type: 'serverConnectionState',
+ *   payload: ServerConnectionStates
+ * }} ServerConnectionState
+ */
 
 /**
  * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState | HistoryMetaData)} ModServerMessage
@@ -70,9 +72,9 @@ export function isModServerMessage(message) {
         return false;
     }
 
-    return  message.type === 'chatMessage' ||
-            message.type === 'serverConnectionState' ||
-            message.type === 'historyMetaData';
+    return message.type === 'chatMessage' ||
+        message.type === 'serverConnectionState' ||
+        message.type === 'historyMetaData';
 }
 
 /**
