@@ -1,6 +1,5 @@
 package dev.creesch.storage;
 
-import com.google.gson.JsonObject;
 import dev.creesch.model.ChatMessagePayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.util.NamedLogger;

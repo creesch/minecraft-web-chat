@@ -7,18 +7,15 @@ import dev.creesch.model.IncomingWebsocketJsonMessage.HistoryPayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.storage.ChatMessageRepository;
-import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsContext;
+import io.javalin.websocket.WsMessageContext;
 import lombok.Getter;
-import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -84,6 +81,59 @@ public class WebInterface {
         });
     }
 
+    private void handleReceivedMessages(WsMessageContext ctx) {
+        LOGGER.info(ctx.message());
+        // Parse received message from json
+        IncomingWebsocketJsonMessage receivedMessage = gson.fromJson(
+            ctx.message(), IncomingWebsocketJsonMessage.class
+        );
+
+        switch (receivedMessage.getType()) {
+            case CHAT -> {
+                String message = gson.fromJson(receivedMessage.getPayload(), String.class);
+                if (message.trim().isEmpty()) {
+                    LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
+                    return;
+                }
+                LOGGER.info("Received WebSocket message: {}", message);
+
+                // Sanitize the message
+                message = sanitizeMessage(message);
+
+                // Send the sanitized message to Minecraft chat
+                sendMinecraftMessage(message);
+            }
+            case HISTORY -> {
+                HistoryPayload historyPayload =
+                    gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
+                int requestedLimit = historyPayload.getLimit();
+                LOGGER.info("Received history request: {}", historyPayload.getServerId());
+                List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(
+                    historyPayload.getServerId(),
+                    requestedLimit + 1 // Used further down to determine if there are more messages available in history.
+                );
+
+                // Let's build metadata
+                WebsocketJsonMessage historyMetaDataMessage = WebsocketMessageBuilder.createHistoryMetaDataMessage(
+                    historyMessages,
+                    requestedLimit
+                );
+
+                // Send the history metadata first
+                ctx.send(gson.toJson(
+                    historyMetaDataMessage
+                ));
+
+                historyMessages.forEach(historicMessage -> {
+                    ctx.send(gson.toJson(
+                        historicMessage
+                    ));
+
+                });
+            }
+        }
+    }
+
     private void setupWebSocket() {
         server.ws("/chat", ws -> {
             ws.onConnect(ctx -> {
@@ -119,58 +169,7 @@ public class WebInterface {
             });
 
 
-            ws.onMessage(ctx -> {
-                LOGGER.info(ctx.message());
-                // Parse received message from json
-                IncomingWebsocketJsonMessage receivedMessage = gson.fromJson(
-                    ctx.message(), IncomingWebsocketJsonMessage.class
-                );
-
-                switch (receivedMessage.getType()) {
-                    case CHAT -> {
-                        String message = gson.fromJson(receivedMessage.getPayload(), String.class);
-                        if (message.trim().isEmpty()) {
-                            LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
-                            return;
-                        }
-                        LOGGER.info("Received WebSocket message: {}", message);
-
-                        // Sanitize the message
-                        message = sanitizeMessage(message);
-
-                        // Send the sanitized message to Minecraft chat
-                        sendMinecraftMessage(message);
-                    }
-                    case HISTORY -> {
-                        HistoryPayload historyPayload =
-                            gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
-                        int requestedLimit = historyPayload.getLimit();
-                        LOGGER.info("Received history request: {}", historyPayload.getServerId());
-                        List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(
-                            historyPayload.getServerId(),
-                            requestedLimit + 1 // Used further down to determine if there are more messages available in history.
-                        );
-
-                        // Let's build metadata
-                        WebsocketJsonMessage historyMetaDataMessage = WebsocketMessageBuilder.createHistoryMetaDataMessage(
-                            historyMessages,
-                            requestedLimit
-                        );
-
-                        // Send the history metadata first
-                        ctx.send(gson.toJson(
-                            historyMetaDataMessage
-                        ));
-
-                        historyMessages.forEach(historicMessage -> {
-                            ctx.send(gson.toJson(
-                                historicMessage
-                            ));
-
-                        });
-                    }
-                }
-            });
+            ws.onMessage(this::handleReceivedMessages);
 
             ws.onError(ctx -> {
                 LOGGER.error("WebSocket error: ", ctx.error());
