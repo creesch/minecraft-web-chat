@@ -73,9 +73,7 @@ const serverInfo = {
         document.title = `${this.baseTitle} - ${name}`;
 
         // Update the status element
-        if (serverNameElement) {
-            serverNameElement.textContent = name;
-        }
+        serverNameElement.textContent = name;
     },
 
     /**
@@ -85,10 +83,7 @@ const serverInfo = {
         this.name = undefined;
         this.id = undefined;
         document.title = this.baseTitle;
-        if (serverNameElement) {
-            serverNameElement.textContent = 'No server';
-        }
-
+        serverNameElement.textContent = 'No server';
     },
 
     /**
@@ -115,16 +110,28 @@ const serverInfo = {
  * ======================
  */
 
-const statusContainerElement = /** @type {HTMLDivElement | null} */ (document.getElementById('status'));
-const statusTextElement = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .connection-status'));
-const serverNameElement = /** @type {HTMLSpanElement | null} */ (document.querySelector('#status .server-name'));
+/**
+ * Gets element based on selector. Throws error if element is null.
+ * @param {string} selector
+ */
+function querySelectorWithAssertion(selector) {
+    const element = document.querySelector(selector);
+    if (!element) {
+        throw new Error(`Required DOM element not found: ${selector}`);
+    }
+    return element;
+}
 
-const messagesElement = /** @type {HTMLDivElement | null} */ (document.getElementById('messages'));
-const loadMoreContainerElement = /** @type {HTMLDivElement | null} */ (document.getElementById('load-more-container'));
-const loadMoreButtonElement = /** @type {HTMLDivElement | null} */ (document.getElementById('load-more-button'));
+const statusContainerElement = /** @type {HTMLDivElement } */ (querySelectorWithAssertion('#status'));
+const statusTextElement = /** @type {HTMLSpanElement} */ (querySelectorWithAssertion('#status .connection-status'));
+const serverNameElement = /** @type {HTMLSpanElement} */ (querySelectorWithAssertion('#status .server-name'));
 
-const chatInputElement = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('message-input'));
-const messageSendButtonElement = /** @type {HTMLTextAreaElement | null} */ (document.getElementById('message-send-button'));
+const messagesElement = /** @type {HTMLDivElement} */ (querySelectorWithAssertion('#messages'));
+const loadMoreContainerElement = /** @type {HTMLDivElement} */ (querySelectorWithAssertion('#load-more-container'));
+const loadMoreButtonElement = /** @type {HTMLButtonElement } */ (querySelectorWithAssertion('#load-more-button'));
+
+const chatInputElement = /** @type {HTMLTextAreaElement} */ (querySelectorWithAssertion('#message-input'));
+const messageSendButtonElement = /** @type {HTMLButtonElement} */ (querySelectorWithAssertion('#message-send-button'));
 
 
 /**
@@ -142,44 +149,37 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Clicked send button
-if (messageSendButtonElement) {
-    messageSendButtonElement.addEventListener('click', () => {
-        sendChatMessage();
-    });
-}
+messageSendButtonElement.addEventListener('click', () => {
+    sendChatMessage();
+});
+
+// Focus input on load
+chatInputElement.focus();
 
 // Allow Enter key to send messages
-if (chatInputElement) {
-    // Focus input on load
-    chatInputElement.focus();
-
-    chatInputElement.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
-}
+chatInputElement.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendChatMessage();
+    }
+});
 
 // Load more button clicked
-if (loadMoreContainerElement && loadMoreButtonElement) {
-    loadMoreButtonElement.addEventListener('click', () => {
-         // No matter what, always hide the element.
-        loadMoreContainerElement.style.display = 'none';
+loadMoreButtonElement.addEventListener('click', () => {
+    // No matter what, always hide the element.
+   loadMoreContainerElement.style.display = 'none';
 
-        // If set to true it means we haven't received new history meta data yet.
-        if (isLoadingHistory) {
-            return;
-        }
+   // If set to true it means we haven't received new history meta data yet.
+   if (isLoadingHistory) {
+       return;
+   }
 
-        // Make sure we have a number and everything.
-        const maybeTimestamp = Number(loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '');
-        if (isFinite(maybeTimestamp)) {
-            requestHistory(messageHistoryLimit, maybeTimestamp);
-        }
-    });
-}
-
+   // Make sure we have a number and everything.
+   const maybeTimestamp = Number(loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '');
+   if (isFinite(maybeTimestamp)) {
+       requestHistory(messageHistoryLimit, maybeTimestamp);
+   }
+});
 
 /**
  * ======================
@@ -218,9 +218,6 @@ function requestHistory(limit, before) {
  * @param {ChatMessage} message
  */
 function handleChatMessage(message) {
-    if (!messagesElement) {
-        return;
-    }
     // Skip if we've already seen this message
     if (displayedMessageIds.has(message.payload.uuid)) {
         return;
@@ -274,7 +271,7 @@ function handleChatMessage(message) {
         // Storing raw scroll value. To be used to fix the scroll position down the line.
         const scrolledFromTop = messagesElement.scrollTop;
 
-        if (message.payload.history && loadMoreContainerElement) {
+        if (message.payload.history) {
             // Insert the message after the load-more button
             loadMoreContainerElement.before(div);
         } else {
@@ -296,14 +293,9 @@ function clearMessageHistory() {
     console.log('clearing history.');
     // empty previously seen messages.
     displayedMessageIds.clear();
-    if (!messagesElement) {
-        return;
-    }
     // Reset the load more button
-    if (loadMoreContainerElement) {
-        loadMoreContainerElement.style.display = 'none';
-        loadMoreContainerElement.dataset['oldestMessageTimestamp'] = '';
-    }
+    loadMoreContainerElement.style.display = 'none';
+    loadMoreContainerElement.dataset['oldestMessageTimestamp'] = '';
 
     // Only remove messages, leaving the load more button alone.
     const messageElements = messagesElement.querySelectorAll('.message');
@@ -318,10 +310,6 @@ function clearMessageHistory() {
  */
 function handleHistoryMetaData(message) {
     isLoadingHistory = false;
-
-    if (!messagesElement || !loadMoreContainerElement) {
-        return;
-    }
 
     if (message.payload.moreHistoryAvailable) {
         loadMoreContainerElement.dataset['oldestMessageTimestamp'] = message.payload.oldestMessageTimestamp.toString();
@@ -379,10 +367,6 @@ function handleMinecraftServerConnectionState(message) {
  * @param {'connected' | 'disconnected' | 'error'} connectionStatus
  */
 function updateWebsocketConnectionStatus(connectionStatus) {
-    if (!statusContainerElement || !statusTextElement) {
-        return;
-    }
-
     // Update connection status if provided
     if (connectionStatus) {
         switch (connectionStatus) {
@@ -405,7 +389,7 @@ function updateWebsocketConnectionStatus(connectionStatus) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://localhost:8080/chat`);
+    ws = new WebSocket(`ws://${location.host}/chat`);
 
     ws.onopen = function () {
         console.log('Connected to websocket server');
@@ -477,7 +461,7 @@ function sendWebsocketMessage(type, payload) {
 }
 
 function sendChatMessage() {
-    if (!chatInputElement || !chatInputElement.value.trim()) {
+    if (!chatInputElement.value.trim()) {
         return;
     }
     console.log(`Sending chat message: ${chatInputElement.value}`);
