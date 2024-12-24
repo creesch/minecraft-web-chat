@@ -271,6 +271,9 @@ function handleChatMessage(message) {
             }
         }
 
+        // Storing raw scroll value. To be used to fix the scroll position down the line.
+        const scrolledFromTop = messagesElement.scrollTop;
+
         if (message.payload.history && loadMoreContainerElement) {
             // Insert the message after the load-more button
             loadMoreContainerElement.before(div);
@@ -278,6 +281,14 @@ function handleChatMessage(message) {
             // For new messages, insert at the start
             messagesElement.insertBefore(div, messagesElement.firstChild);
         }
+
+        // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
+        // Let's fix that, if the user was near the bottom when a message was inserted we put them back there.
+        // Note: the values appear negative due to the flex column shenigans.
+        if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
+            messagesElement.scrollTop = 0;
+        }
+
     });
 }
 
@@ -394,7 +405,7 @@ function updateWebsocketConnectionStatus(connectionStatus) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://${location.host}/chat`);
+    ws = new WebSocket(`ws://localhost:8080/chat`);
 
     ws.onopen = function () {
         console.log('Connected to websocket server');
