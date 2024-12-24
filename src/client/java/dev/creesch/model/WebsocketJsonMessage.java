@@ -92,6 +92,6 @@ public class WebsocketJsonMessage {
             .oldestMessageTimestamp(oldestMessageTimestamp)
             .build();
 
-        return new WebsocketJsonMessage(timestamp, server, MessageType.CHAT_MESSAGE, historyMetaDataPayload, minecraftVersion);
+        return new WebsocketJsonMessage(timestamp, server, MessageType.HISTORY_META_DATA, historyMetaDataPayload, minecraftVersion);
     }
 }

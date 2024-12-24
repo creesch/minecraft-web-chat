@@ -189,13 +189,16 @@ public class ChatMessageRepository {
 
         String query = BASE_GET_MESSAGE_QUERY.formatted(beforeTimestamp != null ? "AND timestamp < ?" : "");
 
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, serverId);
-            stmt.setInt(2, limit);
 
             if (beforeTimestamp != null) {
-                stmt.setLong(3, beforeTimestamp);
+                stmt.setLong(2, beforeTimestamp);
+                stmt.setInt(3, limit);
+            } else {
+                stmt.setInt(2, limit);
             }
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -216,6 +219,7 @@ public class ChatMessageRepository {
             // Just throw an error here, no reason to crash the game over this.
             LOGGER.error("Failed to retrieve chat messages for server: {}", serverId);
         }
+        LOGGER.info("Got {} messages", messages.size());
         return messages;
     }
 }

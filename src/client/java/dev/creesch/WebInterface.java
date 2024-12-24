@@ -107,11 +107,22 @@ public class WebInterface {
                 HistoryPayload historyPayload =
                     gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
                 int requestedLimit = historyPayload.getLimit();
+                int moreHistoryRequestedLimit = requestedLimit + 1; // Used further down to determine if there are more messages available in history.
                 LOGGER.info("Received history request: {}", historyPayload.getServerId());
-                List<WebsocketJsonMessage> historyMessages = messageRepository.getMessages(
-                    historyPayload.getServerId(),
-                    requestedLimit + 1 // Used further down to determine if there are more messages available in history.
-                );
+
+                List<WebsocketJsonMessage> historyMessages;
+                if (historyPayload.getBefore() != null) {
+                    historyMessages = messageRepository.getMessages(
+                        historyPayload.getServerId(),
+                        moreHistoryRequestedLimit,
+                        historyPayload.getBefore()
+                    );
+                } else {
+                    historyMessages = messageRepository.getMessages(
+                        historyPayload.getServerId(),
+                        moreHistoryRequestedLimit
+                    );
+                }
 
                 // Let's build metadata
                 WebsocketJsonMessage historyMetaDataMessage = WebsocketMessageBuilder.createHistoryMetaDataMessage(
@@ -169,7 +180,7 @@ public class WebInterface {
             });
 
 
-            ws.onMessage(this::handleReceivedMessages);
+            ws.onMessage(ctx -> handleReceivedMessages(ctx));
 
             ws.onError(ctx -> {
                 LOGGER.error("WebSocket error: ", ctx.error());
