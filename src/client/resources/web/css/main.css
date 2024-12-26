@@ -57,19 +57,26 @@ body {
 .message {
     position: relative;
     margin: 0.25rem 0;
-    padding: 0.25rem 0;
+    padding: 0.25rem 0.5rem;
     word-wrap: break-word;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.message.ping {
+    background-color: rgba(76, 175, 80, 0.1);
 }
 
 .message.ping::before {
     content: '';
     position: absolute;
-    left: -0.5rem;
+    left: calc(-0.25rem + 2px);
     top: 0;
     bottom: 0;
     width: 0.25rem;
     border-radius: 2px;
-    background-color: #FF77FF;
+    background-color: #4CAF50;
 }
 
 .message a {

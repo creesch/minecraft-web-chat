@@ -25,34 +25,29 @@ export function updateFavicon(count, hasPing) {
         }
 
         const img = new Image();
-        img.src = `img/icon_${size}.png`;
+
+        // Pings should not happen without a count
+        if (hasPing && count > 0) {
+            img.src = `img/icon_${size}_ping.png`;
+        } else if (count > 0) {
+            img.src = `img/icon_${size}_blank.png`;
+        } else {
+            // Default image, will restore the favicon.
+            img.src = `img/icon_${size}.png`;
+        }
+        
         img.onload = () => {
             ctx.drawImage(img, 0, 0, size, size);
 
             if (count > 0) {
                 const x = size / 2;
-                const y = (size / 2) - (size * 0.06); // The middle of the chat icon is not exactly in the center.
+                const y = (size / 2) - (size * 0.05); // The middle of the chat icon is not exactly in the center.
 
                 ctx.font = `bold ${size * 0.5}px "Arial Black"`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-
-                // Draw the outline
-                ctx.strokeStyle = '#56b6c2';
-                ctx.lineWidth = size * 0.15;
-                ctx.strokeText(count > 99 ? '99+' : `${count}`, x, y);
-
-                // Draw the fill
                 ctx.fillStyle = '#000000';
                 ctx.fillText(count > 99 ? '99+' : `${count}`, x, y);
-            }
-
-            if (hasPing) {
-                // Draw a small red circle in the top right corner.
-                ctx.beginPath();
-                ctx.arc(size * 3 / 4, size / 4, size / 8, 0, 2 * Math.PI);
-                ctx.fillStyle = '#ff0000';
-                ctx.fill();
             }
 
             link.href = canvas.toDataURL();
