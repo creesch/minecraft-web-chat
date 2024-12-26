@@ -76,6 +76,11 @@ public class WebsocketMessageBuilder {
             if (pingPattern(playerName).matcher(messageString).find()) {
                 return true;
             }
+
+            String displayName = client.player.getDisplayName().getString();
+            if (pingPattern(displayName).matcher(messageString).find()) {
+                return true;
+            }
         }
 
         for (String pingKeyword : config.pingKeywords) {
