@@ -24,8 +24,10 @@ import { parseModServerMessage } from './message_types.mjs';
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
 /** @type {WebSocket | null} */
 let ws = null;
-/** @type {number} */
 let reconnectAttempts = 0;
+
+/** @type {string | null} */
+let minecraftVersion = null;
 
 // Message History Management
 const messageHistoryLimit = 50;
@@ -446,6 +448,14 @@ function connect() {
         console.log('Got websocket message:', rawJson);
         try {
             const message = parseModServerMessage(rawJson);
+            if (!minecraftVersion) {
+                minecraftVersion = message.minecraftVersion;
+            } else if (minecraftVersion !== message.minecraftVersion) {
+                // The browser page has been left open across minecraft versions.
+                // Reload to get the latest version of the page.
+                window.location.reload();
+            }
+
             switch(message.type) {
                 case 'chatMessage':
                     handleChatMessage(message);
