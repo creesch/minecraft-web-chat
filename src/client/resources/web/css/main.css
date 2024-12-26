@@ -61,7 +61,7 @@ body {
     word-wrap: break-word;
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: start;
 }
 
 .message.ping {
@@ -88,6 +88,7 @@ body {
     color: #b7b7b7;
     font-size: 0.75rem;
     margin-right: 0.3rem;
+    margin-top: 0.15rem;
 }
 
 #input-area {
