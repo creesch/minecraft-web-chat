@@ -22,9 +22,10 @@ public class WebsocketMessageBuilder {
      * Processes both chat and game messages, converting them to the appropriate format
      *
      * @param message The Minecraft text message to process
+     * @param fromSelf Whether the message is from the local player
      * @param client The Minecraft client instance
      */
-    public static WebsocketJsonMessage createLiveChatMessage(Text message, MinecraftClient client) {
+    public static WebsocketJsonMessage createLiveChatMessage(Text message, boolean fromSelf, MinecraftClient client) {
         if (client.world == null) {
             throw new MessageBuildException("Cannot create chat message: client world is null");
         }
@@ -47,7 +48,7 @@ public class WebsocketMessageBuilder {
                 minecraftChatJson,
                 JsonObject.class
             ))
-            .isPing(isPing(message, client))
+            .isPing(!fromSelf && isPing(message, client))
             .build();
 
         return WebsocketJsonMessage.createChatMessage(
