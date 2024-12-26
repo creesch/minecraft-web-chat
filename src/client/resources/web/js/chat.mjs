@@ -285,7 +285,6 @@ function handleChatMessage(message) {
         if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
             messagesElement.scrollTop = 0;
         }
-
     });
 }
 
@@ -469,7 +468,6 @@ function sendChatMessage() {
     sendWebsocketMessage('chat', chatInputElement.value);
     chatInputElement.value = '';
 }
-
 
 /**
  * ======================

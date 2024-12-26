@@ -33,7 +33,6 @@ export function faviconCounter(count) {
                 // Draw the outline
                 ctx.strokeStyle = '#56b6c2';
                 ctx.lineWidth = size * 0.15;
-
                 ctx.strokeText(count > 99 ? '99+' : `${count}`, x, y);
 
                 // Draw the fill

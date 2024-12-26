@@ -81,8 +81,6 @@ public class WebchatClient implements ClientModInitializer {
             );
         });
 
-
-
         // Properly handle minecraft shutting down.
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             if (webInterface == null) {
