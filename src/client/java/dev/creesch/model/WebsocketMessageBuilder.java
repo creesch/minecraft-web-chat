@@ -126,6 +126,7 @@ public class WebsocketMessageBuilder {
             String serverName,
             String messageId,
             String messageJson,
+            boolean isPing,
             String minecraftVersion
         ) {
 
@@ -137,7 +138,7 @@ public class WebsocketMessageBuilder {
                 messageJson,
                 JsonObject.class
             ))
-            .isPing(false)
+            .isPing(isPing)
             .build();
 
         WebsocketJsonMessage.ChatServerInfo serverInfo = new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);

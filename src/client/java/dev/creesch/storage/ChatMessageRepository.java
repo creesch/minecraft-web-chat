@@ -33,6 +33,7 @@ public class ChatMessageRepository {
                 server_name TEXT NOT NULL,
                 message_id TEXT NOT NULL,
                 message_json TEXT NOT NULL,
+                is_ping BOOLEAN NOT NULL,
                 minecraft_version TEXT
             )
             """;
@@ -62,8 +63,9 @@ public class ChatMessageRepository {
                 server_name,
                 message_id,
                 message_json,
+                is_ping,
                 minecraft_version
-            ) VALUES (?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
 
     // Base query, needs formatting
@@ -74,6 +76,7 @@ public class ChatMessageRepository {
                  server_name,
                  message_id,
                  message_json,
+                 is_ping,
                  minecraft_version
              FROM
                  messages
@@ -172,7 +175,8 @@ public class ChatMessageRepository {
             statement.setString(3, message.getServer().getName());
             statement.setString(4, payload.getUuid());
             statement.setString(5, payload.getComponent().toString());
-            statement.setString(6, message.getMinecraftVersion());
+            statement.setBoolean(6, payload.isPing());
+            statement.setString(7, message.getMinecraftVersion());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -207,10 +211,11 @@ public class ChatMessageRepository {
                     String serverName = rs.getString("server_name");
                     String messageId = rs.getString("message_id");
                     String messageJson = rs.getString("message_json");
+                    boolean isPing = rs.getBoolean("is_ping");
                     String minecraftVersion = rs.getString("minecraft_version");
 
                     messages.add(
-                        createHistoricChatMessage(timestamp, serverId, serverName, messageId, messageJson, minecraftVersion)
+                        createHistoricChatMessage(timestamp, serverId, serverName, messageId, messageJson, isPing, minecraftVersion)
                     );
 
                 }
