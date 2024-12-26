@@ -251,6 +251,7 @@ function handleChatMessage(message) {
 
         try {
             // Format the chat message - this uses the Component format from message_parsing
+            assertIsComponent(message.payload.component);
             const chatContent = formatComponent(message.payload.component);
             div.appendChild(chatContent);
         } catch (e) {
