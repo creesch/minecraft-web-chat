@@ -1,12 +1,14 @@
 package dev.creesch.config;
 
+import com.google.gson.GsonBuilder;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import net.fabricmc.loader.api.FabricLoader;
-
-import com.google.gson.GsonBuilder;
 import net.minecraft.util.Identifier;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class ModConfig {
     public static ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler.createBuilder(ModConfig.class)
@@ -20,6 +22,12 @@ public class ModConfig {
 
     @SerialEntry(comment = "Port number used to serve the webinterface")
     public int httpPortNumber = 8080;
+
+    @SerialEntry(comment = "Enable ping on username")
+    public boolean pingOnUsername = true;
+
+    @SerialEntry(comment = "Extra ping keywords")
+    public List<String> pingKeywords = Arrays.asList();
 
     public static void init() {
         HANDLER.load();
