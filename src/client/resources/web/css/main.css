@@ -66,6 +66,7 @@ body {
 
 .message.ping {
     background-color: rgba(76, 175, 80, 0.1);
+    border-radius: 0 2px 2px 0;
 }
 
 .message.ping::before {
