@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-import { faviconCounter, formatTimestamp } from './util.mjs';
+import { updateFavicon, formatTimestamp } from './util.mjs';
 import { assertIsComponent, ComponentError, formatComponent, initializeObfuscation } from './message_parsing.mjs';
 import { parseModServerMessage } from './message_types.mjs';
 
@@ -33,6 +33,7 @@ let isLoadingHistory = false;
 
 // Used for the favicon
 let messageCount = 0;
+let hasPing = false;
 
 // Used to keep track of messages already shown. To prevent possible duplication on server join.
 /** @type {Set<string>} */
@@ -144,7 +145,8 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (querySelector
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         messageCount = 0;
-        faviconCounter(0);
+        hasPing = false;
+        updateFavicon(0, false);
     }
 });
 
@@ -227,12 +229,16 @@ function handleChatMessage(message) {
 
     if (document.visibilityState !== 'visible') {
         messageCount++;
-        faviconCounter(messageCount);
+        hasPing = hasPing || message.payload.isPing;
+        updateFavicon(messageCount, hasPing);
     }
 
     requestAnimationFrame(() => {
         const div = document.createElement('div');
-        div.className = 'message';
+        div.classList.add('message');
+        if (message.payload.isPing) {
+            div.classList.add('ping');
+        }
 
         // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen.
         const { timeString, fullDateTime } = formatTimestamp(message.timestamp);

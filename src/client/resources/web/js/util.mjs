@@ -2,13 +2,20 @@
 'use strict';
 
 /**
- * Render a favicon with a counter.
+ * Render a favicon with a counter and a ping indicator.
  * @param {number} count
+ * @param {boolean} hasPing
  */
-export function faviconCounter(count) {
+export function updateFavicon(count, hasPing) {
     const sizes = [16, 32];
 
     sizes.forEach(size => {
+        /** @type {HTMLLinkElement | null} */
+        const link = document.querySelector(`link[rel="icon"][sizes="${size}x${size}"]`);
+        if (!link) {
+            return;
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -40,11 +47,15 @@ export function faviconCounter(count) {
                 ctx.fillText(count > 99 ? '99+' : `${count}`, x, y);
             }
 
-            /** @type {HTMLLinkElement | null} */
-            const link = document.querySelector(`link[rel="icon"][sizes="${size}x${size}"]`);
-            if (link) {
-                link.href = canvas.toDataURL();
+            if (hasPing) {
+                // Draw a small red circle in the top right corner.
+                ctx.beginPath();
+                ctx.arc(size * 3 / 4, size / 4, size / 8, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ff0000';
+                ctx.fill();
             }
+
+            link.href = canvas.toDataURL();
         };
     });
 }
