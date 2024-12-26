@@ -43,15 +43,12 @@ const faviconInfo = {
 
     /**
      * Update the favicon
-     * @param {{messageCount?: number, hasPing?: boolean}} params
+     * @param {number} messageCount
+     * @param {boolean} hasPing
      */
-    update(params) {
-        if (params.messageCount !== undefined) {
-            this.messageCount = params.messageCount;
-        }
-        if (params.hasPing !== undefined) {
-            this.hasPing = params.hasPing;
-        }
+    update(messageCount, hasPing) {
+        this.messageCount = messageCount;
+        this.hasPing = hasPing;
 
         updateFavicon(this.messageCount, this.hasPing);
     },
@@ -247,10 +244,15 @@ function handleChatMessage(message) {
     displayedMessageIds.add(message.payload.uuid);
 
     if (document.visibilityState !== 'visible') {
-        faviconInfo.update({
-            messageCount: faviconInfo.getMessageCount() + 1,
-            hasPing: faviconInfo.getHasPing() || message.payload.isPing
-        });
+        let hasPing = faviconInfo.getHasPing();
+        if (!message.payload.history) {
+            hasPing ||= message.payload.isPing;
+        }
+
+        faviconInfo.update(
+            faviconInfo.getMessageCount() + 1,
+            hasPing
+        );
     }
 
     requestAnimationFrame(() => {
