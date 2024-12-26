@@ -2,6 +2,8 @@ package dev.creesch.model;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+
+import dev.creesch.config.ModConfig;
 import dev.creesch.util.MinecraftServerIdentifier;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
@@ -11,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class WebsocketMessageBuilder {
     private static final Gson gson = new Gson();
@@ -44,6 +47,7 @@ public class WebsocketMessageBuilder {
                 minecraftChatJson,
                 JsonObject.class
             ))
+            .isPing(isPing(message, client))
             .build();
 
         return WebsocketJsonMessage.createChatMessage(
@@ -54,10 +58,61 @@ public class WebsocketMessageBuilder {
         );
     }
 
-    /**
-     * Processes both chat and game messages, converting them to the appropriate format
-     *
 
+    /**
+     * Checks if the message is a ping.
+     *
+     * @param message The minecraft text message to process
+     * @param client The Minecraft client instance
+     * @return True if the message is a ping, false otherwise   
+     */
+    private static boolean isPing(Text message, MinecraftClient client) {
+        String messageString = message.getString();
+        ModConfig config = ModConfig.HANDLER.instance();
+
+        if (config.pingOnUsername && client.player != null) {
+            String playerName = client.player.getName().getString();
+            if (pingPattern(playerName).matcher(messageString).find()) {
+                return true;
+            }
+        }
+
+        for (String pingKeyword : config.pingKeywords) {
+            if (pingPattern(pingKeyword).matcher(messageString).find()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates a pattern for a ping keyword.
+     * 
+     * @param pingKeyword The keyword to ping for
+     * @return The pattern for the ping keyword
+     */
+    private static Pattern pingPattern(String pingKeyword) {
+        StringBuilder patternBuilder = new StringBuilder();
+        // Eats the standard minecraft chat formatting which starts with <username>.
+        // We don't want to ping based on usernames in that metadata, otherwise users
+        // will be pinged when they send messages because their messages are echoed back
+        // to them.
+        patternBuilder.append("^<[^>]+>");
+        // Allow for any amount of characters before the ping keyword.
+        patternBuilder.append(".*");
+        // Check for a word boundary before the ping keyword.
+        patternBuilder.append("\\b");
+        // Add the ping keyword.
+        patternBuilder.append(Pattern.quote(pingKeyword));
+        // Check for a word boundary after the ping keyword.
+        patternBuilder.append("\\b");
+
+        return Pattern.compile(patternBuilder.toString());
+    }
+
+    /**
+     * Processes both chat and game messages, converting them to the appropriate format.
      */
     public static WebsocketJsonMessage createHistoricChatMessage(
             long timestamp,
@@ -76,6 +131,7 @@ public class WebsocketMessageBuilder {
                 messageJson,
                 JsonObject.class
             ))
+            .isPing(false)
             .build();
 
         WebsocketJsonMessage.ChatServerInfo serverInfo = new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);

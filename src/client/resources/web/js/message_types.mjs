@@ -24,9 +24,10 @@
  * @typedef {BaseModServerMessage & {
  *   type: 'chatMessage',
  *   payload: {
- *     history?: boolean,
+ *     history: boolean,
  *     component: Component,
  *     uuid: string,
+ *     isPing: boolean,
  *   }
  * }} ChatMessage
  */

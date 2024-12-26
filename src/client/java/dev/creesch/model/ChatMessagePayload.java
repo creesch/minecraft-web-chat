@@ -10,4 +10,5 @@ public class ChatMessagePayload {
     private boolean history;
     private String uuid;
     private JsonObject component;
+    private boolean isPing;
 }
