@@ -31,9 +31,39 @@ let reconnectAttempts = 0;
 const messageHistoryLimit = 50;
 let isLoadingHistory = false;
 
-// Used for the favicon
-let messageCount = 0;
-let hasPing = false;
+const faviconInfo = {
+    messageCount: 0,
+    hasPing: false,
+
+    clear() {
+        this.messageCount = 0;
+        this.hasPing = false;
+        updateFavicon(this.messageCount, this.hasPing);
+    },
+
+    /**
+     * Update the favicon
+     * @param {{messageCount?: number, hasPing?: boolean}} params
+     */
+    update(params) {
+        if (params.messageCount !== undefined) {
+            this.messageCount = params.messageCount;
+        }
+        if (params.hasPing !== undefined) {
+            this.hasPing = params.hasPing;
+        }
+
+        updateFavicon(this.messageCount, this.hasPing);
+    },
+
+    getMessageCount() {
+        return this.messageCount;
+    },
+
+    getHasPing() {
+        return this.hasPing;
+    }
+};
 
 // Used to keep track of messages already shown. To prevent possible duplication on server join.
 /** @type {Set<string>} */
@@ -41,19 +71,10 @@ const displayedMessageIds = new Set();
 
 /**
  * Server information and related methods.
- * @type {{
- *   name: string | undefined;
- *   id: string | undefined;
- *   baseTitle: string;
- *   update: (name: string , id: string) => void;
- *   clear: () => void;
- *   getId: () => string | undefined;
- *   getName: () => string | undefined;
- * }}
  */
 const serverInfo = {
-    name: undefined,
-    id: undefined,
+    name: /** @type {string | undefined} */ (undefined),
+    id: /** @type {string | undefined} */ (undefined),
     baseTitle: document.title, // Store the page title on load so we can manipulate it based on events and always restore it.
 
     /**
@@ -144,9 +165,7 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (querySelector
 // Favicon updates if tab is not in focus
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        messageCount = 0;
-        hasPing = false;
-        updateFavicon(0, false);
+        faviconInfo.clear();
     }
 });
 
@@ -228,9 +247,10 @@ function handleChatMessage(message) {
     displayedMessageIds.add(message.payload.uuid);
 
     if (document.visibilityState !== 'visible') {
-        messageCount++;
-        hasPing = hasPing || message.payload.isPing;
-        updateFavicon(messageCount, hasPing);
+        faviconInfo.update({
+            messageCount: faviconInfo.getMessageCount() + 1,
+            hasPing: faviconInfo.getHasPing() || message.payload.isPing
+        });
     }
 
     requestAnimationFrame(() => {
