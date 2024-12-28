@@ -75,7 +75,13 @@ public class WebInterface {
             }
 
             // Security headers
-            ctx.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
+            ctx.header("Content-Security-Policy",
+                "default-src 'self'; " +
+                "script-src 'self' 'unsafe-inline'; " +
+                "style-src 'self' 'unsafe-inline'; " +
+                "img-src 'self' data:; " +
+                "connect-src 'self' https://textures.minecraft.net;" // Need to fetch player textures.
+            );
             ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
             ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
         });
@@ -162,15 +168,24 @@ public class WebInterface {
                 }
                 // Got a world, use JOIN state to communicate this
                 WebsocketJsonMessage joinMessage = WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN);
-
-                String jsonMessage = gson.toJson(
+                String jsonJoinMessage = gson.toJson(
                     joinMessage
                 );
-                LOGGER.info(jsonMessage);
+
+                // Even though the client will receive the player list shortly anyway. It will be with a noticable delay.
+                // So on connect make sure the list is send immediatly.
+                WebsocketJsonMessage playerListMessage = WebsocketMessageBuilder.createPlayerList(client);
+                String jsonPlayerListMessage = gson.toJson(
+                    playerListMessage
+                );
+
                 try {
-                    ctx.send(jsonMessage);
+                    ctx.send(jsonJoinMessage);
+                    ctx.send(jsonPlayerListMessage);
                 } catch (Exception e) {
-                    LOGGER.warn("Failed to send JOIN message to connection: {}", ctx.session.getRemoteAddress(), e);
+                    LOGGER.info(jsonJoinMessage);
+                    LOGGER.info(jsonPlayerListMessage);
+                    LOGGER.warn("Failed to send JOIN or PlayerList message to connection: {}", ctx.session.getRemoteAddress(), e);
                 }
             });
 
@@ -247,12 +262,11 @@ public class WebInterface {
 
     public void broadcastMessage(WebsocketJsonMessage message) {
         String jsonMessage = gson.toJson(message);
-        LOGGER.info(jsonMessage);
-
         connections.forEach(ctx -> {
             try {
                 ctx.send(jsonMessage);
             } catch (Exception e) {
+                LOGGER.info(jsonMessage);
                 LOGGER.warn("Failed to send message to connection: {}", ctx.session.getRemoteAddress(), e);
             }
         });

@@ -44,6 +44,24 @@
  */
 
 /**
+ * Player information matching PlayerListInfoEntry on server
+ * @typedef {Object} PlayerInfo
+ * @property {string} playerId
+ * @property {string} playerName
+ * @property {string} playerDisplayName
+ * @property {string} playerTextureUrl
+ */
+
+/**
+ * ServerPlayerList message from Minecraft
+ * @typedef {BaseModServerMessage & {
+*   type: 'serverPlayerList',
+*   payload: PlayerInfo[]
+* }} ServerPlayerList
+*/
+
+
+/**
  * @typedef {'init'| 'join' | 'disconnect'} ServerConnectionStates
  */
 
@@ -56,7 +74,7 @@
  */
 
 /**
- * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState | HistoryMetaData)} ModServerMessage
+ * @typedef {BaseModServerMessage & (ChatMessage | ServerConnectionState | HistoryMetaData | ServerPlayerList)} ModServerMessage
  */
 
 /**
@@ -75,7 +93,8 @@ export function isModServerMessage(message) {
 
     return message.type === 'chatMessage' ||
         message.type === 'serverConnectionState' ||
-        message.type === 'historyMetaData';
+        message.type === 'historyMetaData' ||
+        message.type === 'serverPlayerList';
 }
 
 /**

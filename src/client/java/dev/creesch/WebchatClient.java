@@ -7,8 +7,10 @@ import dev.creesch.storage.ChatMessageRepository;
 import dev.creesch.util.NamedLogger;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
@@ -19,6 +21,7 @@ public class WebchatClient implements ClientModInitializer {
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private WebInterface webInterface;
     private ChatMessageRepository messageRepository;
+    private int tickCounter = 0;
 
     @Override
     public void onInitializeClient() {
@@ -62,8 +65,15 @@ public class WebchatClient implements ClientModInitializer {
                     return;
                 }
 
+                // Send join event
                 webInterface.broadcastMessage(
                     WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN)
+                );
+
+                // Even though the clients will receive the player list shortly anyway. It will be with a noticable delay.
+                // So on join make sure the list is send immediatly.
+                webInterface.broadcastMessage(
+                    WebsocketMessageBuilder.createPlayerList(client)
                 );
 
                 String webchatPort = String.valueOf(config.httpPortNumber);
@@ -91,6 +101,29 @@ public class WebchatClient implements ClientModInitializer {
             }
 
             webInterface.shutdown();
+        });
+
+        // For the client in fabric there are no events to listen for other players joining or leaving the server.
+        // In order to do that a mixin would be needed to directly access minecraft.
+        // Considering that reading the player list is a fairly low impact operation it simply
+        // works out to just send clients updates every couple of ticks.
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Only used to send player list updates. So a client is needed and a world (on a server)
+            if (client == null || client.world == null) {
+                return;
+            }
+
+            tickCounter++;
+            // Send update every 80 ticks (~4 seconds depending on circumstances in game)
+            // Not fast but should be good enough for most use cases.
+            if (tickCounter % 80 == 0) {
+                // Send player list
+                webInterface.broadcastMessage(
+                    WebsocketMessageBuilder.createPlayerList(client)
+                );
+
+                tickCounter = 0; // Reset counter
+            }
         });
     }
 }

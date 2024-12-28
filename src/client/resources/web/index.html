@@ -12,23 +12,29 @@
     <link rel="stylesheet" href="css/message_formatting.css">
 </head>
 <body>
-<div id="container">
-    <div id="messages">
-        <div id="load-more-container">
-            <button id="load-more-button">Load More</button>
+    <div id="container">
+        <div id="chat-area">
+            <div id="messages">
+                <div id="load-more-container">
+                    <button id="load-more-button">Load More</button>
+                </div>
+            </div>
+            <div id="input-area">
+                <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
+                <button id="message-send-button">Send</button>
+            </div>
+        </div>
+        <div id="player-list-container">
+            <h2>Players Online <span id="player-count">(0)</span></h2>
+            <ul id="player-list"></ul>
         </div>
     </div>
-    <div id="input-area">
-        <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
-        <button id="message-send-button">Send</button>
+    <div id="status" class="status-disconnected">
+        <span class="connection-status">Disconnected</span>
+        -
+        <span class="server-name">No server</span>
     </div>
-</div>
-<div id="status" class="status-disconnected">
-    <span class="connection-status">Disconnected</span>
-    -
-    <span class="server-name">No server</span>
-</div>
 
-<script type="module" src="js/chat.mjs"></script>
+    <script type="module" src="js/chat.mjs"></script>
 </body>
 </html>

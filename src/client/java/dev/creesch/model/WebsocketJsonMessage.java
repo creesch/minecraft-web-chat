@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,7 +31,9 @@ public class WebsocketJsonMessage {
         @SerializedName("serverConnectionState")
         SERVER_CONNECTION_STATE,
         @SerializedName("historyMetaData")
-        HISTORY_META_DATA
+        HISTORY_META_DATA,
+        @SerializedName("serverPlayerList")
+        SERVER_PLAYER_LIST
     }
 
     /**
@@ -91,5 +95,14 @@ public class WebsocketJsonMessage {
             .build();
 
         return new WebsocketJsonMessage(timestamp, server, MessageType.HISTORY_META_DATA, historyMetaDataPayload, minecraftVersion);
+    }
+
+    public static WebsocketJsonMessage createServerPlayerListMessage (
+        long timestamp,
+        ChatServerInfo server,
+        List<PlayerListInfoEntry> playerList,
+        String minecraftVersion
+    ) {
+        return new WebsocketJsonMessage(timestamp, server, MessageType.SERVER_PLAYER_LIST, playerList, minecraftVersion);
     }
 }
