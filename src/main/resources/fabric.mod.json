@@ -1,43 +1,43 @@
 {
-	"schemaVersion": 1,
-	"id": "web-chat",
-	"version": "${version}",
-	"name": "Web chat",
-	"description": "Chat in minecraft from your browser",
-	"authors": [
-		"Creesch"
-	],
+  "schemaVersion": 1,
+  "id": "web-chat",
+  "version": "${version}",
+  "name": "Web chat",
+  "description": "Chat in minecraft from your browser",
+  "authors": [
+    "Creesch"
+  ],
   "contributors": [
     "teaearlgraycold"
   ],
-	"contact": {
-		"homepage": "https://modrinth.com/mod/web-chat",
-		"sources": "https://github.com/creesch/minecraft-web-chat",
+  "contact": {
+    "homepage": "https://modrinth.com/mod/web-chat",
+    "sources": "https://github.com/creesch/minecraft-web-chat",
     "issues": "https://github.com/creesch/minecraft-web-chat/issues"
-	},
-	"license": "Apache-2.0 license",
-	"icon": "assets/web-chat/icon.png",
-	"environment": "client",
-	"entrypoints": {
-		"main": [
-			"dev.creesch.Webchat"
-		],
-		"client": [
-			"dev.creesch.WebchatClient"
-		],
-		"modmenu": [
-			"dev.creesch.config.ModMenuIntegration"
-		]
+  },
+  "license": "Apache-2.0 license",
+  "icon": "assets/web-chat/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "dev.creesch.Webchat"
+    ],
+    "client": [
+      "dev.creesch.WebchatClient"
+    ],
+    "modmenu": [
+      "dev.creesch.config.ModMenuIntegration"
+    ]
 
-	},
-	"depends": {
-		"fabricloader": ">=0.16.9",
-		"minecraft": "~1.21.1",
-		"java": ">=21",
-		"fabric-api": "*",
-		"yet_another_config_lib_v3": ">=3.6.1+1.21-fabric"
-	},
-	"recommends": {
-		"modmenu": ">=11.0.3"
-	}
+  },
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "yet_another_config_lib_v3": ">=3.6.1+1.21-fabric"
+  },
+  "recommends": {
+    "modmenu": ">=11.0.3"
+  }
 }
