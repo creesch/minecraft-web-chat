@@ -229,8 +229,8 @@ public class WebsocketMessageBuilder {
 
                 if (texturesObj.has("SKIN")) {
                     String textureURL = texturesObj.getAsJsonObject("SKIN")
-                    .get("url")
-                    .getAsString();
+                        .get("url")
+                        .getAsString();
 
                     if (MINECRAFT_TEXTURE_URL_PATTERN.matcher(textureURL).matches()) {
                         // Replace http with https to ensure secure URLs
