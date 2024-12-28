@@ -68,7 +68,7 @@ public class ModConfigScreen {
                                         .description(
                                             OptionDescription.of(Text.literal(
                                                 "Port number used to serve the web interface.\n" +
-                                                "Make sure that both this port and the one above it (+1) are available.\n" +
+                                                "Make sure that this port is available.\n" +
                                                 "\n" +
                                                 "IMPORTANT: You need to restart minecraft for this to take effect."
                                             ))

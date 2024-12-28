@@ -7,6 +7,9 @@
 	"authors": [
 		"Creesch"
 	],
+  "contributors": [
+    "teaearlgraycold"
+  ],
 	"contact": {
 		"homepage": "https://github.com/creesch/minecraft-web-chat",
 		"sources": "https://github.com/creesch/minecraft-web-chat"
@@ -33,7 +36,7 @@
 		"fabric-api": "*",
 		"yet_another_config_lib_v3": ">=3.6.1+1.21-fabric"
 	},
-	"suggests": {
-		"another-mod": "*"
+	"recommends": {
+		"modmenu": ">=11.0.3"
 	}
 }
