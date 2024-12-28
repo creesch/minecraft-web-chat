@@ -93,8 +93,6 @@ public class WebsocketMessageBuilder {
                     return true;
                 }
             }
-
-
         }
 
         for (String pingKeyword : config.pingKeywords) {
