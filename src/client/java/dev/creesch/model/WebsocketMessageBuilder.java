@@ -255,31 +255,31 @@ public class WebsocketMessageBuilder {
         ClientPlayNetworkHandler networkHandler = client.getNetworkHandler();
 
         List<PlayerListInfoEntry> playerList = new ArrayList<>();
-        if (networkHandler != null) {
-            networkHandler.getPlayerList().forEach(player -> {
-                GameProfile profile = player.getProfile(); // Contains UUID and name
-                String playerId = profile.getId().toString();
-                String playerName = profile.getName();
-                String playerDisplayName = player.getDisplayName() != null ? player.getDisplayName().getString() : playerName;
 
-                // To get the texture we need to digg a little bit deeper.
-                // Note: This retrieves the texture URL. In theory, it is possible to fetch player textures from minecraft.
-                // In practice this is a messy afair because of how texture loading works. So it is easier to let the web client.
-                // Fetch the texture from mojang directly and cut the head out of it.
-                String playerTextureUrl = getPlayerTextureUrl(profile);
-
-                PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
-                    .playerId(playerId)
-                    .playerName(playerName)
-                    .playerDisplayName(playerDisplayName)
-                    .playerTextureUrl(playerTextureUrl)
-                    .build();
-
-                playerList.add(playerInfo);
-            });
-        } else {
+        if (networkHandler == null) {
             return null;
         }
+        networkHandler.getPlayerList().forEach(player -> {
+            GameProfile profile = player.getProfile(); // Contains UUID and name
+            String playerId = profile.getId().toString();
+            String playerName = profile.getName();
+            String playerDisplayName = player.getDisplayName() != null ? player.getDisplayName().getString() : playerName;
+
+            // To get the texture we need to digg a little bit deeper.
+            // Note: This retrieves the texture URL. In theory, it is possible to fetch player textures from minecraft.
+            // In practice this is a messy afair because of how texture loading works. So it is easier to let the web client.
+            // Fetch the texture from mojang directly and cut the head out of it.
+            String playerTextureUrl = getPlayerTextureUrl(profile);
+
+            PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
+                .playerId(playerId)
+                .playerName(playerName)
+                .playerDisplayName(playerDisplayName)
+                .playerTextureUrl(playerTextureUrl)
+                .build();
+
+            playerList.add(playerInfo);
+        });
 
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
