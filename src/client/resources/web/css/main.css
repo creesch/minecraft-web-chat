@@ -230,9 +230,8 @@ body {
     #status {
         top: 0.5rem;
         bottom: auto;
-        left: 50%;
-        transform: translateX(-50%);
-        width: calc(100% - 1rem);
-        max-width: 400px;
+        left: 0.5rem;
+        right: 0.5rem;
+        width: auto;
     }
 }
