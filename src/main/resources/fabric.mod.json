@@ -11,8 +11,9 @@
     "teaearlgraycold"
   ],
 	"contact": {
-		"homepage": "https://github.com/creesch/minecraft-web-chat",
-		"sources": "https://github.com/creesch/minecraft-web-chat"
+		"homepage": "https://modrinth.com/mod/web-chat",
+		"sources": "https://github.com/creesch/minecraft-web-chat",
+    "issues": "https://github.com/creesch/minecraft-web-chat/issues"
 	},
 	"license": "Apache-2.0 license",
 	"icon": "assets/web-chat/icon.png",
