@@ -2,4 +2,6 @@
 build
 coverage
 bin
-.github
+
+# Prettier is a bit too opinionated about empty lines while those can be needed for formatting
+*.md

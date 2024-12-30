@@ -2,7 +2,9 @@
     "name": "minecraft-web-chat",
     "displayName": "minecraft-web-chat",
     "scripts": {
-        "test": "vitest"
+        "test": "vitest",
+        "prettier": "prettier . --write",
+        "eslint": "eslint ."
     },
     "devDependencies": {
         "@eslint/js": "^9.17.0",
