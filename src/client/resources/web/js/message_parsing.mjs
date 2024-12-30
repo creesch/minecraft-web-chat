@@ -3,10 +3,10 @@
 
 import { translations } from './translations.mjs';
 
-// Minecraft JSON message parsing to HTML. 
-// A lot of the code below has been inspired (though not directly copied) by prismarine-chat: https://github.com/PrismarineJS/prismarine-chat 
+// Minecraft JSON message parsing to HTML.
+// A lot of the code below has been inspired (though not directly copied) by prismarine-chat: https://github.com/PrismarineJS/prismarine-chat
 
-// These limits prevent DoS attacks and stack overflow issues from maliciously crafted messages 
+// These limits prevent DoS attacks and stack overflow issues from maliciously crafted messages
 const MAX_CHAT_LENGTH = 4096;
 const MAX_CHAT_DEPTH = 8;
 
@@ -28,14 +28,10 @@ const VALID_COLORS = [
     'light_purple',
     'yellow',
     'white',
-    'reset'
+    'reset',
 ];
 
-const VALID_HOVER_EVENTS = [
-    'show_text',
-    'show_item',
-    'show_entity'
-];
+const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
 
 /**
  * @typedef {Object} Component
@@ -125,19 +121,25 @@ export function assertIsComponent(component, path = []) {
      */
     function assertIsHoverEvent(hoverEvent, path) {
         if (!hoverEvent || typeof hoverEvent !== 'object') {
-            throw new ComponentError("HoverEvent is not an object", path);
+            throw new ComponentError('HoverEvent is not an object', path);
         }
 
         if (!('action' in hoverEvent)) {
-            throw new ComponentError("HoverEvent.action is not present", path);
+            throw new ComponentError('HoverEvent.action is not present', path);
         }
 
         if (typeof hoverEvent.action !== 'string') {
-            throw new ComponentError("HoverEvent.action is not a string", [...path, 'action']);
+            throw new ComponentError('HoverEvent.action is not a string', [
+                ...path,
+                'action',
+            ]);
         }
 
         if (!VALID_HOVER_EVENTS.includes(hoverEvent.action)) {
-            throw new ComponentError(`HoverEvent.action is not a valid hover event: ${hoverEvent.action}`, [...path, 'action']);
+            throw new ComponentError(
+                `HoverEvent.action is not a valid hover event: ${hoverEvent.action}`,
+                [...path, 'action'],
+            );
         }
 
         switch (hoverEvent.action) {
@@ -161,10 +163,14 @@ export function assertIsComponent(component, path = []) {
      */
     function assertIsShowTextHoverEvent(hoverEvent, path) {
         if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
-            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+            throw new ComponentError(
+                'HoverEvent does not have a contents or value property',
+                path,
+            );
         }
 
-        const contents = 'contents' in hoverEvent ? hoverEvent.contents : hoverEvent.value;
+        const contents =
+            'contents' in hoverEvent ? hoverEvent.contents : hoverEvent.value;
         if (typeof contents === 'string') {
             return;
         }
@@ -181,7 +187,11 @@ export function assertIsComponent(component, path = []) {
                     return;
                 }
 
-                assertIsComponent(component, [...path, 'contents', index.toString()]);
+                assertIsComponent(component, [
+                    ...path,
+                    'contents',
+                    index.toString(),
+                ]);
             });
         } else {
             assertIsComponent(contents, [...path, 'contents']);
@@ -196,35 +206,67 @@ export function assertIsComponent(component, path = []) {
      */
     function assertIsShowItemHoverEvent(hoverEvent, path) {
         if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
-            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+            throw new ComponentError(
+                'HoverEvent does not have a contents or value property',
+                path,
+            );
         }
 
         if ('value' in hoverEvent) {
             if (typeof hoverEvent.value !== 'string') {
-                throw new ComponentError("HoverEvent.value is not a string", [...path, 'value']);
+                throw new ComponentError('HoverEvent.value is not a string', [
+                    ...path,
+                    'value',
+                ]);
             }
 
             return;
         }
 
-        if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
-            throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+        if (
+            typeof hoverEvent.contents !== 'object' ||
+            hoverEvent.contents === null
+        ) {
+            throw new ComponentError('HoverEvent.contents is not an object', [
+                ...path,
+                'contents',
+            ]);
         }
 
         if (!('id' in hoverEvent.contents)) {
-            throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+            throw new ComponentError('HoverEvent.contents.id is not present', [
+                ...path,
+                'contents',
+                'id',
+            ]);
         }
 
         if (typeof hoverEvent.contents.id !== 'string') {
-            throw new ComponentError("HoverEvent.contents.id is not a string", [...path, 'contents', 'id']);
+            throw new ComponentError('HoverEvent.contents.id is not a string', [
+                ...path,
+                'contents',
+                'id',
+            ]);
         }
 
-        if ('count' in hoverEvent.contents && typeof hoverEvent.contents.count !== 'number') {
-            throw new ComponentError("HoverEvent.contents.count is not a number", [...path, 'contents', 'count']);
+        if (
+            'count' in hoverEvent.contents &&
+            typeof hoverEvent.contents.count !== 'number'
+        ) {
+            throw new ComponentError(
+                'HoverEvent.contents.count is not a number',
+                [...path, 'contents', 'count'],
+            );
         }
 
-        if ('tag' in hoverEvent.contents && typeof hoverEvent.contents.tag !== 'string') {
-            throw new ComponentError("HoverEvent.contents.tag is not a string", [...path, 'contents', 'tag']);
+        if (
+            'tag' in hoverEvent.contents &&
+            typeof hoverEvent.contents.tag !== 'string'
+        ) {
+            throw new ComponentError(
+                'HoverEvent.contents.tag is not a string',
+                [...path, 'contents', 'tag'],
+            );
         }
     }
 
@@ -236,77 +278,148 @@ export function assertIsComponent(component, path = []) {
      */
     function assertIsShowEntityHoverEvent(hoverEvent, path) {
         if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
-            throw new ComponentError("HoverEvent does not have a contents or value property", path);
+            throw new ComponentError(
+                'HoverEvent does not have a contents or value property',
+                path,
+            );
         }
 
         if ('value' in hoverEvent) {
             if (typeof hoverEvent.value !== 'string') {
-                throw new ComponentError("HoverEvent.value is not a string", [...path, 'value']);
+                throw new ComponentError('HoverEvent.value is not a string', [
+                    ...path,
+                    'value',
+                ]);
             }
 
             return;
         }
 
-        if (typeof hoverEvent.contents !== 'object' || hoverEvent.contents === null) {
-            throw new ComponentError("HoverEvent.contents is not an object", [...path, 'contents']);
+        if (
+            typeof hoverEvent.contents !== 'object' ||
+            hoverEvent.contents === null
+        ) {
+            throw new ComponentError('HoverEvent.contents is not an object', [
+                ...path,
+                'contents',
+            ]);
         }
 
         if (!('type' in hoverEvent.contents)) {
-            throw new ComponentError("HoverEvent.contents.type is not present", [...path, 'contents', 'type']);
+            throw new ComponentError(
+                'HoverEvent.contents.type is not present',
+                [...path, 'contents', 'type'],
+            );
         }
 
         if (typeof hoverEvent.contents.type !== 'string') {
-            throw new ComponentError("HoverEvent.contents.type is not a string", [...path, 'contents', 'type']);
+            throw new ComponentError(
+                'HoverEvent.contents.type is not a string',
+                [...path, 'contents', 'type'],
+            );
         }
 
         if (!('id' in hoverEvent.contents)) {
-            throw new ComponentError("HoverEvent.contents.id is not present", [...path, 'contents', 'id']);
+            throw new ComponentError('HoverEvent.contents.id is not present', [
+                ...path,
+                'contents',
+                'id',
+            ]);
         }
 
-        if ('name' in hoverEvent.contents && typeof hoverEvent.contents.name !== 'string') {
-            throw new ComponentError("HoverEvent.contents.name is not a string", [...path, 'contents', 'name']);
+        if (
+            'name' in hoverEvent.contents &&
+            typeof hoverEvent.contents.name !== 'string'
+        ) {
+            throw new ComponentError(
+                'HoverEvent.contents.name is not a string',
+                [...path, 'contents', 'name'],
+            );
         }
     }
 
-    if (!('text' in component) && !('translate' in component) && !('extra' in component)) {
-        throw new ComponentError("Component does not have a text, translate, or extra property", path);
+    if (
+        !('text' in component) &&
+        !('translate' in component) &&
+        !('extra' in component)
+    ) {
+        throw new ComponentError(
+            'Component does not have a text, translate, or extra property',
+            path,
+        );
     }
 
     if ('text' in component && typeof component.text !== 'string') {
-        throw new ComponentError("Component.text is not a string", [...path, 'text']);
+        throw new ComponentError('Component.text is not a string', [
+            ...path,
+            'text',
+        ]);
     }
 
     if ('translate' in component && typeof component.translate !== 'string') {
-        throw new ComponentError("Component.translate is not a string", [...path, 'translate']);
+        throw new ComponentError('Component.translate is not a string', [
+            ...path,
+            'translate',
+        ]);
     }
 
     if ('color' in component && typeof component.color !== 'string') {
-        throw new ComponentError("Component.color is not a string", [...path, 'color']);
+        throw new ComponentError('Component.color is not a string', [
+            ...path,
+            'color',
+        ]);
     }
 
     if ('bold' in component && typeof component.bold !== 'boolean') {
-        throw new ComponentError("Component.bold is not a boolean", [...path, 'bold']);
+        throw new ComponentError('Component.bold is not a boolean', [
+            ...path,
+            'bold',
+        ]);
     }
 
     if ('italic' in component && typeof component.italic !== 'boolean') {
-        throw new ComponentError("Component.italic is not a boolean", [...path, 'italic']);
+        throw new ComponentError('Component.italic is not a boolean', [
+            ...path,
+            'italic',
+        ]);
     }
 
-    if ('underlined' in component && typeof component.underlined !== 'boolean') {
-        throw new ComponentError("Component.underlined is not a boolean", [...path, 'underlined']);
+    if (
+        'underlined' in component &&
+        typeof component.underlined !== 'boolean'
+    ) {
+        throw new ComponentError('Component.underlined is not a boolean', [
+            ...path,
+            'underlined',
+        ]);
     }
 
-    if ('strikethrough' in component && typeof component.strikethrough !== 'boolean') {
-        throw new ComponentError("Component.strikethrough is not a boolean", [...path, 'strikethrough']);
+    if (
+        'strikethrough' in component &&
+        typeof component.strikethrough !== 'boolean'
+    ) {
+        throw new ComponentError('Component.strikethrough is not a boolean', [
+            ...path,
+            'strikethrough',
+        ]);
     }
 
-    if ('obfuscated' in component && typeof component.obfuscated !== 'boolean') {
-        throw new ComponentError("Component.obfuscated is not a boolean", [...path, 'obfuscated']);
+    if (
+        'obfuscated' in component &&
+        typeof component.obfuscated !== 'boolean'
+    ) {
+        throw new ComponentError('Component.obfuscated is not a boolean', [
+            ...path,
+            'obfuscated',
+        ]);
     }
 
     if ('extra' in component) {
         if (!Array.isArray(component.extra)) {
-            throw new ComponentError("Component.extra is not an array", [...path, 'extra']);
+            throw new ComponentError('Component.extra is not an array', [
+                ...path,
+                'extra',
+            ]);
         }
 
         component.extra.forEach((component, index) => {
@@ -318,15 +431,18 @@ export function assertIsComponent(component, path = []) {
             }
 
             assertIsComponent(component, [...path, 'extra', index.toString()]);
-        })
+        });
     }
 
     if ('with' in component) {
         if (!Array.isArray(component.with)) {
-            throw new ComponentError("Component.with is not an array", [...path, 'with']);
+            throw new ComponentError('Component.with is not an array', [
+                ...path,
+                'with',
+            ]);
         }
 
-        component.with.forEach((component, index) =>{
+        component.with.forEach((component, index) => {
             if (typeof component === 'string') {
                 return;
             }
@@ -359,9 +475,9 @@ function isValidColor(color) {
     }
 
     return /^#[0-9a-fA-F]{6}$/.test(color); // Allow valid hex colors (e.g., #FF0000)
-} 
+}
 
-// Imitates Minecraft's obfuscated text. 
+// Imitates Minecraft's obfuscated text.
 export function initializeObfuscation() {
     const chars = `
         ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
@@ -397,11 +513,15 @@ export function initializeObfuscation() {
                 const element = elements[i];
                 if (!element) continue;
 
-                const length = element.textContent ? element.textContent.length : 0;
+                const length = element.textContent
+                    ? element.textContent.length
+                    : 0;
                 let result = '';
 
                 for (let j = 0; j < length; j++) {
-                    result += chars.charAt(Math.floor(Math.random() * charsLength));
+                    result += chars.charAt(
+                        Math.floor(Math.random() * charsLength),
+                    );
                 }
 
                 element.textContent = result;
@@ -436,10 +556,12 @@ function linkifyText(text) {
     while (match !== null) {
         // Add text before the URL
         if (lastIndex < match.index) {
-            result.push(document.createTextNode(text.slice(lastIndex, match.index)));
+            result.push(
+                document.createTextNode(text.slice(lastIndex, match.index)),
+            );
         }
 
-        const url = /** @type {string} */(match[1]);
+        const url = /** @type {string} */ (match[1]);
         const a = document.createElement('a');
         a.href = url;
         a.rel = 'noopener noreferrer';
@@ -475,13 +597,17 @@ function numberedSubstitution(template, args) {
     while (match !== null) {
         // Add text before the placeholder
         if (lastIndex < match.index) {
-            result.push(document.createTextNode(template.slice(lastIndex, match.index)));
+            result.push(
+                document.createTextNode(template.slice(lastIndex, match.index)),
+            );
         }
 
-        const index = parseInt(/** @type {string} */(match[1])) - 1;
+        const index = parseInt(/** @type {string} */ (match[1])) - 1;
         const value = args[index];
         if (!value) {
-            console.warn(`Missing argument ${index} for template "${template}"`);
+            console.warn(
+                `Missing argument ${index} for template "${template}"`,
+            );
             result.push(document.createTextNode(match[0]));
         } else if (typeof value === 'string') {
             result.push(document.createTextNode(value));
@@ -523,12 +649,16 @@ function simpleSubstitution(template, args) {
     while (match !== null) {
         // Add text before the placeholder
         if (lastIndex < match.index) {
-            result.push(document.createTextNode(template.slice(lastIndex, match.index)));
+            result.push(
+                document.createTextNode(template.slice(lastIndex, match.index)),
+            );
         }
 
         const value = args[index++];
         if (!value) {
-            console.warn(`Missing argument ${index} for template "${template}"`);
+            console.warn(
+                `Missing argument ${index} for template "${template}"`,
+            );
             result.push(document.createTextNode('%s'));
         } else if (typeof value === 'string') {
             result.push(document.createTextNode(value));
@@ -569,7 +699,7 @@ function formatTranslation(key, args) {
             return [document.createTextNode(key)];
         }
 
-        return args.map(value => {
+        return args.map((value) => {
             if (typeof value === 'string') {
                 return document.createTextNode(value);
             }
@@ -611,13 +741,13 @@ function formatComponentPlainText(component) {
         result += component.text;
     } else if (component.translate) {
         result += formatTranslation(component.translate, component.with ?? [])
-            .map(component => component.textContent ?? '')
+            .map((component) => component.textContent ?? '')
             .join('');
     }
 
     if (component.extra) {
         result += component.extra
-            .map(component => {
+            .map((component) => {
                 if (typeof component === 'string') {
                     return component;
                 }
@@ -640,7 +770,7 @@ function formatComponentPlainText(component) {
  */
 function formatHoverEvent(hoverEvent) {
     switch (hoverEvent.action) {
-        case 'show_text':
+        case 'show_text': {
             const contents = hoverEvent.contents ?? hoverEvent.value;
             if (typeof contents === 'undefined') {
                 console.warn('HoverEvent.contents is undefined');
@@ -655,20 +785,23 @@ function formatHoverEvent(hoverEvent) {
             }
 
             if (Array.isArray(contents)) {
-                return contents.map(component => {
-                    if (typeof component === 'string') {
-                        return component;
-                    }
-                    if (typeof component === 'number') {
-                        return String(component);
-                    }
+                return contents
+                    .map((component) => {
+                        if (typeof component === 'string') {
+                            return component;
+                        }
+                        if (typeof component === 'number') {
+                            return String(component);
+                        }
 
-                    return formatComponentPlainText(component);
-                }).join('');
+                        return formatComponentPlainText(component);
+                    })
+                    .join('');
             }
 
             return formatComponentPlainText(contents);
-        case 'show_item':
+        }
+        case 'show_item': {
             if (!hoverEvent.contents) {
                 // Don't attempt to parse SNBT data in hoverEvent.value
                 console.warn('Unsupported legacy hoverEvent');
@@ -680,14 +813,17 @@ function formatHoverEvent(hoverEvent) {
             }
 
             return hoverEvent.contents.id;
-        case 'show_entity':
+        }
+
+        case 'show_entity': {
             if (!hoverEvent.contents) {
                 // Don't attempt to parse SNBT data in hoverEvent.value
                 console.warn('Unsupported legacy hoverEvent');
                 return '';
             }
 
-            return hoverEvent.contents.name || "Unnamed Entity";
+            return hoverEvent.contents.name || 'Unnamed Entity';
+        }
     }
 }
 
@@ -708,7 +844,9 @@ export function formatComponent(component) {
             } else if (component.color.startsWith('#')) {
                 result.style.color = component.color;
             } else {
-                result.classList.add(`mc-${component.color.replace(/_/g, '-')}`);
+                result.classList.add(
+                    `mc-${component.color.replace(/_/g, '-')}`,
+                );
             }
         }
 
@@ -734,16 +872,19 @@ export function formatComponent(component) {
         }
 
         if (component.text) {
-            linkifyText(component.text)
-                .forEach(component => result.appendChild(component));
+            linkifyText(component.text).forEach((component) =>
+                result.appendChild(component),
+            );
         } else if (component.translate) {
-            formatTranslation(component.translate, component.with ?? [])
-                .forEach(component => result.appendChild(component));
+            formatTranslation(
+                component.translate,
+                component.with ?? [],
+            ).forEach((component) => result.appendChild(component));
         }
 
         if (component.extra) {
             component.extra
-                .map(component => {
+                .map((component) => {
                     if (typeof component === 'string') {
                         return document.createTextNode(component);
                     }
@@ -753,9 +894,9 @@ export function formatComponent(component) {
 
                     return formatComponent(component);
                 })
-                .forEach(component => result.appendChild(component));
+                .forEach((component) => result.appendChild(component));
         }
-    
+
         if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
             console.warn('Chat message exceeded maximum length, truncating');
             result.textContent = result.textContent.slice(0, MAX_CHAT_LENGTH);
@@ -764,6 +905,8 @@ export function formatComponent(component) {
         return result;
     } catch (error) {
         console.error('Error formatting component:', error);
-        return document.createTextNode(String(component.text ?? '').slice(0, MAX_CHAT_LENGTH));
+        return document.createTextNode(
+            String(component.text ?? '').slice(0, MAX_CHAT_LENGTH),
+        );
     }
 }
