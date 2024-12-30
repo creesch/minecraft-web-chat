@@ -1,3 +1,7 @@
+buildscript {
+  apply from: 'dependencies.gradle'
+}
+
 plugins {
 	id 'fabric-loom' version '1.9-SNAPSHOT'
 	id 'maven-publish'
