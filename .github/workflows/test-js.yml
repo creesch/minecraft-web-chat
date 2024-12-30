@@ -2,26 +2,30 @@ name: Test JavaScript
 on: [pull_request, push]
 
 jobs:
-  test:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    test:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+            - name: Install dependencies
+              run: npm install
 
-      - name: Run eslint
-        run: npx eslint
+            - name: Run TypeScript check
+              run: npx tsc
 
-      - name: Run TypeScript check
-        run: npx tsc
+            - name: Run eslint
+              run: npx eslint
 
-      - name: Run tests
-        run: npm run test -- run
+            - name: Run tests
+              run: npm run test -- run
+
+            # Formatting after tests so that functionality is always checked.
+            - name: Run prettier check
+              run: npx prettier . --check
