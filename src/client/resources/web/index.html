@@ -27,9 +27,19 @@
     <body>
         <main id="container">
             <section id="chat-area" aria-label="Chat messages and input">
-                <section id="messages" role="log" aria-live="polite" aria-label="Chat messages">
+                <section
+                    id="messages"
+                    role="log"
+                    aria-live="polite"
+                    aria-label="Chat messages"
+                >
                     <div id="load-more-container">
-                        <button id="load-more-button" aria-label="Load more messages">Load More</button>
+                        <button
+                            id="load-more-button"
+                            aria-label="Load more messages"
+                        >
+                            Load More
+                        </button>
                     </div>
                 </section>
                 <section id="input-area" aria-label="Message input">
@@ -39,15 +49,25 @@
                         rows="1"
                         aria-label="Type a chat message"
                     ></textarea>
-                    <button id="message-send-button" aria-label="Send message">Send</button>
+                    <button id="message-send-button" aria-label="Send message">
+                        Send
+                    </button>
                 </section>
             </section>
             <aside id="player-list-container" aria-label="Online players">
-                <h2>Players Online <span id="player-count" aria-live="polite">(0)</span></h2>
+                <h2>
+                    Players Online
+                    <span id="player-count" aria-live="polite">(0)</span>
+                </h2>
                 <ul id="player-list"></ul>
             </aside>
         </main>
-        <div id="status" class="status-disconnected" role="status" aria-live="polite">
+        <div
+            id="status"
+            class="status-disconnected"
+            role="status"
+            aria-live="polite"
+        >
             <span class="connection-status">Disconnected</span>
             -
             <span class="server-name">No server</span>
