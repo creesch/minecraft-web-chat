@@ -106,17 +106,18 @@ Here are some useful commands for development:
 1. Before starting work on a new feature or bug fix, **open an issue or discussion** making sure the change aligns with the project goals.
 2. Fork the repository and create a new branch for your work.
 3. Make your changes. Ensure the code is well documented and tested.
-4. Run 
-5. Submit a pull request with a clear description of your changes.
+    - Unit tests: Currently on for `src/client/resources/web/js/message_parsing.js`.
+    - Manual validation: Make sure the mod builds and works in both a singleplayer (LAN) world and actual server.
+4. Submit a pull request with a clear description of your changes.
 
 ## Project Structure
 
 - **`src/client/java/`**: The Java source code for the Minecraft mod.
-- **`src/client/resources/`**: Includes static files like the HTML, CSS, and JavaScript for the web chat.
+- **`src/client/resources/`**: Includes static files like HTML, CSS, and JavaScript for the web chat.
 - **`web/`**: Contains the core web files:
-    - `index.html`: The main web chat page.
-    - `styles.css`: Styling for the web chat interface.
-    - `app.mjs`: The main JavaScript logic for the web chat.
+    - `index.html`: The main page.
+    - `css/`: Styling.
+    - `js/`: Javascript logic.
 - **`build/`**: Generated files after building the mod.
     - `libs/`: The generated jar
 
