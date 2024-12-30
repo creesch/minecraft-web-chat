@@ -5,6 +5,10 @@ updates:
       directory: '/' # Location of package manifests
       schedule:
           interval: 'daily'
-      ignore:
-          - dependency-name: 'dev.isxander:yet-another-config-lib' # Dependabot is not aware of modloaders and minecraft versions.
-          - dependency-name: 'com.terraformersmc:modmenu' # Dependabot is not aware of modloaders and minecraft versions.
+      ignore: # Basically ignore all the fabric and minecraft specific dependencies as depandabot has no clue how they interact together. Only check actual java dependencies
+          - dependency-name: 'dev.isxander:yet-another-config-lib'
+          - dependency-name: 'com.terraformersmc:modmenu'
+          - dependency-name: 'net.fabricmc.fabric-api:fabric-api'
+          - dependency-name: 'com.mojang:minecraft'
+          - dependency-name: 'fabric-loom'
+          - dependency-name: 'net.fabricmc:fabric-loader'
