@@ -335,6 +335,7 @@ const createPlayerList = (listContainer) => {
             if (!playerElement) {
                 // Create a new DOM element if none exists for the player.
                 playerElement = document.createElement('li');
+                playerElement.setAttribute('role', 'listitem');
                 playerElement.setAttribute('data-player-id', player.playerId);
 
                 // Create and configure the player's head image.
@@ -342,12 +343,25 @@ const createPlayerList = (listContainer) => {
                 headImg.className = 'player-head';
                 headImg.src = player.playerHead || STEVE_HEAD_BASE64;
                 headImg.alt = `${player.playerDisplayName}'s head`;
+                headImg.setAttribute('aria-hidden', 'true');
 
                 // Create and configure the player's display name span.
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'player-name';
                 nameSpan.textContent = player.playerDisplayName;
                 nameSpan.title = player.playerName;
+                // Specifically for aria labels show both playerDisplayName and playerName if they are different.
+                if (player.playerDisplayName !== player.playerName) {
+                    nameSpan.setAttribute(
+                        'aria-label',
+                        `Display name: ${player.playerDisplayName}, Username: ${player.playerName}`,
+                    );
+                } else {
+                    nameSpan.setAttribute(
+                        'aria-label',
+                        `Player name: ${player.playerDisplayName}`,
+                    );
+                }
 
                 // Add click event to insert the player name into the chat input
                 const playerClickHandler = () => {
@@ -509,7 +523,7 @@ function querySelectorWithAssertion(selector) {
     return element;
 }
 
-const statusContainerElement = /** @type {HTMLDivElement } */ (
+const statusContainerElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#status')
 );
 const statusTextElement = /** @type {HTMLSpanElement} */ (
@@ -519,26 +533,28 @@ const serverNameElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#status .server-name')
 );
 
-const playerListElement = /** @type {HTMLDivElement } */ (
+const playerListElement = /** @type {HTMLUListElement} */ (
     querySelectorWithAssertion('#player-list')
 );
-const playerListCountElement = /** @type {HTMLHeadingElement} */ (
+
+const playerListCountElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#player-count')
 );
 
-const messagesElement = /** @type {HTMLDivElement} */ (
+const messagesElement = /** @type {HTMLElement} */ (
     querySelectorWithAssertion('#messages')
 );
 const loadMoreContainerElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#load-more-container')
 );
-const loadMoreButtonElement = /** @type {HTMLButtonElement } */ (
+const loadMoreButtonElement = /** @type {HTMLButtonElement} */ (
     querySelectorWithAssertion('#load-more-button')
 );
 
 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
+
 const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
     querySelectorWithAssertion('#message-send-button')
 );
@@ -645,10 +661,11 @@ function handleChatMessage(message) {
     }
 
     requestAnimationFrame(() => {
-        const div = document.createElement('div');
-        div.classList.add('message');
+        const messageElement = document.createElement('article');
+        messageElement.classList.add('message');
+
         if (message.payload.isPing) {
-            div.classList.add('ping');
+            messageElement.classList.add('ping');
         }
 
         // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen.
@@ -658,18 +675,18 @@ function handleChatMessage(message) {
         timeElement.textContent = timeString;
         timeElement.title = fullDateTime;
         timeElement.className = 'message-time';
-        div.appendChild(timeElement);
+        messageElement.appendChild(timeElement);
 
         try {
             // Format the chat message - this uses the Component format from message_parsing
             assertIsComponent(message.payload.component);
             const chatContent = formatComponent(message.payload.component);
-            div.appendChild(chatContent);
+            messageElement.appendChild(chatContent);
         } catch (e) {
             console.error(message);
             if (e instanceof ComponentError) {
                 console.error('Invalid component:', e.toString());
-                div.appendChild(
+                messageElement.appendChild(
                     formatComponent({
                         text: 'Invalid message received from server',
                         color: 'red',
@@ -677,7 +694,7 @@ function handleChatMessage(message) {
                 );
             } else {
                 console.error('Error parsing message:', e);
-                div.appendChild(
+                messageElement.appendChild(
                     formatComponent({
                         text: 'Error parsing message',
                         color: 'red',
@@ -691,10 +708,13 @@ function handleChatMessage(message) {
 
         if (message.payload.history) {
             // Insert the message after the load-more button
-            loadMoreContainerElement.before(div);
+            loadMoreContainerElement.before(messageElement);
         } else {
             // For new messages, insert at the start
-            messagesElement.insertBefore(div, messagesElement.firstChild);
+            messagesElement.insertBefore(
+                messageElement,
+                messagesElement.firstChild,
+            );
         }
 
         // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
@@ -809,7 +829,7 @@ function updateWebsocketConnectionStatus(connectionStatus) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://${location.host}/chat`);
+    ws = new WebSocket(`ws://localhost:8080/chat`);
 
     ws.onopen = function () {
         console.log('Connected to websocket server');

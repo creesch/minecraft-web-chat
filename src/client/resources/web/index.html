@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8" />
         <title>Minecraft Chat</title>
@@ -25,28 +25,29 @@
         <link rel="stylesheet" href="css/message_formatting.css" />
     </head>
     <body>
-        <div id="container">
-            <div id="chat-area">
-                <div id="messages">
+        <main id="container">
+            <section id="chat-area" aria-label="Chat messages and input">
+                <section id="messages" role="log" aria-live="polite" aria-label="Chat messages">
                     <div id="load-more-container">
-                        <button id="load-more-button">Load More</button>
+                        <button id="load-more-button" aria-label="Load more messages">Load More</button>
                     </div>
-                </div>
-                <div id="input-area">
+                </section>
+                <section id="input-area" aria-label="Message input">
                     <textarea
                         id="message-input"
                         placeholder="Type your message..."
                         rows="1"
+                        aria-label="Type a chat message"
                     ></textarea>
-                    <button id="message-send-button">Send</button>
-                </div>
-            </div>
-            <div id="player-list-container">
-                <h2>Players Online <span id="player-count">(0)</span></h2>
+                    <button id="message-send-button" aria-label="Send message">Send</button>
+                </section>
+            </section>
+            <aside id="player-list-container" aria-label="Online players">
+                <h2>Players Online <span id="player-count" aria-live="polite">(0)</span></h2>
                 <ul id="player-list"></ul>
-            </div>
-        </div>
-        <div id="status" class="status-disconnected">
+            </aside>
+        </main>
+        <div id="status" class="status-disconnected" role="status" aria-live="polite">
             <span class="connection-status">Disconnected</span>
             -
             <span class="server-name">No server</span>
