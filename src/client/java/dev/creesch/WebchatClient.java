@@ -10,14 +10,13 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-
 public class WebchatClient implements ClientModInitializer {
+
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private WebInterface webInterface;
     private ChatMessageRepository messageRepository;
@@ -33,18 +32,32 @@ public class WebchatClient implements ClientModInitializer {
         LOGGER.info("web chat loaded");
 
         // Chat messages from users.
-        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            String selfName = client.player == null ? "" : client.player.getName().getString();
-            boolean fromSelf = sender.getName().equals(selfName);
-            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createLiveChatMessage(message, fromSelf, client);
-            messageRepository.saveMessage(chatMessage);
-            webInterface.broadcastMessage(chatMessage);
-        });
+        ClientReceiveMessageEvents.CHAT.register(
+            (message, signedMessage, sender, params, receptionTimestamp) -> {
+                MinecraftClient client = MinecraftClient.getInstance();
+                String selfName = client.player == null
+                    ? ""
+                    : client.player.getName().getString();
+                boolean fromSelf = sender.getName().equals(selfName);
+                WebsocketJsonMessage chatMessage =
+                    WebsocketMessageBuilder.createLiveChatMessage(
+                        message,
+                        fromSelf,
+                        client
+                    );
+                messageRepository.saveMessage(chatMessage);
+                webInterface.broadcastMessage(chatMessage);
+            }
+        );
 
         // System messages (joins, leaves, deaths, etc.)
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            WebsocketJsonMessage chatMessage = WebsocketMessageBuilder.createLiveChatMessage(message, false, MinecraftClient.getInstance());
+            WebsocketJsonMessage chatMessage =
+                WebsocketMessageBuilder.createLiveChatMessage(
+                    message,
+                    false,
+                    MinecraftClient.getInstance()
+                );
             messageRepository.saveMessage(chatMessage);
             webInterface.broadcastMessage(chatMessage);
         });
@@ -52,7 +65,9 @@ public class WebchatClient implements ClientModInitializer {
         // Send state to client so history can be cleared
         ClientPlayConnectionEvents.INIT.register((handler, client) -> {
             webInterface.broadcastMessage(
-                WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.INIT)
+                WebsocketMessageBuilder.createConnectionStateMessage(
+                    WebsocketJsonMessage.ServerConnectionStates.INIT
+                )
             );
         });
 
@@ -67,7 +82,9 @@ public class WebchatClient implements ClientModInitializer {
 
                 // Send join event
                 webInterface.broadcastMessage(
-                    WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN)
+                    WebsocketMessageBuilder.createConnectionStateMessage(
+                        WebsocketJsonMessage.ServerConnectionStates.JOIN
+                    )
                 );
 
                 // Even though the clients will receive the player list shortly anyway. It will be with a noticable delay.
@@ -77,12 +94,18 @@ public class WebchatClient implements ClientModInitializer {
                 );
 
                 String webchatPort = String.valueOf(config.httpPortNumber);
-                Text message = Text.literal("Web chat: ")
-                        .append(Text.literal("http://localhost:" + webchatPort)
-                            .formatted(Formatting.BLUE, Formatting.UNDERLINE)
-                            .styled(style -> style.withClickEvent(
-                                    new ClickEvent(ClickEvent.Action.OPEN_URL, "http://localhost:" + webchatPort)
-                        )));
+                Text message = Text.literal("Web chat: ").append(
+                    Text.literal("http://localhost:" + webchatPort)
+                        .formatted(Formatting.BLUE, Formatting.UNDERLINE)
+                        .styled(style ->
+                            style.withClickEvent(
+                                new ClickEvent(
+                                    ClickEvent.Action.OPEN_URL,
+                                    "http://localhost:" + webchatPort
+                                )
+                            )
+                        )
+                );
                 client.player.sendMessage(message, false);
             });
         });
@@ -90,7 +113,9 @@ public class WebchatClient implements ClientModInitializer {
         // Send state to client
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             webInterface.broadcastMessage(
-                WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.DISCONNECT)
+                WebsocketMessageBuilder.createConnectionStateMessage(
+                    WebsocketJsonMessage.ServerConnectionStates.DISCONNECT
+                )
             );
         });
 

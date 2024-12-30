@@ -55,11 +55,10 @@
 /**
  * ServerPlayerList message from Minecraft
  * @typedef {BaseModServerMessage & {
-*   type: 'serverPlayerList',
-*   payload: PlayerInfo[]
-* }} ServerPlayerList
-*/
-
+ *   type: 'serverPlayerList',
+ *   payload: PlayerInfo[]
+ * }} ServerPlayerList
+ */
 
 /**
  * @typedef {'init'| 'join' | 'disconnect'} ServerConnectionStates
@@ -91,10 +90,12 @@ export function isModServerMessage(message) {
         return false;
     }
 
-    return message.type === 'chatMessage' ||
+    return (
+        message.type === 'chatMessage' ||
         message.type === 'serverConnectionState' ||
         message.type === 'historyMetaData' ||
-        message.type === 'serverPlayerList';
+        message.type === 'serverPlayerList'
+    );
 }
 
 /**

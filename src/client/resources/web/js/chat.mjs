@@ -1,8 +1,18 @@
 // @ts-check
 'use strict';
 
-import { updateFavicon, formatTimestamp, getPlayerHead, STEVE_HEAD_BASE64 } from './util.mjs';
-import { assertIsComponent, ComponentError, formatComponent, initializeObfuscation } from './message_parsing.mjs';
+import {
+    updateFavicon,
+    formatTimestamp,
+    getPlayerHead,
+    STEVE_HEAD_BASE64,
+} from './util.mjs';
+import {
+    assertIsComponent,
+    ComponentError,
+    formatComponent,
+    initializeObfuscation,
+} from './message_parsing.mjs';
 import { parseModServerMessage } from './message_types.mjs';
 
 /**
@@ -60,7 +70,7 @@ const faviconInfo = {
 
     getHasPing() {
         return this.hasPing;
-    }
+    },
 };
 
 // Used to keep track of messages already shown. To prevent possible duplication on server join.
@@ -82,7 +92,9 @@ const serverInfo = {
      */
     update(name, id) {
         if (!name || !id) {
-            console.error('Invalid server information: Both name and id must be provided.');
+            console.error(
+                'Invalid server information: Both name and id must be provided.',
+            );
             return;
         }
 
@@ -120,41 +132,40 @@ const serverInfo = {
      */
     getName() {
         return this.name;
-    }
+    },
 };
 
 /**
  * Player list
  */
 
-
 /**
  * Extends PlayerInfo to include the cached player head image and DOM element.
  * @typedef {PlayerInfo & {
-*   playerHead?: string | null, // Cached base64 image data for the player's head.
-*   element?: HTMLElement | null, // Cached reference to the player's DOM element.
-*   playerClickHandler?: EventListener // Reference to the click event handler for cleanup.
-* }} StoredPlayerInfo
-*/
+ *   playerHead?: string | null, // Cached base64 image data for the player's head.
+ *   element?: HTMLElement | null, // Cached reference to the player's DOM element.
+ *   playerClickHandler?: EventListener // Reference to the click event handler for cleanup.
+ * }} StoredPlayerInfo
+ */
 
 /**
-* Interface for the player list manager.
-* @typedef {Object} PlayerListManager
-* @property {Map<string, StoredPlayerInfo>} players - Map of player IDs to player data.
-* @property {(newPlayerList: PlayerInfo[]) => Promise<void>} updatePlayerList - Updates the player list.
-* @property {(player: StoredPlayerInfo, existingPlayer?: StoredPlayerInfo) => HTMLElement | null} updatePlayerElement - Updates a player's DOM element.
-* @property {(playerId: string) => void} removePlayerElement - Removes a player's DOM element.
-* @property {(playerId: string) => StoredPlayerInfo | null} getPlayer - Gets a player by ID.
-* @property {() => StoredPlayerInfo[]} getAllPlayers - Gets all players.
-* @property {() => number} getPlayerCount - Gets the total player count.
-* @property {() => void} clearAll - Removes all players and clears the DOM.
-*/
+ * Interface for the player list manager.
+ * @typedef {Object} PlayerListManager
+ * @property {Map<string, StoredPlayerInfo>} players - Map of player IDs to player data.
+ * @property {(newPlayerList: PlayerInfo[]) => Promise<void>} updatePlayerList - Updates the player list.
+ * @property {(player: StoredPlayerInfo, existingPlayer?: StoredPlayerInfo) => HTMLElement | null} updatePlayerElement - Updates a player's DOM element.
+ * @property {(playerId: string) => void} removePlayerElement - Removes a player's DOM element.
+ * @property {(playerId: string) => StoredPlayerInfo | null} getPlayer - Gets a player by ID.
+ * @property {() => StoredPlayerInfo[]} getAllPlayers - Gets all players.
+ * @property {() => number} getPlayerCount - Gets the total player count.
+ * @property {() => void} clearAll - Removes all players and clears the DOM.
+ */
 
 /**
-* Creates a player list manager that handles both data storage and DOM updates.
-* @param {HTMLElement} listContainer - The container element where player elements will be rendered.
-* @returns {PlayerListManager} An object with methods to manage the player list.
-*/
+ * Creates a player list manager that handles both data storage and DOM updates.
+ * @param {HTMLElement} listContainer - The container element where player elements will be rendered.
+ * @returns {PlayerListManager} An object with methods to manage the player list.
+ */
 const createPlayerList = (listContainer) => {
     /**
      * Flag to indicate if an update is in progress if set to true updating will be skipped.
@@ -193,7 +204,9 @@ const createPlayerList = (listContainer) => {
                 // Identify players that need to be updated or added.
                 const playersNeedingUpdate = newPlayerList.filter((player) => {
                     if (!player.playerId || !player.playerName) {
-                        console.warn(`Invalid player data: ${JSON.stringify(player)}`);
+                        console.warn(
+                            `Invalid player data: ${JSON.stringify(player)}`,
+                        );
                         return false;
                     }
 
@@ -205,8 +218,10 @@ const createPlayerList = (listContainer) => {
                     return (
                         !existingPlayer ||
                         existingPlayer.playerName !== player.playerName ||
-                        existingPlayer.playerDisplayName !== player.playerDisplayName ||
-                        existingPlayer.playerTextureUrl !== player.playerTextureUrl
+                        existingPlayer.playerDisplayName !==
+                            player.playerDisplayName ||
+                        existingPlayer.playerTextureUrl !==
+                            player.playerTextureUrl
                     );
                 });
 
@@ -215,73 +230,93 @@ const createPlayerList = (listContainer) => {
                 }
 
                 // Fetch or reuse player head images. Using promises for parallel processing.
-                const fetchPromises = playersNeedingUpdate.map(async (player) => {
-                    const existingPlayer = this.players.get(player.playerId);
+                const fetchPromises = playersNeedingUpdate.map(
+                    async (player) => {
+                        const existingPlayer = this.players.get(
+                            player.playerId,
+                        );
 
-                    if (existingPlayer && existingPlayer.playerTextureUrl === player.playerTextureUrl) {
-                        // Reuse existing head if the texture URL hasn't changed.
-                        return {
-                            ...player,
-                            playerHead: existingPlayer.playerHead,
-                        };
-                    }
+                        if (
+                            existingPlayer &&
+                            existingPlayer.playerTextureUrl ===
+                                player.playerTextureUrl
+                        ) {
+                            // Reuse existing head if the texture URL hasn't changed.
+                            return {
+                                ...player,
+                                playerHead: existingPlayer.playerHead,
+                            };
+                        }
 
-                    try {
-                        const playerHead = await getPlayerHead(player.playerTextureUrl);
-                        console.log(playerHead);
-                        console.log(player)
-                        return {
-                            ...player,
-                            playerHead,
-                        };
-                    } catch (error) {
-                        console.error(`Failed to get player head for ${player.playerName}, using default:`, error);
-                        return {
-                            ...player,
-                            playerHead: STEVE_HEAD_BASE64,
-                        };
-                    }
-                });
+                        try {
+                            const playerHead = await getPlayerHead(
+                                player.playerTextureUrl,
+                            );
+                            console.log(playerHead);
+                            console.log(player);
+                            return {
+                                ...player,
+                                playerHead,
+                            };
+                        } catch (error) {
+                            console.error(
+                                `Failed to get player head for ${player.playerName}, using default:`,
+                                error,
+                            );
+                            return {
+                                ...player,
+                                playerHead: STEVE_HEAD_BASE64,
+                            };
+                        }
+                    },
+                );
 
                 // Wait for all asynchronous fetches to complete.
                 const updatedPlayers = await Promise.all(fetchPromises);
 
                 // Batch DOM updates within the next animation frame for efficiency.
                 // Note: likely overkill for most small servers, just making sure that bigger servers with lots of users don't tank browser performance.
-                await new Promise((/** @type {(value: void) => void} */ resolve) => {
-                    requestAnimationFrame(() => {
-                        // Also use document fragment to for off screen dom building first.
-                        const fragment = document.createDocumentFragment();
+                await new Promise(
+                    (/** @type {(value: void) => void} */ resolve) => {
+                        requestAnimationFrame(() => {
+                            // Also use document fragment to for off screen dom building first.
+                            const fragment = document.createDocumentFragment();
 
-                        for (const player of updatedPlayers) {
-                            const existingPlayer = this.players.get(player.playerId);
-                            const element = this.updatePlayerElement(player, existingPlayer);
+                            for (const player of updatedPlayers) {
+                                const existingPlayer = this.players.get(
+                                    player.playerId,
+                                );
+                                const element = this.updatePlayerElement(
+                                    player,
+                                    existingPlayer,
+                                );
 
-                            // Store the updated player data in the map.
-                            this.players.set(player.playerId, player);
+                                // Store the updated player data in the map.
+                                this.players.set(player.playerId, player);
 
-                            // Add new elements to the document fragment.
-                            if (element) {
-                                fragment.appendChild(element);
+                                // Add new elements to the document fragment.
+                                if (element) {
+                                    fragment.appendChild(element);
+                                }
                             }
-                        }
 
-                        // Append all new elements to the DOM in one operation.
-                        if (fragment.childNodes.length > 0) {
-                            listContainer.appendChild(fragment);
-                        }
+                            // Append all new elements to the DOM in one operation.
+                            if (fragment.childNodes.length > 0) {
+                                listContainer.appendChild(fragment);
+                            }
 
-                        // Remove players that are no longer in the list.
-                        for (const playerId of currentPlayers) {
-                            this.removePlayerElement(playerId);
-                        }
+                            // Remove players that are no longer in the list.
+                            for (const playerId of currentPlayers) {
+                                this.removePlayerElement(playerId);
+                            }
 
-                        // Update the header with the player count
-                        playerListCountElement.textContent = `(${this.getPlayerCount()})`;
+                            // Update the header with the player count
+                            playerListCountElement.textContent = `(${this.getPlayerCount()})`;
 
-                        resolve(); // Mark the update process as complete.
-                    });
-                });
+                            resolve(); // Mark the update process as complete.
+                        });
+                    },
+                );
             } finally {
                 isUpdating = false;
             }
@@ -317,11 +352,17 @@ const createPlayerList = (listContainer) => {
                 // Add click event to insert the player name into the chat input
                 const playerClickHandler = () => {
                     const cursorPos = chatInputElement.selectionStart;
-                    const textBefore = chatInputElement.value.substring(0, cursorPos);
-                    const textAfter = chatInputElement.value.substring(cursorPos);
+                    const textBefore = chatInputElement.value.substring(
+                        0,
+                        cursorPos,
+                    );
+                    const textAfter =
+                        chatInputElement.value.substring(cursorPos);
                     chatInputElement.value = `${textBefore}${player.playerDisplayName}${textAfter}`;
                     chatInputElement.focus();
-                    chatInputElement.selectionStart = chatInputElement.selectionEnd = cursorPos + player.playerDisplayName.length;
+                    chatInputElement.selectionStart =
+                        chatInputElement.selectionEnd =
+                            cursorPos + player.playerDisplayName.length;
                 };
 
                 playerElement.addEventListener('click', playerClickHandler);
@@ -339,16 +380,26 @@ const createPlayerList = (listContainer) => {
             }
 
             // Update the existing element if properties have changed.
-            const headImg = /** @type {HTMLImageElement | null} */ (playerElement.querySelector('.player-head'));
-            const nameSpan = /** @type {HTMLSpanElement | null} */ (playerElement.querySelector('.player-name'));
+            const headImg = /** @type {HTMLImageElement | null} */ (
+                playerElement.querySelector('.player-head')
+            );
+            const nameSpan = /** @type {HTMLSpanElement | null} */ (
+                playerElement.querySelector('.player-name')
+            );
 
-            if (headImg && existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
+            if (
+                headImg &&
+                existingPlayer?.playerTextureUrl !== player.playerTextureUrl
+            ) {
                 headImg.src = player.playerHead || STEVE_HEAD_BASE64;
                 headImg.alt = `${player.playerDisplayName}'s head`;
             }
 
             if (nameSpan) {
-                if (existingPlayer?.playerDisplayName !== player.playerDisplayName) {
+                if (
+                    existingPlayer?.playerDisplayName !==
+                    player.playerDisplayName
+                ) {
                     nameSpan.textContent = player.playerDisplayName;
                 }
 
@@ -370,7 +421,10 @@ const createPlayerList = (listContainer) => {
             const player = this.players.get(playerId);
             if (player && player.element) {
                 if (player.playerClickHandler) {
-                    player.element.removeEventListener('click', player.playerClickHandler);
+                    player.element.removeEventListener(
+                        'click',
+                        player.playerClickHandler,
+                    );
                     delete player.playerClickHandler; // Remove the reference to the handler
                 }
 
@@ -388,7 +442,10 @@ const createPlayerList = (listContainer) => {
             for (const player of this.players.values()) {
                 if (player.element) {
                     if (player.playerClickHandler) {
-                        player.element.removeEventListener('click', player.playerClickHandler);
+                        player.element.removeEventListener(
+                            'click',
+                            player.playerClickHandler,
+                        );
                         delete player.playerClickHandler; // Remove the reference to the handler
                     }
 
@@ -434,7 +491,6 @@ const createPlayerList = (listContainer) => {
     };
 };
 
-
 /**
  * ======================
  *  HTML elements
@@ -453,20 +509,39 @@ function querySelectorWithAssertion(selector) {
     return element;
 }
 
-const statusContainerElement = /** @type {HTMLDivElement } */ (querySelectorWithAssertion('#status'));
-const statusTextElement = /** @type {HTMLSpanElement} */ (querySelectorWithAssertion('#status .connection-status'));
-const serverNameElement = /** @type {HTMLSpanElement} */ (querySelectorWithAssertion('#status .server-name'));
+const statusContainerElement = /** @type {HTMLDivElement } */ (
+    querySelectorWithAssertion('#status')
+);
+const statusTextElement = /** @type {HTMLSpanElement} */ (
+    querySelectorWithAssertion('#status .connection-status')
+);
+const serverNameElement = /** @type {HTMLSpanElement} */ (
+    querySelectorWithAssertion('#status .server-name')
+);
 
-const playerListElement = /** @type {HTMLDivElement } */ (querySelectorWithAssertion('#player-list'));
-const playerListCountElement = /** @type {HTMLHeadingElement} */ (querySelectorWithAssertion('#player-count'));
+const playerListElement = /** @type {HTMLDivElement } */ (
+    querySelectorWithAssertion('#player-list')
+);
+const playerListCountElement = /** @type {HTMLHeadingElement} */ (
+    querySelectorWithAssertion('#player-count')
+);
 
-const messagesElement = /** @type {HTMLDivElement} */ (querySelectorWithAssertion('#messages'));
-const loadMoreContainerElement = /** @type {HTMLDivElement} */ (querySelectorWithAssertion('#load-more-container'));
-const loadMoreButtonElement = /** @type {HTMLButtonElement } */ (querySelectorWithAssertion('#load-more-button'));
+const messagesElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#messages')
+);
+const loadMoreContainerElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#load-more-container')
+);
+const loadMoreButtonElement = /** @type {HTMLButtonElement } */ (
+    querySelectorWithAssertion('#load-more-button')
+);
 
-const chatInputElement = /** @type {HTMLTextAreaElement} */ (querySelectorWithAssertion('#message-input'));
-const messageSendButtonElement = /** @type {HTMLButtonElement} */ (querySelectorWithAssertion('#message-send-button'));
-
+const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+    querySelectorWithAssertion('#message-input')
+);
+const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
+    querySelectorWithAssertion('#message-send-button')
+);
 
 /**
  * ======================
@@ -508,7 +583,9 @@ loadMoreButtonElement.addEventListener('click', () => {
     }
 
     // Make sure we have a number and everything.
-    const maybeTimestamp = Number(loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '');
+    const maybeTimestamp = Number(
+        loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '',
+    );
     if (isFinite(maybeTimestamp)) {
         requestHistory(messageHistoryLimit, maybeTimestamp);
     }
@@ -542,7 +619,7 @@ function requestHistory(limit, before) {
     sendWebsocketMessage('history', {
         serverId,
         limit,
-        before
+        before,
     });
 }
 
@@ -564,10 +641,7 @@ function handleChatMessage(message) {
             hasPing ||= message.payload.isPing;
         }
 
-        faviconInfo.update(
-            faviconInfo.getMessageCount() + 1,
-            hasPing
-        );
+        faviconInfo.update(faviconInfo.getMessageCount() + 1, hasPing);
     }
 
     requestAnimationFrame(() => {
@@ -599,7 +673,7 @@ function handleChatMessage(message) {
                     formatComponent({
                         text: 'Invalid message received from server',
                         color: 'red',
-                    })
+                    }),
                 );
             } else {
                 console.error('Error parsing message:', e);
@@ -607,7 +681,7 @@ function handleChatMessage(message) {
                     formatComponent({
                         text: 'Error parsing message',
                         color: 'red',
-                    })
+                    }),
                 );
             }
         }
@@ -642,7 +716,7 @@ function clearMessageHistory() {
 
     // Only remove messages, leaving the load more button alone.
     const messageElements = messagesElement.querySelectorAll('.message');
-    messageElements.forEach(element => {
+    messageElements.forEach((element) => {
         element.remove();
     });
 }
@@ -655,7 +729,8 @@ function handleHistoryMetaData(message) {
     isLoadingHistory = false;
 
     if (message.payload.moreHistoryAvailable) {
-        loadMoreContainerElement.dataset['oldestMessageTimestamp'] = message.payload.oldestMessageTimestamp.toString();
+        loadMoreContainerElement.dataset['oldestMessageTimestamp'] =
+            message.payload.oldestMessageTimestamp.toString();
         // Show button after delay so people can't spam it and cause issue.
         setTimeout(() => {
             loadMoreContainerElement.style.display = 'block';
@@ -688,7 +763,7 @@ function handleMinecraftServerConnectionState(message) {
             clearMessageHistory();
 
             // Then we update server info.
-            serverInfo.update(message.server.name, message.server.identifier)
+            serverInfo.update(message.server.name, message.server.identifier);
 
             // Finally request message history
             requestHistory(messageHistoryLimit);
@@ -802,10 +877,12 @@ function sendWebsocketMessage(type, payload) {
         return;
     }
 
-    ws.send(JSON.stringify({
-        type,
-        payload
-    }));
+    ws.send(
+        JSON.stringify({
+            type,
+            payload,
+        }),
+    );
 }
 
 function sendChatMessage() {

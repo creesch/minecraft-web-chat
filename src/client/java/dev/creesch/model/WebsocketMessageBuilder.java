@@ -2,29 +2,28 @@ package dev.creesch.model;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import dev.creesch.config.ModConfig;
 import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.text.Text;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.regex.Pattern;
-
 public class WebsocketMessageBuilder {
+
     private static final Gson gson = new Gson();
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
 
@@ -35,29 +34,38 @@ public class WebsocketMessageBuilder {
      * @param fromSelf Whether the message is from the local player
      * @param client The Minecraft client instance
      */
-    public static WebsocketJsonMessage createLiveChatMessage(Text message, boolean fromSelf, MinecraftClient client) {
+    public static WebsocketJsonMessage createLiveChatMessage(
+        Text message,
+        boolean fromSelf,
+        MinecraftClient client
+    ) {
         if (client.world == null) {
-            throw new MessageBuildException("Cannot create chat message: client world is null");
+            throw new MessageBuildException(
+                "Cannot create chat message: client world is null"
+            );
         }
 
         // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
-        String minecraftChatJson = Text.Serialization.toJsonString(message, client.world.getRegistryManager());
+        String minecraftChatJson = Text.Serialization.toJsonString(
+            message,
+            client.world.getRegistryManager()
+        );
 
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
-        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        WebsocketJsonMessage.ChatServerInfo serverInfo =
+            MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().getName();
         // UUID used to prevent duplicates when doing
-        String messageUUID = UUID.nameUUIDFromBytes((timestamp + minecraftChatJson).getBytes()).toString();
+        String messageUUID = UUID.nameUUIDFromBytes(
+            (timestamp + minecraftChatJson).getBytes()
+        ).toString();
 
         // Back to objects we go
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(false)
             .uuid(messageUUID)
-            .component(gson.fromJson(
-                minecraftChatJson,
-                JsonObject.class
-            ))
+            .component(gson.fromJson(minecraftChatJson, JsonObject.class))
             .isPing(!fromSelf && isPing(message, client))
             .build();
 
@@ -68,7 +76,6 @@ public class WebsocketMessageBuilder {
             minecraftVersion
         );
     }
-
 
     /**
      * Checks if the message is a ping.
@@ -133,27 +140,24 @@ public class WebsocketMessageBuilder {
      * Processes both chat and game messages, converting them to the appropriate format.
      */
     public static WebsocketJsonMessage createHistoricChatMessage(
-            long timestamp,
-            String serverId,
-            String serverName,
-            String messageId,
-            String messageJson,
-            boolean isPing,
-            String minecraftVersion
-        ) {
-
+        long timestamp,
+        String serverId,
+        String serverName,
+        String messageId,
+        String messageJson,
+        boolean isPing,
+        String minecraftVersion
+    ) {
         // Back to objects we go
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(true)
             .uuid(messageId)
-            .component(gson.fromJson(
-                messageJson,
-                JsonObject.class
-            ))
+            .component(gson.fromJson(messageJson, JsonObject.class))
             .isPing(isPing)
             .build();
 
-        WebsocketJsonMessage.ChatServerInfo serverInfo = new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);
+        WebsocketJsonMessage.ChatServerInfo serverInfo =
+            new WebsocketJsonMessage.ChatServerInfo(serverName, serverId);
 
         return WebsocketJsonMessage.createChatMessage(
             timestamp,
@@ -168,9 +172,12 @@ public class WebsocketMessageBuilder {
      *
      * @param state The server connection state to use
      */
-    public static WebsocketJsonMessage createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates state) {
+    public static WebsocketJsonMessage createConnectionStateMessage(
+        WebsocketJsonMessage.ServerConnectionStates state
+    ) {
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
-        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        WebsocketJsonMessage.ChatServerInfo serverInfo =
+            MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().getName();
 
         return WebsocketJsonMessage.createServerConnectionStateMessage(
@@ -181,7 +188,10 @@ public class WebsocketMessageBuilder {
         );
     }
 
-    public static WebsocketJsonMessage createHistoryMetaDataMessage(List<WebsocketJsonMessage> historyMessages, int requestedLimit) {
+    public static WebsocketJsonMessage createHistoryMetaDataMessage(
+        List<WebsocketJsonMessage> historyMessages,
+        int requestedLimit
+    ) {
         boolean moreHistoryAvailable = false;
         if (historyMessages.size() > requestedLimit) {
             moreHistoryAvailable = true;
@@ -197,7 +207,8 @@ public class WebsocketMessageBuilder {
 
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
-        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        WebsocketJsonMessage.ChatServerInfo serverInfo =
+            MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().getName();
 
         return WebsocketJsonMessage.createHistoryMetaDataMessage(
@@ -209,7 +220,8 @@ public class WebsocketMessageBuilder {
         );
     }
 
-    private static final Pattern MINECRAFT_TEXTURE_URL_PATTERN = Pattern.compile("^https?://textures\\.minecraft\\.net/texture/.+");
+    private static final Pattern MINECRAFT_TEXTURE_URL_PATTERN =
+        Pattern.compile("^https?://textures\\.minecraft\\.net/texture/.+");
 
     private static String getPlayerTextureUrl(GameProfile profile) {
         Collection<Property> textures = profile.getProperties().get("textures");
@@ -223,35 +235,56 @@ public class WebsocketMessageBuilder {
         // Instead, simply grab the first texture that is minecraft hosted. Fingers crossed there aren't multiple hostnames for textures.
         for (Property property : textures) {
             try {
-                String decodedValue = new String(Base64.getDecoder().decode(property.value()), StandardCharsets.UTF_8);
-                JsonObject textureJson = JsonParser.parseString(decodedValue).getAsJsonObject();
-                JsonObject texturesObj = textureJson.getAsJsonObject("textures");
+                String decodedValue = new String(
+                    Base64.getDecoder().decode(property.value()),
+                    StandardCharsets.UTF_8
+                );
+                JsonObject textureJson = JsonParser.parseString(
+                    decodedValue
+                ).getAsJsonObject();
+                JsonObject texturesObj = textureJson.getAsJsonObject(
+                    "textures"
+                );
 
                 if (texturesObj.has("SKIN")) {
-                    String textureURL = texturesObj.getAsJsonObject("SKIN")
+                    String textureURL = texturesObj
+                        .getAsJsonObject("SKIN")
                         .get("url")
                         .getAsString();
 
-                    if (MINECRAFT_TEXTURE_URL_PATTERN.matcher(textureURL).matches()) {
+                    if (
+                        MINECRAFT_TEXTURE_URL_PATTERN.matcher(
+                            textureURL
+                        ).matches()
+                    ) {
                         // Replace http with https to ensure secure URLs
-                        textureURL = textureURL.replaceFirst("^http://", "https://");
+                        textureURL = textureURL.replaceFirst(
+                            "^http://",
+                            "https://"
+                        );
                         return textureURL;
                     }
                 }
             } catch (Exception e) {
-                LOGGER.error("Error decoding skin texture for player {}", profile.getName(), e);
+                LOGGER.error(
+                    "Error decoding skin texture for player {}",
+                    profile.getName(),
+                    e
+                );
             }
         }
 
         return "unknown";
     }
 
-     /**
+    /**
      * Uses the networkHandler to fetch a playerlist and create a ServerPlayerListMessage.
      *
      * @param client MinecraftClient
      */
-    public static WebsocketJsonMessage createPlayerList(MinecraftClient client) {
+    public static WebsocketJsonMessage createPlayerList(
+        MinecraftClient client
+    ) {
         ClientPlayNetworkHandler networkHandler = client.getNetworkHandler();
 
         List<PlayerListInfoEntry> playerList = new ArrayList<>();
@@ -259,31 +292,36 @@ public class WebsocketMessageBuilder {
         if (networkHandler == null) {
             return null;
         }
-        networkHandler.getPlayerList().forEach(player -> {
-            GameProfile profile = player.getProfile(); // Contains UUID and name
-            String playerId = profile.getId().toString();
-            String playerName = profile.getName();
-            String playerDisplayName = player.getDisplayName() != null ? player.getDisplayName().getString() : playerName;
+        networkHandler
+            .getPlayerList()
+            .forEach(player -> {
+                GameProfile profile = player.getProfile(); // Contains UUID and name
+                String playerId = profile.getId().toString();
+                String playerName = profile.getName();
+                String playerDisplayName = player.getDisplayName() != null
+                    ? player.getDisplayName().getString()
+                    : playerName;
 
-            // To get the texture we need to digg a little bit deeper.
-            // Note: This retrieves the texture URL. In theory, it is possible to fetch player textures from minecraft.
-            // In practice this is a messy afair because of how texture loading works. So it is easier to let the web client.
-            // Fetch the texture from mojang directly and cut the head out of it.
-            String playerTextureUrl = getPlayerTextureUrl(profile);
+                // To get the texture we need to digg a little bit deeper.
+                // Note: This retrieves the texture URL. In theory, it is possible to fetch player textures from minecraft.
+                // In practice this is a messy afair because of how texture loading works. So it is easier to let the web client.
+                // Fetch the texture from mojang directly and cut the head out of it.
+                String playerTextureUrl = getPlayerTextureUrl(profile);
 
-            PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
-                .playerId(playerId)
-                .playerName(playerName)
-                .playerDisplayName(playerDisplayName)
-                .playerTextureUrl(playerTextureUrl)
-                .build();
+                PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
+                    .playerId(playerId)
+                    .playerName(playerName)
+                    .playerDisplayName(playerDisplayName)
+                    .playerTextureUrl(playerTextureUrl)
+                    .build();
 
-            playerList.add(playerInfo);
-        });
+                playerList.add(playerInfo);
+            });
 
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
-        WebsocketJsonMessage.ChatServerInfo serverInfo = MinecraftServerIdentifier.getCurrentServerInfo();
+        WebsocketJsonMessage.ChatServerInfo serverInfo =
+            MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().getName();
 
         return WebsocketJsonMessage.createServerPlayerListMessage(

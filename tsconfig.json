@@ -1,50 +1,48 @@
 {
     "compilerOptions": {
-      "lib": ["dom", "ES2021"],
+        "lib": ["dom", "ES2021"],
 
-      // JavaScript Support
-      "allowJs": true,
-      "checkJs": true,
-      "noEmit": true,
-  
-      // Module Settings
-      "module": "ES2020",
-      "moduleResolution": "node",
-      "target": "ES2021",
-  
-      // Strictness
-      "strict": true,
-      "noImplicitAny": true,
-      "strictNullChecks": true,
-      "strictFunctionTypes": true,
-      "strictBindCallApply": true,
-      "strictPropertyInitialization": true,
-      "noImplicitThis": true,
-      "useUnknownInCatchVariables": true,
-      "alwaysStrict": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true,
-      "noUncheckedIndexedAccess": true,
-      "noImplicitOverride": true,
-      "noPropertyAccessFromIndexSignature": true,
-  
-      // Additional Safety
-      "forceConsistentCasingInFileNames": true,
-      "skipLibCheck": true,
-      "verbatimModuleSyntax": true,
-      "isolatedModules": true,
+        // JavaScript Support
+        "allowJs": true,
+        "checkJs": true,
+        "noEmit": true,
 
-      "paths": {
-        "~/*": ["./src/client/resources/web/js/*"]
-      }
+        // Module Settings
+        "module": "ES2020",
+        "moduleResolution": "node",
+        "target": "ES2021",
+
+        // Strictness
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "alwaysStrict": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+
+        // Additional Safety
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+
+        "paths": {
+            "~/*": ["./src/client/resources/web/js/*"]
+        }
     },
     "include": [
-      "src/client/resources/web/js/**/*.js",
-      "src/client/resources/web/js/**/*.mjs",
-      "src/test/resources/web/js/**/*.js",
-      "src/test/resources/web/js/**/*.mjs"
+        "src/client/resources/web/js/**/*.js",
+        "src/client/resources/web/js/**/*.mjs",
+        "src/test/resources/web/js/**/*.js",
+        "src/test/resources/web/js/**/*.mjs"
     ],
-    "exclude": [
-      "node_modules"
-    ]
+    "exclude": ["node_modules"]
 }

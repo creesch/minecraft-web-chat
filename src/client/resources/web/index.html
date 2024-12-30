@@ -1,40 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>Minecraft Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-    <link rel="icon" type="image/png" sizes="32x32" href="img/icon_32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="img/icon_16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="img/icon_180.png">
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/message_formatting.css">
-</head>
-<body>
-    <div id="container">
-        <div id="chat-area">
-            <div id="messages">
-                <div id="load-more-container">
-                    <button id="load-more-button">Load More</button>
+    <head>
+        <meta charset="utf-8" />
+        <title>Minecraft Chat</title>
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="img/icon_32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="img/icon_16.png"
+        />
+        <link rel="apple-touch-icon" sizes="180x180" href="img/icon_180.png" />
+        <link rel="manifest" href="site.webmanifest" />
+        <link rel="stylesheet" href="css/main.css" />
+        <link rel="stylesheet" href="css/message_formatting.css" />
+    </head>
+    <body>
+        <div id="container">
+            <div id="chat-area">
+                <div id="messages">
+                    <div id="load-more-container">
+                        <button id="load-more-button">Load More</button>
+                    </div>
+                </div>
+                <div id="input-area">
+                    <textarea
+                        id="message-input"
+                        placeholder="Type your message..."
+                        rows="1"
+                    ></textarea>
+                    <button id="message-send-button">Send</button>
                 </div>
             </div>
-            <div id="input-area">
-                <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
-                <button id="message-send-button">Send</button>
+            <div id="player-list-container">
+                <h2>Players Online <span id="player-count">(0)</span></h2>
+                <ul id="player-list"></ul>
             </div>
         </div>
-        <div id="player-list-container">
-            <h2>Players Online <span id="player-count">(0)</span></h2>
-            <ul id="player-list"></ul>
+        <div id="status" class="status-disconnected">
+            <span class="connection-status">Disconnected</span>
+            -
+            <span class="server-name">No server</span>
         </div>
-    </div>
-    <div id="status" class="status-disconnected">
-        <span class="connection-status">Disconnected</span>
-        -
-        <span class="server-name">No server</span>
-    </div>
 
-    <script type="module" src="js/chat.mjs"></script>
-</body>
+        <script type="module" src="js/chat.mjs"></script>
+    </body>
 </html>

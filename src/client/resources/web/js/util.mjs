@@ -9,9 +9,11 @@
 export function updateFavicon(count, hasPing) {
     const sizes = [16, 32];
 
-    sizes.forEach(size => {
+    sizes.forEach((size) => {
         /** @type {HTMLLinkElement | null} */
-        const link = document.querySelector(`link[rel="icon"][sizes="${size}x${size}"]`);
+        const link = document.querySelector(
+            `link[rel="icon"][sizes="${size}x${size}"]`,
+        );
         if (!link) {
             return;
         }
@@ -41,7 +43,7 @@ export function updateFavicon(count, hasPing) {
 
             if (count > 0) {
                 const x = size / 2;
-                const y = (size / 2) - (size * 0.05); // The middle of the chat icon is not exactly in the center.
+                const y = size / 2 - size * 0.05; // The middle of the chat icon is not exactly in the center.
 
                 ctx.font = `bold ${size * 0.5}px "Arial Black"`;
                 ctx.textAlign = 'center';
@@ -67,7 +69,7 @@ export function formatTimestamp(timestamp) {
     const timeString = date.toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
     });
 
     // Full date and time for tooltip
@@ -78,15 +80,15 @@ export function formatTimestamp(timestamp) {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false
+        hour12: false,
     });
 
     return { timeString, fullDateTime };
 }
 
-
 /** @type {string} Default Steve head texture as base64 */
-export const STEVE_HEAD_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAANNJREFUKFNjNFYR/M/AwMDAw8YCouDgy68/DD9+/WFgVJHg+M/PwwmWgCkCSYLYIJpRW473f4GrDYOEmCgDCxcvw59vnxm+//zN8PHjB4aZh04yMM5O9vzPzy/AwMnOCjYFJAkDIEWMq4oi/4f2LmMItutiiDC9ANa5/ZYDw9pDZQyri6MQJoB0HTh3HazZwUgTTINNmBBp//8/63+GXccvMejJqoIlTt++yuDraMLw6etvBsYpCXb/337+zXDw1EUGdg42hp8/foFpCz1NBj5uVgYAzxRTZRWSVwUAAAAASUVORK5CYII='
+export const STEVE_HEAD_BASE64 =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAANNJREFUKFNjNFYR/M/AwMDAw8YCouDgy68/DD9+/WFgVJHg+M/PwwmWgCkCSYLYIJpRW473f4GrDYOEmCgDCxcvw59vnxm+//zN8PHjB4aZh04yMM5O9vzPzy/AwMnOCjYFJAkDIEWMq4oi/4f2LmMItutiiDC9ANa5/ZYDw9pDZQyri6MQJoB0HTh3HazZwUgTTINNmBBp//8/63+GXccvMejJqoIlTt++yuDraMLw6etvBsYpCXb/337+zXDw1EUGdg42hp8/foFpCz1NBj5uVgYAzxRTZRWSVwUAAAAASUVORK5CYII=';
 
 /** @type {number} Timeout in milliseconds for texture fetching */
 const FETCH_TIMEOUT = 1000;
@@ -131,8 +133,10 @@ export async function getPlayerHead(textureUrl) {
         const blob = await fetchTexture(textureUrl);
         const arrayBuffer = await blob.arrayBuffer();
         const base64 = btoa(
-            new Uint8Array(arrayBuffer)
-                .reduce((data, byte) => data + String.fromCharCode(byte), '')
+            new Uint8Array(arrayBuffer).reduce(
+                (data, byte) => data + String.fromCharCode(byte),
+                '',
+            ),
         );
 
         const img = new Image();
@@ -161,7 +165,10 @@ export async function getPlayerHead(textureUrl) {
 
         return canvas.toDataURL('image/png');
     } catch (error) {
-        console.warn('Error processing player head, using Steve head as fallback:', error);
+        console.warn(
+            'Error processing player head, using Steve head as fallback:',
+            error,
+        );
         return STEVE_HEAD_BASE64;
     }
 }

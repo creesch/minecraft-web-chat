@@ -1,11 +1,11 @@
 package dev.creesch;
 
 import net.fabricmc.api.ModInitializer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Webchat implements ModInitializer {
+
     public static final String MOD_ID = "web-chat";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 

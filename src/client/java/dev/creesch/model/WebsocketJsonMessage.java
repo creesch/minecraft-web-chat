@@ -1,16 +1,16 @@
 package dev.creesch.model;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class WebsocketJsonMessage {
+
     private long timestamp;
     private ChatServerInfo server;
     private MessageType type;
@@ -21,6 +21,7 @@ public class WebsocketJsonMessage {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ChatServerInfo {
+
         private String name;
         private String identifier;
     }
@@ -33,7 +34,7 @@ public class WebsocketJsonMessage {
         @SerializedName("historyMetaData")
         HISTORY_META_DATA,
         @SerializedName("serverPlayerList")
-        SERVER_PLAYER_LIST
+        SERVER_PLAYER_LIST,
     }
 
     /**
@@ -45,16 +46,16 @@ public class WebsocketJsonMessage {
         @SerializedName("join")
         JOIN,
         @SerializedName("disconnect")
-        DISCONNECT
+        DISCONNECT,
     }
 
     // Private constructor to force use of factory methods
     private WebsocketJsonMessage(
-            long timestamp,
-            ChatServerInfo server,
-            MessageType type,
-            Object payload,
-            String minecraftVersion
+        long timestamp,
+        ChatServerInfo server,
+        MessageType type,
+        Object payload,
+        String minecraftVersion
     ) {
         this.timestamp = timestamp;
         this.server = server;
@@ -64,12 +65,18 @@ public class WebsocketJsonMessage {
     }
 
     public static WebsocketJsonMessage createChatMessage(
-            long timestamp,
-            ChatServerInfo server,
-            ChatMessagePayload message,
-            String minecraftVersion
+        long timestamp,
+        ChatServerInfo server,
+        ChatMessagePayload message,
+        String minecraftVersion
     ) {
-        return new WebsocketJsonMessage(timestamp, server, MessageType.CHAT_MESSAGE, message, minecraftVersion);
+        return new WebsocketJsonMessage(
+            timestamp,
+            server,
+            MessageType.CHAT_MESSAGE,
+            message,
+            minecraftVersion
+        );
     }
 
     public static WebsocketJsonMessage createServerConnectionStateMessage(
@@ -78,31 +85,49 @@ public class WebsocketJsonMessage {
         ServerConnectionStates state,
         String minecraftVersion
     ) {
-        return new WebsocketJsonMessage(timestamp, server, MessageType.SERVER_CONNECTION_STATE, state, minecraftVersion);
+        return new WebsocketJsonMessage(
+            timestamp,
+            server,
+            MessageType.SERVER_CONNECTION_STATE,
+            state,
+            minecraftVersion
+        );
     }
 
-    public static WebsocketJsonMessage createHistoryMetaDataMessage (
+    public static WebsocketJsonMessage createHistoryMetaDataMessage(
         long timestamp,
         ChatServerInfo server,
         long oldestMessageTimestamp,
         boolean moreHistoryAvailable,
         String minecraftVersion
     ) {
+        HistoryMetaDataPayload historyMetaDataPayload =
+            HistoryMetaDataPayload.builder()
+                .moreHistoryAvailable(moreHistoryAvailable)
+                .oldestMessageTimestamp(oldestMessageTimestamp)
+                .build();
 
-        HistoryMetaDataPayload historyMetaDataPayload = HistoryMetaDataPayload.builder()
-            .moreHistoryAvailable(moreHistoryAvailable)
-            .oldestMessageTimestamp(oldestMessageTimestamp)
-            .build();
-
-        return new WebsocketJsonMessage(timestamp, server, MessageType.HISTORY_META_DATA, historyMetaDataPayload, minecraftVersion);
+        return new WebsocketJsonMessage(
+            timestamp,
+            server,
+            MessageType.HISTORY_META_DATA,
+            historyMetaDataPayload,
+            minecraftVersion
+        );
     }
 
-    public static WebsocketJsonMessage createServerPlayerListMessage (
+    public static WebsocketJsonMessage createServerPlayerListMessage(
         long timestamp,
         ChatServerInfo server,
         List<PlayerListInfoEntry> playerList,
         String minecraftVersion
     ) {
-        return new WebsocketJsonMessage(timestamp, server, MessageType.SERVER_PLAYER_LIST, playerList, minecraftVersion);
+        return new WebsocketJsonMessage(
+            timestamp,
+            server,
+            MessageType.SERVER_PLAYER_LIST,
+            playerList,
+            minecraftVersion
+        );
     }
 }

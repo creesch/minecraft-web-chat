@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
  * A {@link Logger} wrapper that always prints the name of the logger regardless of configuration.
  */
 public final class NamedLogger {
+
     private final Logger inner;
     private final String name;
 

@@ -18,9 +18,8 @@ public class IncomingWebsocketJsonMessage {
         @SerializedName("chat")
         CHAT,
         @SerializedName("history")
-        HISTORY
+        HISTORY,
     }
-
 
     // Nested class for history payload.
     @Data

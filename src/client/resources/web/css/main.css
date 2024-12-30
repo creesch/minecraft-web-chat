@@ -100,7 +100,7 @@ body {
     padding: 0.4rem 1rem;
     border: none;
     border-radius: 0.3rem;
-    background-color: #4CAF50;
+    background-color: #4caf50;
     color: #ffffff;
     cursor: pointer;
     font-size: 0.9rem;
@@ -119,7 +119,7 @@ body {
     word-wrap: break-word;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;  /* Ensure items start from the top */
+    align-items: flex-start; /* Ensure items start from the top */
 }
 
 .message.ping {
@@ -135,11 +135,11 @@ body {
     bottom: 0;
     width: 0.25rem;
     border-radius: 2px;
-    background-color: #4CAF50;
+    background-color: #4caf50;
 }
 
 .message a {
-    color: #5555FF;
+    color: #5555ff;
     text-decoration: none;
 }
 
@@ -180,7 +180,7 @@ body {
     padding: 0.6rem 1.5rem;
     border: none;
     border-radius: 0.3rem;
-    background-color: #4CAF50;
+    background-color: #4caf50;
     color: #ffffff;
     cursor: pointer;
     font-size: 1rem;
@@ -204,7 +204,7 @@ body {
 }
 
 .status-connected {
-    color: #4CAF50;
+    color: #4caf50;
 }
 
 .status-disconnected {
@@ -220,7 +220,7 @@ body {
 */
 @media (max-width: 620px) {
     #container {
-        padding-top: 2.5rem;  /* Make room for status bar */
+        padding-top: 2.5rem; /* Make room for status bar */
     }
 
     #player-list-container {

@@ -1,19 +1,19 @@
 package dev.creesch.util;
 
 import dev.creesch.model.WebsocketJsonMessage;
+import java.nio.file.Path;
+import java.util.UUID;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.WorldSavePath;
-
-import java.nio.file.Path;
-import java.util.UUID;
 
 /**
  * Utility class for identifying Minecraft servers and worlds.
  * Provides consistent identification for singleplayer (LAN) worlds and multiplayer servers.
  */
 public class MinecraftServerIdentifier {
+
     /**
      * Default server info returned when not connected to any world/server.
      * Should not happen in the current mod setup. But better to account for it.
@@ -21,7 +21,7 @@ public class MinecraftServerIdentifier {
      */
     private static final MinecraftClient client = MinecraftClient.getInstance();
     private static final WebsocketJsonMessage.ChatServerInfo DISCONNECTED =
-            new WebsocketJsonMessage.ChatServerInfo("Disconnected", "disconnected");
+        new WebsocketJsonMessage.ChatServerInfo("Disconnected", "disconnected");
 
     /**
      * Gets information about the current server or world the player is connected to.
@@ -38,7 +38,6 @@ public class MinecraftServerIdentifier {
      *         Returns DISCONNECTED if not connected to any world or server.
      */
     public static WebsocketJsonMessage.ChatServerInfo getCurrentServerInfo() {
-
         // World is null, so we can't be on a minecraft server of any kind.
         if (client.world == null) {
             return DISCONNECTED;
@@ -61,10 +60,9 @@ public class MinecraftServerIdentifier {
             String rawIdentifier = minecraftDir.relativize(savePath).toString();
 
             return new WebsocketJsonMessage.ChatServerInfo(
-                    worldName,
-                    UUID.nameUUIDFromBytes(rawIdentifier.getBytes()).toString()
+                worldName,
+                UUID.nameUUIDFromBytes(rawIdentifier.getBytes()).toString()
             );
-
         } else {
             ServerInfo serverInfo = client.getCurrentServerEntry();
             if (serverInfo == null) {
@@ -72,11 +70,15 @@ public class MinecraftServerIdentifier {
             }
 
             // It is very unlikely that label is null for servers. But just in case fall back to the server address.
-            String serverName = serverInfo.label != null ? serverInfo.label.getString() : serverInfo.address;
-            String serverIdentifier = UUID.nameUUIDFromBytes(serverInfo.address.getBytes()).toString();
+            String serverName = serverInfo.label != null
+                ? serverInfo.label.getString()
+                : serverInfo.address;
+            String serverIdentifier = UUID.nameUUIDFromBytes(
+                serverInfo.address.getBytes()
+            ).toString();
             return new WebsocketJsonMessage.ChatServerInfo(
-                    serverName,
-                    serverIdentifier
+                serverName,
+                serverIdentifier
             );
         }
     }

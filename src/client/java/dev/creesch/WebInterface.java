@@ -12,34 +12,40 @@ import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsContext;
 import io.javalin.websocket.WsMessageContext;
-import lombok.Getter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import lombok.Getter;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 
 public class WebInterface {
+
     // Server related things
     @Getter
     private final Javalin server;
 
     private final Gson gson = new Gson();
-    private final Set<WsContext> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<WsContext> connections = Collections.newSetFromMap(
+        new ConcurrentHashMap<>()
+    );
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     ModConfig config = ModConfig.HANDLER.instance();
     private final ChatMessageRepository messageRepository;
-    private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile("[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]");
+    private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile(
+        "[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]"
+    );
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
 
     public WebInterface(ChatMessageRepository messageRepository) {
         if (messageRepository == null) {
-            throw new IllegalArgumentException("MessageRepository cannot be null");
+            throw new IllegalArgumentException(
+                "MessageRepository cannot be null"
+            );
         }
         this.messageRepository = messageRepository;
         server = createServer();
@@ -61,7 +67,9 @@ public class WebInterface {
 
             // Allow access to the root directory ("/") but block subdirectories ending with "/"
             if (!uri.equals("/") && uri.endsWith("/")) {
-                LOGGER.warn("Unauthorized attempt to access subdirectory: " + uri);
+                LOGGER.warn(
+                    "Unauthorized attempt to access subdirectory: " + uri
+                );
                 ctx.status(401).result("Unauthorized access");
                 return;
             }
@@ -75,7 +83,8 @@ public class WebInterface {
             }
 
             // Security headers
-            ctx.header("Content-Security-Policy",
+            ctx.header(
+                "Content-Security-Policy",
                 "default-src 'self'; " +
                 "script-src 'self' 'unsafe-inline'; " +
                 "style-src 'self' 'unsafe-inline'; " +
@@ -91,14 +100,21 @@ public class WebInterface {
         LOGGER.info(ctx.message());
         // Parse received message from json
         IncomingWebsocketJsonMessage receivedMessage = gson.fromJson(
-            ctx.message(), IncomingWebsocketJsonMessage.class
+            ctx.message(),
+            IncomingWebsocketJsonMessage.class
         );
 
         switch (receivedMessage.getType()) {
             case CHAT -> {
-                String message = gson.fromJson(receivedMessage.getPayload(), String.class);
+                String message = gson.fromJson(
+                    receivedMessage.getPayload(),
+                    String.class
+                );
                 if (message.trim().isEmpty()) {
-                    LOGGER.warn("Received an empty message from {}", ctx.session.getRemoteAddress());
+                    LOGGER.warn(
+                        "Received an empty message from {}",
+                        ctx.session.getRemoteAddress()
+                    );
                     return;
                 }
                 LOGGER.info("Received WebSocket message: {}", message);
@@ -110,11 +126,16 @@ public class WebInterface {
                 sendMinecraftMessage(message);
             }
             case HISTORY -> {
-                HistoryPayload historyPayload =
-                    gson.fromJson(receivedMessage.getPayload(), HistoryPayload.class);
+                HistoryPayload historyPayload = gson.fromJson(
+                    receivedMessage.getPayload(),
+                    HistoryPayload.class
+                );
                 int requestedLimit = historyPayload.getLimit();
                 int moreHistoryRequestedLimit = requestedLimit + 1; // Used further down to determine if there are more messages available in history.
-                LOGGER.info("Received history request: {}", historyPayload.getServerId());
+                LOGGER.info(
+                    "Received history request: {}",
+                    historyPayload.getServerId()
+                );
 
                 List<WebsocketJsonMessage> historyMessages;
                 if (historyPayload.getBefore() != null) {
@@ -131,21 +152,17 @@ public class WebInterface {
                 }
 
                 // Let's build metadata
-                WebsocketJsonMessage historyMetaDataMessage = WebsocketMessageBuilder.createHistoryMetaDataMessage(
-                    historyMessages,
-                    requestedLimit
-                );
+                WebsocketJsonMessage historyMetaDataMessage =
+                    WebsocketMessageBuilder.createHistoryMetaDataMessage(
+                        historyMessages,
+                        requestedLimit
+                    );
 
                 // Send the history metadata first
-                ctx.send(gson.toJson(
-                    historyMetaDataMessage
-                ));
+                ctx.send(gson.toJson(historyMetaDataMessage));
 
                 historyMessages.forEach(historicMessage -> {
-                    ctx.send(gson.toJson(
-                        historicMessage
-                    ));
-
+                    ctx.send(gson.toJson(historicMessage));
                 });
             }
         }
@@ -157,7 +174,12 @@ public class WebInterface {
                 // For localhost connections pinging likely isn't needed.
                 // But if someone wants to use the mod on their phone or something it might be useful to include it.
                 ctx.enableAutomaticPings(15, TimeUnit.SECONDS);
-                LOGGER.info("New WebSocket connection from {}", ctx.session.getRemoteAddress() != null ? ctx.session.getRemoteAddress() : "unknown remote address");
+                LOGGER.info(
+                    "New WebSocket connection from {}",
+                    ctx.session.getRemoteAddress() != null
+                        ? ctx.session.getRemoteAddress()
+                        : "unknown remote address"
+                );
                 connections.add(ctx);
 
                 // If minecraft is connected to a server the client needs to know.
@@ -167,17 +189,17 @@ public class WebInterface {
                     return;
                 }
                 // Got a world, use JOIN state to communicate this
-                WebsocketJsonMessage joinMessage = WebsocketMessageBuilder.createConnectionStateMessage(WebsocketJsonMessage.ServerConnectionStates.JOIN);
-                String jsonJoinMessage = gson.toJson(
-                    joinMessage
-                );
+                WebsocketJsonMessage joinMessage =
+                    WebsocketMessageBuilder.createConnectionStateMessage(
+                        WebsocketJsonMessage.ServerConnectionStates.JOIN
+                    );
+                String jsonJoinMessage = gson.toJson(joinMessage);
 
                 // Even though the client will receive the player list shortly anyway. It will be with a noticable delay.
                 // So on connect make sure the list is send immediatly.
-                WebsocketJsonMessage playerListMessage = WebsocketMessageBuilder.createPlayerList(client);
-                String jsonPlayerListMessage = gson.toJson(
-                    playerListMessage
-                );
+                WebsocketJsonMessage playerListMessage =
+                    WebsocketMessageBuilder.createPlayerList(client);
+                String jsonPlayerListMessage = gson.toJson(playerListMessage);
 
                 try {
                     ctx.send(jsonJoinMessage);
@@ -185,15 +207,23 @@ public class WebInterface {
                 } catch (Exception e) {
                     LOGGER.info(jsonJoinMessage);
                     LOGGER.info(jsonPlayerListMessage);
-                    LOGGER.warn("Failed to send JOIN or PlayerList message to connection: {}", ctx.session.getRemoteAddress(), e);
+                    LOGGER.warn(
+                        "Failed to send JOIN or PlayerList message to connection: {}",
+                        ctx.session.getRemoteAddress(),
+                        e
+                    );
                 }
             });
 
             ws.onClose(ctx -> {
-                LOGGER.info("WebSocket connection closed: {} with status {} and reason: {}", ctx.session.getRemoteAddress(), ctx.status(), ctx.reason());
+                LOGGER.info(
+                    "WebSocket connection closed: {} with status {} and reason: {}",
+                    ctx.session.getRemoteAddress(),
+                    ctx.status(),
+                    ctx.reason()
+                );
                 connections.remove(ctx);
             });
-
 
             ws.onMessage(ctx -> handleReceivedMessages(ctx));
 
@@ -210,7 +240,11 @@ public class WebInterface {
             try {
                 ctx.session.close(); // Close the WebSocket session
             } catch (Exception e) {
-                LOGGER.warn("Failed to close WebSocket connection: {}", ctx.session.getRemoteAddress(), e);
+                LOGGER.warn(
+                    "Failed to close WebSocket connection: {}",
+                    ctx.session.getRemoteAddress(),
+                    e
+                );
             }
         });
         connections.clear();
@@ -225,9 +259,13 @@ public class WebInterface {
 
     private String sanitizeMessage(String message) {
         // Replace known illegal characters like linebreaks, control characters, zero width characters, etc
-        String cleanedMessage = ILLEGAL_CHARACTERS.matcher(message).replaceAll("");
+        String cleanedMessage = ILLEGAL_CHARACTERS.matcher(message).replaceAll(
+            ""
+        );
         // Remove multiple spaces as well
-        cleanedMessage = MULTIPLE_SPACES.matcher(cleanedMessage).replaceAll(" ");
+        cleanedMessage = MULTIPLE_SPACES.matcher(cleanedMessage).replaceAll(
+            " "
+        );
         return cleanedMessage;
     }
 
@@ -235,7 +273,9 @@ public class WebInterface {
         MinecraftClient client = MinecraftClient.getInstance();
         // Probably an edge case, if even possible but client can potentially be null
         if (client == null) {
-            LOGGER.warn("MinecraftClient instance is null. Cannot send message.");
+            LOGGER.warn(
+                "MinecraftClient instance is null. Cannot send message."
+            );
             return;
         }
 
@@ -255,7 +295,9 @@ public class WebInterface {
             // Break long messages into smaller chunks
             for (int i = 0; i < message.length(); i += maxLength) {
                 int end = Math.min(i + maxLength, message.length());
-                player.networkHandler.sendChatMessage(message.substring(i, end));
+                player.networkHandler.sendChatMessage(
+                    message.substring(i, end)
+                );
             }
         });
     }
@@ -267,7 +309,11 @@ public class WebInterface {
                 ctx.send(jsonMessage);
             } catch (Exception e) {
                 LOGGER.info(jsonMessage);
-                LOGGER.warn("Failed to send message to connection: {}", ctx.session.getRemoteAddress(), e);
+                LOGGER.warn(
+                    "Failed to send message to connection: {}",
+                    ctx.session.getRemoteAddress(),
+                    e
+                );
             }
         });
     }
