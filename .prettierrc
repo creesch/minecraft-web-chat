@@ -1,0 +1,7 @@
+{
+    "singleQuote": true,
+    "tabWidth": 4,
+    "proseWrap": "preserve",
+    "arrowParens": "always",
+    "plugins": ["prettier-plugin-java"]
+}
