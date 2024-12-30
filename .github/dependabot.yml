@@ -5,5 +5,6 @@ updates:
       directory: '/' # Location of package manifests
       schedule:
           interval: 'daily'
-      labels:
-          - 'dependencies'
+      ignore:
+          - dependency-name: 'dev.isxander:yet-another-config-lib' # Dependabot is not aware of modloaders and minecraft versions.
+          - dependency-name: 'com.terraformersmc:modmenu' # Dependabot is not aware of modloaders and minecraft versions.
