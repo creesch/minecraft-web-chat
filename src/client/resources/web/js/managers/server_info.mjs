@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-import { querySelectorWithAssertion } from './util.mjs';
+import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
  * Class to manage server information and related UI updates

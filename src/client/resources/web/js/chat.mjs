@@ -6,24 +6,24 @@ import {
     formatTimestamp,
     getPlayerHead,
     STEVE_HEAD_BASE64,
-} from './util.mjs';
+} from './utils.mjs';
 import {
     assertIsComponent,
     ComponentError,
     formatComponent,
     initializeObfuscation,
-} from './message_parsing.mjs';
-import { serverInfo } from './server_info.mjs';
-import { parseModServerMessage } from './message_types.mjs';
-import { faviconManager } from './favicon_manager.mjs';
+} from './messages/message_parsing.mjs';
+import { serverInfo } from './managers/server_info.mjs';
+import { parseModServerMessage } from './messages/message_types.mjs';
+import { faviconManager } from './managers/favicon_manager.mjs';
 
 /**
  * Import all types we might need
- * @typedef {import('./message_parsing.mjs').Component} Component
- * @typedef {import('./message_types.mjs').ChatMessage} ChatMessage
- * @typedef {import('./message_types.mjs').HistoryMetaData} HistoryMetaData
- * @typedef {import('./message_types.mjs').PlayerInfo} PlayerInfo
- * @typedef {import('./message_types.mjs').ServerConnectionState} ServerConnectionState
+ * @typedef {import('./messages/message_parsing.mjs').Component} Component
+ * @typedef {import('./messages/message_types.mjs').ChatMessage} ChatMessage
+ * @typedef {import('./messages/message_types.mjs').HistoryMetaData} HistoryMetaData
+ * @typedef {import('./messages/message_types.mjs').PlayerInfo} PlayerInfo
+ * @typedef {import('./messages/message_types.mjs').ServerConnectionState} ServerConnectionState
  */
 
 /**
@@ -716,7 +716,7 @@ function updateWebsocketConnectionStatus(connectionStatus) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://${location.host}/chat`);
+    ws = new WebSocket(`ws://localhost:8080/chat`);
 
     ws.onopen = function () {
         console.log('Connected to websocket server');
