@@ -334,7 +334,7 @@ function updateWebsocketConnectionStatus(connectionStatus) {
 }
 
 function connect() {
-    ws = new WebSocket(`ws://localhost:8080/chat`);
+    ws = new WebSocket(`ws://${location.host}/chat`);
 
     ws.onopen = function () {
         console.log('Connected to websocket server');
