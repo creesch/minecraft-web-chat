@@ -1,13 +1,19 @@
 // @ts-check
 'use strict';
 
-import { formatTimestamp, getPlayerHead, STEVE_HEAD_BASE64 } from './util.mjs';
+import {
+    querySelectorWithAssertion,
+    formatTimestamp,
+    getPlayerHead,
+    STEVE_HEAD_BASE64,
+} from './util.mjs';
 import {
     assertIsComponent,
     ComponentError,
     formatComponent,
     initializeObfuscation,
 } from './message_parsing.mjs';
+import { serverInfo } from './server_info.mjs';
 import { parseModServerMessage } from './message_types.mjs';
 import { faviconManager } from './favicon_manager.mjs';
 
@@ -41,64 +47,6 @@ let isLoadingHistory = false;
 // Used to keep track of messages already shown. To prevent possible duplication on server join.
 /** @type {Set<string>} */
 const displayedMessageIds = new Set();
-
-/**
- * Server information and related methods.
- */
-const serverInfo = {
-    name: /** @type {string | undefined} */ (undefined),
-    id: /** @type {string | undefined} */ (undefined),
-    baseTitle: document.title, // Store the page title on load so we can manipulate it based on events and always restore it.
-
-    /**
-     * Updates server information and UI elements.
-     * @param {string} name - The server's name.
-     * @param {string} id - The server's identifier.
-     */
-    update(name, id) {
-        if (!name || !id) {
-            console.error(
-                'Invalid server information: Both name and id must be provided.',
-            );
-            return;
-        }
-
-        this.name = name;
-        this.id = id;
-
-        // Update the page title
-        document.title = `${this.baseTitle} - ${name}`;
-
-        // Update the status element
-        serverNameElement.textContent = name;
-    },
-
-    /**
-     * Clears the current server information from both variables and UI.
-     */
-    clear() {
-        this.name = undefined;
-        this.id = undefined;
-        document.title = this.baseTitle;
-        serverNameElement.textContent = 'No server';
-    },
-
-    /**
-     * Retrieves the server's ID.
-     * @returns {string | undefined} The server's ID.
-     */
-    getId() {
-        return this.id;
-    },
-
-    /**
-     * Retrieves the server's name.
-     * @returns {string | undefined} The server's name.
-     */
-    getName() {
-        return this.name;
-    },
-};
 
 /**
  * Player list
@@ -476,26 +424,11 @@ const createPlayerList = (listContainer) => {
  * ======================
  */
 
-/**
- * Gets element based on selector. Throws error if element is null.
- * @param {string} selector
- */
-function querySelectorWithAssertion(selector) {
-    const element = document.querySelector(selector);
-    if (!element) {
-        throw new Error(`Required DOM element not found: ${selector}`);
-    }
-    return element;
-}
-
 const statusContainerElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#status')
 );
 const statusTextElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#status .connection-status')
-);
-const serverNameElement = /** @type {HTMLSpanElement} */ (
-    querySelectorWithAssertion('#status .server-name')
 );
 
 const playerListElement = /** @type {HTMLUListElement} */ (
