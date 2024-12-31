@@ -1,12 +1,7 @@
 // @ts-check
 'use strict';
 
-import {
-    updateFavicon,
-    formatTimestamp,
-    getPlayerHead,
-    STEVE_HEAD_BASE64,
-} from './util.mjs';
+import { formatTimestamp, getPlayerHead, STEVE_HEAD_BASE64 } from './util.mjs';
 import {
     assertIsComponent,
     ComponentError,
@@ -14,6 +9,7 @@ import {
     initializeObfuscation,
 } from './message_parsing.mjs';
 import { parseModServerMessage } from './message_types.mjs';
+import { faviconManager } from './favicon_manager.mjs';
 
 /**
  * Import all types we might need
@@ -41,37 +37,6 @@ let reconnectAttempts = 0;
 // Message History Management
 const messageHistoryLimit = 50;
 let isLoadingHistory = false;
-
-const faviconInfo = {
-    messageCount: 0,
-    hasPing: false,
-
-    clear() {
-        this.messageCount = 0;
-        this.hasPing = false;
-        updateFavicon(this.messageCount, this.hasPing);
-    },
-
-    /**
-     * Update the favicon
-     * @param {number} messageCount
-     * @param {boolean} hasPing
-     */
-    update(messageCount, hasPing) {
-        this.messageCount = messageCount;
-        this.hasPing = hasPing;
-
-        updateFavicon(this.messageCount, this.hasPing);
-    },
-
-    getMessageCount() {
-        return this.messageCount;
-    },
-
-    getHasPing() {
-        return this.hasPing;
-    },
-};
 
 // Used to keep track of messages already shown. To prevent possible duplication on server join.
 /** @type {Set<string>} */
@@ -565,13 +530,6 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
  * ======================
  */
 
-// Favicon updates if tab is not in focus
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        faviconInfo.clear();
-    }
-});
-
 // Clicked send button
 messageSendButtonElement.addEventListener('click', () => {
     sendChatMessage();
@@ -651,14 +609,10 @@ function handleChatMessage(message) {
 
     displayedMessageIds.add(message.payload.uuid);
 
-    if (document.visibilityState !== 'visible') {
-        let hasPing = faviconInfo.getHasPing();
-        if (!message.payload.history) {
-            hasPing ||= message.payload.isPing;
-        }
-
-        faviconInfo.update(faviconInfo.getMessageCount() + 1, hasPing);
-    }
+    faviconManager.handleNewMessage(
+        message.payload.isPing,
+        message.payload.history,
+    );
 
     requestAnimationFrame(() => {
         const messageElement = document.createElement('article');
