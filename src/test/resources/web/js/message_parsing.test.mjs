@@ -1,7 +1,10 @@
 import { expect, test } from 'vitest';
-import { assertIsComponent, formatComponent } from '~/message_parsing.mjs';
+import {
+    assertIsComponent,
+    formatComponent,
+} from '~/messages/message_parsing.mjs';
 /**
- * @typedef {import('~/message_parsing.mjs').Component} Component
+ * @typedef {import('~/messages/message_parsing.mjs').Component} Component
  */
 
 /**
