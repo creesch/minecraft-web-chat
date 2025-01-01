@@ -69,7 +69,7 @@ const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
 /**
  * @typedef {Object} ShowEntityHoverEvent
  * @property {'show_entity'} action - Displays entity information
- * @property {{ type: string, id: unknown, name?: string }} [contents] - The entity data to show
+ * @property {{ type: string, id: unknown, name?: string | Component }} [contents] - The entity data to show
  * @property {string} [value] - Deprecated: SNBT representation of the entity data to show.
  */
 
@@ -832,6 +832,10 @@ function formatHoverEvent(hoverEvent) {
                 // Don't attempt to parse SNBT data in hoverEvent.value
                 console.warn('Unsupported legacy hoverEvent');
                 return '';
+            }
+
+            if (typeof hoverEvent.contents.name === 'object') {
+                return formatComponentPlainText(hoverEvent.contents.name);
             }
 
             return hoverEvent.contents.name || 'Unnamed Entity';
