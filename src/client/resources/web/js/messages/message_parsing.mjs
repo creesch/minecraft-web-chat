@@ -329,12 +329,24 @@ export function assertIsComponent(component, path = []) {
 
         if (
             'name' in hoverEvent.contents &&
-            typeof hoverEvent.contents.name !== 'string'
+            hoverEvent.contents.name !== null
         ) {
-            throw new ComponentError(
-                'HoverEvent.contents.name is not a string',
-                [...path, 'contents', 'name'],
-            );
+            if (typeof hoverEvent.contents.name === 'string') {
+                return;
+            }
+
+            if (typeof hoverEvent.contents.name !== 'object') {
+                throw new ComponentError(
+                    'HoverEvent.contents.name is not a string or valid component',
+                    [...path, 'contents', 'name'],
+                );
+            }
+
+            assertIsComponent(hoverEvent.contents.name, [
+                ...path,
+                'contents',
+                'name',
+            ]);
         }
     }
 
