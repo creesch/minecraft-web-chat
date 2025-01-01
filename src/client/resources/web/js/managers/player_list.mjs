@@ -21,16 +21,7 @@ import {
  */
 
 /**
- * Interface for the player list manager.
- * @typedef {Object} PlayerListManager
- * @property {Map<string, StoredPlayerInfo>} players - Map of player IDs to player data.
- * @property {(newPlayerList: PlayerInfo[]) => Promise<void>} updatePlayerList - Updates the player list.
- * @property {(player: StoredPlayerInfo, existingPlayer?: StoredPlayerInfo) => HTMLElement | null} updatePlayerElement - Updates a player's DOM element.
- * @property {(playerId: string) => void} removePlayerElement - Removes a player's DOM element.
- * @property {(playerId: string) => StoredPlayerInfo | null} getPlayer - Gets a player by ID.
- * @property {() => StoredPlayerInfo[]} getAllPlayers - Gets all players.
- * @property {() => number} getPlayerCount - Gets the total player count.
- * @property {() => void} clearAll - Removes all players and clears the DOM.
+ * Manages the player list UI component, handling player data storage, DOM updates and player head image caching.
  */
 
 class PlayerList {
