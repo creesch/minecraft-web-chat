@@ -133,7 +133,10 @@ public class WebsocketMessageBuilder {
         // Check for a word boundary after the ping keyword.
         patternBuilder.append("\\b");
 
-        return Pattern.compile(patternBuilder.toString());
+        return Pattern.compile(
+            patternBuilder.toString(),
+            Pattern.CASE_INSENSITIVE
+        );
     }
 
     /**

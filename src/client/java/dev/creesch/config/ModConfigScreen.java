@@ -25,7 +25,8 @@ public class ModConfigScreen {
                                         OptionDescription.of(
                                             Text.literal(
                                                 "Enable ping on username.\n" +
-                                                "This will ping the browser window any time a player's username appears in the chat."
+                                                "This will ping the browser window any time a player's username appears in the chat " +
+                                                "(case insensitive)."
                                             )
                                         )
                                     )
@@ -53,7 +54,8 @@ public class ModConfigScreen {
                                 OptionDescription.of(
                                     Text.literal(
                                         "Extra keywords to ping on.\n" +
-                                        "This will ping the browser window any time one of these words appear in the chat."
+                                        "This will ping the browser window any time one of these words appear in the chat " +
+                                        "(case insensitive)."
                                     )
                                 )
                             )
