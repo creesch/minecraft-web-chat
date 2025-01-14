@@ -8,6 +8,8 @@ on: [pull_request, push]
 
 jobs:
     build:
+        # Skip if it's a PR from the same repo (as push will handle it)
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
         strategy:
             matrix:
                 # Use these Java versions
