@@ -1,4 +1,4 @@
-name: Test JavaScript
+name: Test (JavaScript)
 on: [pull_request, push]
 
 jobs:
