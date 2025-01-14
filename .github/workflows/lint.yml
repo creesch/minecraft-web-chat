@@ -1,8 +1,8 @@
-name: Test JavaScript
+name: Lint
 on: [pull_request, push]
 
 jobs:
-    test:
+    lint:
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository
@@ -17,8 +17,9 @@ jobs:
             - name: Install dependencies
               run: npm install
 
-            - name: Run TypeScript check
-              run: npx tsc
+            - name: Run eslint
+              run: npx eslint
 
-            - name: Run tests
-              run: npm run test -- run
+            # Prettier will check JavaScript and Java files.
+            - name: Run prettier check
+              run: npx prettier . --check
