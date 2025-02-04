@@ -14,8 +14,8 @@ import {
 /**
  * Extends PlayerInfo to include the cached player head image and DOM element.
  * @typedef {PlayerInfo & {
- *   playerHead?: string | null, // Cached base64 image data for the player's head.
- *   element?: HTMLElement | null, // Cached reference to the player's DOM element.
+ *   playerHead?: string, // Cached base64 image data for the player's head.
+ *   element?: HTMLElement, // Cached reference to the player's DOM element.
  *   playerClickHandler?: EventListener // Reference to the click event handler for cleanup.
  * }} StoredPlayerInfo
  */
@@ -314,7 +314,7 @@ class PlayerList {
         }
 
         player.element.remove(); // Remove the element from the DOM.
-        player.element = null; // Clear the cached reference to the element.
+        player.element = undefined; // Clear the cached reference to the element.
         this.#players.delete(playerId); // Remove the player from the map.
     }
 
