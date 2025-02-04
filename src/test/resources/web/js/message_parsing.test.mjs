@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import {
     assertIsComponent,
-    formatComponent,
+    formatChatMessage,
 } from '~/messages/message_parsing.mjs';
 /**
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
@@ -618,13 +618,63 @@ const COMPONENT_FORMATTING_TESTS = [
             '</span>' +
             '</span>',
     ],
+
+    // Legacy color codes
+    [
+        'legacy color code',
+        { text: '§4test' },
+        '<span><span class="mc-dark-red">test</span></span>',
+    ],
+    [
+        'legacy color code with bold',
+        { text: '§4§ltest' },
+        '<span><span class="mc-bold mc-dark-red">test</span></span>',
+    ],
+    ['legacy color code with reset', { text: '§4§rtest' }, '<span>test</span>'],
+    [
+        'all color codes',
+        { text: '§0§1§2§3§4§5§6§7§8§9§a§b§c§d§e§ftest' },
+        '<span><span class="mc-white">test</span></span>',
+    ],
+    ['invalid color code', { text: '§xtest' }, '<span>§xtest</span>'],
+    [
+        'legacy color code with bold and reset',
+        { text: '§4§ltest§rtest' },
+        '<span><span class="mc-bold mc-dark-red">test</span>test</span>',
+    ],
+    [
+        'complex nested formatting',
+        { text: '§4§l[§r§6Warning§4§l]§r: §7Message' },
+        '<span>' +
+            '<span class="mc-bold mc-dark-red">[</span>' +
+            '<span class="mc-gold">Warning</span>' +
+            '<span class="mc-bold mc-dark-red">]</span>' +
+            ': <span class="mc-gray">Message</span>' +
+            '</span>',
+    ],
+    [
+        'formatting codes within a translation',
+        {
+            translate: 'argument.item.id.invalid',
+            color: 'red',
+            with: [{ text: '§4§ltest§r', color: 'blue' }],
+        },
+        '<span class="mc-red">Unknown item \'<span class="mc-blue"><span class="mc-bold mc-dark-red">test</span></span>\'</span>',
+    ],
+
+    // Non-breaking spaces
+    [
+        'multiple spaces',
+        { text: 'test   test' },
+        '<span>test&nbsp;&nbsp;&nbsp;test</span>',
+    ],
 ];
 
 for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
     test(name, () => {
         expect(() => assertIsComponent(component)).not.toThrow();
 
-        const element = formatComponent(component);
+        const element = formatChatMessage(component);
         if (element instanceof Text) {
             expect(element.textContent).toBe(expected);
         } else {

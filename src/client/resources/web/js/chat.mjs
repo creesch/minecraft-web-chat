@@ -5,7 +5,7 @@ import { querySelectorWithAssertion, formatTimestamp } from './utils.mjs';
 import {
     assertIsComponent,
     ComponentError,
-    formatComponent,
+    formatChatMessage,
     initializeObfuscation,
 } from './messages/message_parsing.mjs';
 import { serverInfo } from './managers/server_info.mjs';
@@ -185,14 +185,14 @@ function handleChatMessage(message) {
         try {
             // Format the chat message - this uses the Component format from message_parsing
             assertIsComponent(message.payload.component);
-            const chatContent = formatComponent(message.payload.component);
+            const chatContent = formatChatMessage(message.payload.component);
             messageElement.appendChild(chatContent);
         } catch (e) {
             console.error(message);
             if (e instanceof ComponentError) {
                 console.error('Invalid component:', e.toString());
                 messageElement.appendChild(
-                    formatComponent({
+                    formatChatMessage({
                         text: 'Invalid message received from server',
                         color: 'red',
                     }),
@@ -200,7 +200,7 @@ function handleChatMessage(message) {
             } else {
                 console.error('Error parsing message:', e);
                 messageElement.appendChild(
-                    formatComponent({
+                    formatChatMessage({
                         text: 'Error parsing message',
                         color: 'red',
                     }),

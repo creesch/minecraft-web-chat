@@ -11,25 +11,38 @@ const MAX_CHAT_LENGTH = 4096;
 const MAX_CHAT_DEPTH = 8;
 
 // Minecraft's standard color palette - used for legacy color code compatibility
-const VALID_COLORS = [
-    'black',
-    'dark_blue',
-    'dark_green',
-    'dark_aqua',
-    'dark_red',
-    'dark_purple',
-    'gold',
-    'gray',
-    'dark_gray',
-    'blue',
-    'green',
-    'aqua',
-    'red',
-    'light_purple',
-    'yellow',
-    'white',
-    'reset',
-];
+/** @type {Record<string, string>} */
+const COLOR_CODES = {
+    0: 'black',
+    1: 'dark_blue',
+    2: 'dark_green',
+    3: 'dark_aqua',
+    4: 'dark_red',
+    5: 'dark_purple',
+    6: 'gold',
+    7: 'gray',
+    8: 'dark_gray',
+    9: 'blue',
+    a: 'green',
+    b: 'aqua',
+    c: 'red',
+    d: 'light_purple',
+    e: 'yellow',
+    f: 'white',
+};
+
+/** @type {Record<string, string>} */
+const FORMATTING_CODES = {
+    r: 'reset',
+    k: 'obfuscated',
+    l: 'bold',
+    m: 'strikethrough',
+    n: 'underlined',
+    o: 'italic',
+};
+
+/** @type {Record<string, string>} */
+const TEXT_CODES = { ...COLOR_CODES, ...FORMATTING_CODES };
 
 const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
 
@@ -482,7 +495,7 @@ function isValidColor(color) {
     }
 
     color = color.toLowerCase();
-    if (VALID_COLORS.includes(color)) {
+    if (Object.values(COLOR_CODES).includes(color)) {
         return true;
     }
 
@@ -557,7 +570,7 @@ export function initializeObfuscation() {
 /**
  * Handles URL detection and conversion while maintaining XSS protection.
  * @param {string} text
- * @returns {(Element | Text)[]}
+ * @returns {(HTMLAnchorElement | Text)[]}
  */
 function linkifyText(text) {
     const result = [];
@@ -588,6 +601,106 @@ function linkifyText(text) {
     // Add remaining text
     if (lastIndex < text.length) {
         result.push(document.createTextNode(text.slice(lastIndex)));
+    }
+
+    return result;
+}
+
+/**
+ * Gets the class name for a § code.
+ * @param {string} textCode
+ * @returns {string}
+ */
+function className(textCode) {
+    if (COLOR_CODES[textCode]) {
+        return `mc-${COLOR_CODES[textCode].replace(/_/g, '-')}`;
+    }
+
+    if (FORMATTING_CODES[textCode]) {
+        return `mc-${FORMATTING_CODES[textCode]}`;
+    }
+
+    return '';
+}
+
+/**
+ * Creates a formatted element using § codes.
+ * @param {string} text
+ * @param {string[]} codes
+ * @returns {Element | Text}
+ */
+function createFormattedElement(text, codes) {
+    if (codes.length === 0) {
+        return document.createTextNode(text);
+    }
+
+    const span = document.createElement('span');
+    codes.forEach((code) => span.classList.add(className(code)));
+    span.textContent = text;
+    return span;
+}
+
+/**
+ * Colorizes text with Minecraft's § codes.
+ * @param {string} text
+ * @returns {(Element | Text)[]}
+ */
+function colorizeText(text) {
+    const result = [];
+    const regex = new RegExp(`§([${Object.keys(TEXT_CODES).join('')}])`, 'g');
+    let lastIndex = 0;
+    let match = regex.exec(text);
+
+    /** @type {string | null} */
+    let colorCode = null;
+    const formatCodes = /** @type {Set<string>} */ (new Set());
+    /**
+     * List of codes to apply to the text.
+     * @param {Set<string>} formatCodes
+     * @param {string | null} colorCode
+     * @returns {string[]}
+     */
+    function codes(formatCodes, colorCode) {
+        return Array.from(formatCodes).concat(colorCode ? [colorCode] : []);
+    }
+
+    while (match !== null) {
+        if (lastIndex < match.index) {
+            result.push(
+                createFormattedElement(
+                    text.slice(lastIndex, match.index),
+                    codes(formatCodes, colorCode),
+                ),
+            );
+        }
+
+        const code = match[1];
+        switch (code) {
+            case undefined:
+                throw new Error('Unreachable!');
+            case 'r':
+                colorCode = null;
+                formatCodes.clear();
+                break;
+            default:
+                if (code in COLOR_CODES) {
+                    colorCode = code;
+                } else {
+                    formatCodes.add(code);
+                }
+        }
+
+        lastIndex = regex.lastIndex;
+        match = regex.exec(text);
+    }
+
+    if (lastIndex < text.length) {
+        result.push(
+            createFormattedElement(
+                text.slice(lastIndex),
+                codes(formatCodes, colorCode),
+            ),
+        );
     }
 
     return result;
@@ -844,85 +957,146 @@ function formatHoverEvent(hoverEvent) {
 }
 
 /**
- * Formats a Minecraft component into HTML.
+ * Transforms component structure into HTML.
+ * @param {Component} component
+ * @returns {Element}
+ */
+function formatComponent(component) {
+    const result = document.createElement('span');
+
+    // Using CSS classes for standard colors for consistency with Minecrafts palette
+    // Direct style attributes only used for hex colors
+    if (component.color) {
+        if (!isValidColor(component.color)) {
+            console.warn('Invalid color format:', component.color);
+        } else if (component.color.startsWith('#')) {
+            result.style.color = component.color;
+        } else {
+            result.classList.add(`mc-${component.color.replace(/_/g, '-')}`);
+        }
+    }
+
+    if (component.bold) {
+        result.classList.add('mc-bold');
+    }
+    if (component.italic) {
+        result.classList.add('mc-italic');
+    }
+    if (component.underlined) {
+        result.classList.add('mc-underlined');
+    }
+    if (component.strikethrough) {
+        result.classList.add('mc-strikethrough');
+    }
+    if (component.obfuscated) {
+        result.classList.add('mc-obfuscated');
+    }
+
+    // Hover events are implemented as titles for simplicity and broad browser compatibility
+    if (component.hoverEvent) {
+        result.title = formatHoverEvent(component.hoverEvent);
+    }
+
+    if (component.text) {
+        result.appendChild(document.createTextNode(component.text));
+    } else if (component.translate) {
+        formatTranslation(component.translate, component.with ?? []).forEach(
+            (component) => result.appendChild(component),
+        );
+    }
+
+    if (component.extra) {
+        component.extra
+            .map((component) => {
+                if (typeof component === 'string') {
+                    return document.createTextNode(component);
+                }
+                if (typeof component === 'number') {
+                    return document.createTextNode(String(component));
+                }
+
+                return formatComponent(component);
+            })
+            .forEach((component) => result.appendChild(component));
+    }
+
+    if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
+        console.warn('Chat message exceeded maximum length, truncating');
+        result.textContent = result.textContent.slice(0, MAX_CHAT_LENGTH);
+    }
+
+    return result;
+}
+
+const NON_BREAKING_SPACE = '\u00A0';
+
+/**
+ * Transforms text content into HTML.
+ * @param {Element} element
+ */
+function formatPlainText(element) {
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+    );
+
+    /** @type {Text[]} */
+    const textNodes = [];
+    while (walker.nextNode()) {
+        textNodes.push(/** @type {Text} */ (walker.currentNode));
+    }
+
+    for (const textNode of textNodes) {
+        let text = textNode.textContent ?? '';
+
+        // Replace runs of 2+ spaces with non-breaking spaces
+        text = text.replace(/[ ]{2,}/g, (match) =>
+            NON_BREAKING_SPACE.repeat(match.length),
+        );
+
+        const parent = textNode.parentNode;
+        if (!parent) continue;
+
+        const linkedElements = linkifyText(text);
+
+        const finalElements = linkedElements.flatMap((element) => {
+            if (element instanceof HTMLAnchorElement) {
+                return element;
+            }
+
+            return colorizeText(element.textContent ?? '');
+        });
+
+        const replacement = document.createDocumentFragment();
+        for (const element of finalElements) {
+            replacement.appendChild(element);
+        }
+
+        parent.replaceChild(replacement, textNode);
+    }
+}
+
+/**
+ * Transforms a Minecraft component into HTML.
  * @param {Component} component
  * @returns {Element | Text}
  */
-export function formatComponent(component) {
-    const result = document.createElement('span');
-
+export function formatChatMessage(component) {
+    /** @type {Element} */
+    let element;
     try {
-        // Using CSS classes for standard colors for consistency with Minecrafts palette
-        // Direct style attributes only used for hex colors
-        if (component.color) {
-            if (!isValidColor(component.color)) {
-                console.warn('Invalid color format:', component.color);
-            } else if (component.color.startsWith('#')) {
-                result.style.color = component.color;
-            } else {
-                result.classList.add(
-                    `mc-${component.color.replace(/_/g, '-')}`,
-                );
-            }
-        }
-
-        if (component.bold) {
-            result.classList.add('mc-bold');
-        }
-        if (component.italic) {
-            result.classList.add('mc-italic');
-        }
-        if (component.underlined) {
-            result.classList.add('mc-underlined');
-        }
-        if (component.strikethrough) {
-            result.classList.add('mc-strikethrough');
-        }
-        if (component.obfuscated) {
-            result.classList.add('mc-obfuscated');
-        }
-
-        // Hover events are implemented as titles for simplicity and broad browser compatibility
-        if (component.hoverEvent) {
-            result.title = formatHoverEvent(component.hoverEvent);
-        }
-
-        if (component.text) {
-            linkifyText(component.text).forEach((component) =>
-                result.appendChild(component),
-            );
-        } else if (component.translate) {
-            formatTranslation(
-                component.translate,
-                component.with ?? [],
-            ).forEach((component) => result.appendChild(component));
-        }
-
-        if (component.extra) {
-            component.extra
-                .map((component) => {
-                    if (typeof component === 'string') {
-                        return document.createTextNode(component);
-                    }
-                    if (typeof component === 'number') {
-                        return document.createTextNode(String(component));
-                    }
-
-                    return formatComponent(component);
-                })
-                .forEach((component) => result.appendChild(component));
-        }
-
-        if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
-            console.warn('Chat message exceeded maximum length, truncating');
-            result.textContent = result.textContent.slice(0, MAX_CHAT_LENGTH);
-        }
-
-        return result;
+        // First pass: create an HTML element from the component structure
+        element = formatComponent(component);
     } catch (error) {
         console.error('Error formatting component:', error);
         return document.createTextNode(
             String(component.text ?? '').slice(0, MAX_CHAT_LENGTH),
         );
     }
+
+    // Second pass: transform the text content of the element and its children
+    formatPlainText(element);
+
+    return element;
 }
