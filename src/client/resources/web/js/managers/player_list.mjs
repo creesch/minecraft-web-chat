@@ -11,7 +11,6 @@ import { querySelectorWithAssertion } from '../utils.mjs';
  * Extends PlayerInfo to include the cached player head image and DOM element.
  * @typedef {PlayerInfo & {
  *   element?: HTMLElement, // Cached reference to the player's DOM element.
- *   playerClickHandler?: EventListener // Reference to the click event handler for cleanup.
  * }} StoredPlayerInfo
  */
 
@@ -234,7 +233,7 @@ class PlayerList {
         }
 
         // Add click event to insert the player name into the chat input
-        const playerClickHandler = () => {
+        playerElement.addEventListener('click', () => {
             const cursorPos = this.#chatInput.selectionStart;
             const textBefore = this.#chatInput.value.substring(0, cursorPos);
             const textAfter = this.#chatInput.value.substring(cursorPos);
@@ -242,12 +241,7 @@ class PlayerList {
             this.#chatInput.focus();
             this.#chatInput.selectionStart = this.#chatInput.selectionEnd =
                 cursorPos + player.playerDisplayName.length;
-        };
-
-        playerElement.addEventListener('click', playerClickHandler);
-
-        // Store the click handler for cleanup
-        player.playerClickHandler = playerClickHandler;
+        });
 
         // Assemble the player element.
         playerElement.appendChild(headContainer);
@@ -267,16 +261,7 @@ class PlayerList {
             return;
         }
 
-        if (player.playerClickHandler) {
-            player.element.removeEventListener(
-                'click',
-                player.playerClickHandler,
-            );
-            delete player.playerClickHandler; // Remove the reference to the handler
-        }
-
         player.element.remove(); // Remove the element from the DOM.
-        player.element = undefined; // Clear the cached reference to the element.
         this.#players.delete(playerId); // Remove the player from the map.
     }
 
