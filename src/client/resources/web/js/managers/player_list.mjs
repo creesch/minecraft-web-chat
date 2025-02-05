@@ -1,11 +1,7 @@
 // @ts-check
 'use strict';
 
-import {
-    STEVE_HEAD_BASE64,
-    getPlayerHead,
-    querySelectorWithAssertion,
-} from '../utils.mjs';
+import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
  * @typedef {import('../messages/message_types.mjs').PlayerInfo} PlayerInfo
@@ -14,16 +10,29 @@ import {
 /**
  * Extends PlayerInfo to include the cached player head image and DOM element.
  * @typedef {PlayerInfo & {
- *   playerHead?: string, // Cached base64 image data for the player's head.
  *   element?: HTMLElement, // Cached reference to the player's DOM element.
  *   playerClickHandler?: EventListener // Reference to the click event handler for cleanup.
  * }} StoredPlayerInfo
  */
 
 /**
+ * Checks if two player info objects are equal.
+ * @param {PlayerInfo} a
+ * @param {PlayerInfo} b
+ * @returns {boolean} True if the player info objects are equal, false otherwise.
+ */
+function playerInfoEquals(a, b) {
+    return (
+        a.playerId === b.playerId &&
+        a.playerName === b.playerName &&
+        a.playerDisplayName === b.playerDisplayName &&
+        a.playerTextureUrl === b.playerTextureUrl
+    );
+}
+
+/**
  * Manages the player list UI component, handling player data storage, DOM updates and player head image caching.
  */
-
 class PlayerList {
     /** @type {Map<string, StoredPlayerInfo>} */
     #players = new Map();
@@ -36,13 +45,6 @@ class PlayerList {
 
     /** @type {HTMLSpanElement} */
     #playerCountElement;
-
-    /**
-     * Flag to indicate if an update is in progress if set to true updating will be skipped.
-     * This shouldn't be too big of an issue once the initial playerlist is created as updates will be send every few seconds.
-     * @type {boolean}
-     */
-    #isUpdating = false;
 
     /**
      * @param {HTMLElement} listContainer
@@ -60,224 +62,111 @@ class PlayerList {
      * new players are added, and removed players are cleaned up.
      *
      * @param {PlayerInfo[]} newPlayerList - The new list of players.
-     * @returns {Promise<void>} Resolves when the update process is complete.
      */
-    async updatePlayerList(newPlayerList) {
+    updatePlayerList(newPlayerList) {
         if (!Array.isArray(newPlayerList)) {
             console.warn('Invalid player list data');
             return;
         }
 
-        if (this.#isUpdating) {
-            // Note: due to the use of requestAnimationFrame this will happen more often when a tab is in the background.
-            // Updates will pick up again once the tab is in focus.
-            console.warn('Update already in progress');
-            return;
-        }
-        this.#isUpdating = true;
-
-        try {
-            const currentPlayers = new Set(this.#players.keys());
-
-            // Identify players that need to be updated or added.
-            const playersNeedingUpdate = newPlayerList.filter((player) => {
-                if (!player.playerId || !player.playerName) {
-                    console.warn(
-                        `Invalid player data: ${JSON.stringify(player)}`,
-                    );
-                    return false;
-                }
-
-                const existingPlayer = this.#players.get(player.playerId);
-
-                // Conditions for requiring an update:
-                // 1. Player does not exist in the map
-                // 2. Player name, display name, or texture URL has changed. Note: It seems unlikely this happens with vanilla servers. Just accounting for potential modded servers.
-                return (
-                    !existingPlayer ||
-                    existingPlayer.playerName !== player.playerName ||
-                    existingPlayer.playerDisplayName !==
-                        player.playerDisplayName ||
-                    existingPlayer.playerTextureUrl !== player.playerTextureUrl
-                );
-            });
-
-            for (const player of newPlayerList) {
-                currentPlayers.delete(player.playerId);
+        // Identify players that need to be updated or added.
+        const updatedPlayers = newPlayerList.filter((player) => {
+            if (!player.playerId || !player.playerName) {
+                console.warn(`Invalid player data: ${JSON.stringify(player)}`);
+                return false;
             }
 
-            // Fetch or reuse player head images. Using promises for parallel processing.
-            const fetchPromises = playersNeedingUpdate.map(async (player) => {
-                const existingPlayer = this.#players.get(player.playerId);
+            const existingPlayer = this.#players.get(player.playerId);
+            if (!existingPlayer) {
+                // We need to update if the player doesn't exist in the map.
+                return true;
+            }
 
-                if (
-                    existingPlayer &&
-                    existingPlayer.playerTextureUrl === player.playerTextureUrl
-                ) {
-                    // Reuse existing head if the texture URL hasn't changed.
-                    return {
-                        ...player,
-                        playerHead: existingPlayer.playerHead,
-                    };
-                }
+            // We need to update if the player info has changed.
+            return !playerInfoEquals(existingPlayer, player);
+        });
 
-                try {
-                    const playerHead = await getPlayerHead(
-                        player.playerTextureUrl,
-                    );
-                    return {
-                        ...player,
-                        playerHead,
-                    };
-                } catch (error) {
-                    console.error(
-                        `Failed to get player head for ${player.playerName}, using default:`,
-                        error,
-                    );
-                    return {
-                        ...player,
-                        playerHead: STEVE_HEAD_BASE64,
-                    };
-                }
-            });
-
-            // Wait for all asynchronous fetches to complete.
-            const updatedPlayers = await Promise.all(fetchPromises);
-
-            // Batch DOM updates within the next animation frame for efficiency.
-            // Note: likely overkill for most small servers, just making sure that bigger servers with lots of users don't tank browser performance.
-            await new Promise(
-                (/** @type {(value: void) => void} */ resolve) => {
-                    requestAnimationFrame(() => {
-                        // Also use document fragment to for off screen dom building first.
-                        const fragment = document.createDocumentFragment();
-
-                        for (const player of updatedPlayers) {
-                            const existingPlayer = this.#players.get(
-                                player.playerId,
-                            );
-                            const element = this.#updatePlayerElement(
-                                player,
-                                existingPlayer,
-                            );
-
-                            // Store the updated player data in the map.
-                            this.#players.set(player.playerId, player);
-
-                            // Add new elements to the document fragment.
-                            if (element) {
-                                fragment.appendChild(element);
-                            }
-                        }
-
-                        // Append all new elements to the DOM in one operation.
-                        if (fragment.childNodes.length > 0) {
-                            this.#listContainer.appendChild(fragment);
-                        }
-
-                        // Remove players that are no longer in the list.
-                        for (const playerId of currentPlayers) {
-                            this.removePlayerElement(playerId);
-                        }
-
-                        // Update the header with the player count
-                        this.#playerCountElement.textContent = `(${this.getPlayerCount()})`;
-
-                        resolve(); // Mark the update process as complete.
-                    });
-                },
-            );
-        } finally {
-            this.#isUpdating = false;
+        const removedPlayers = new Set(this.#players.keys());
+        for (const player of newPlayerList) {
+            removedPlayers.delete(player.playerId);
         }
+
+        // Create a document fragment to hold the new elements.
+        const fragment = document.createDocumentFragment();
+        for (const player of updatedPlayers) {
+            const existingPlayer = this.#players.get(player.playerId);
+
+            // Create or update the player element.
+            /** @type {HTMLElement | undefined} */
+            let element;
+            if (!existingPlayer?.element) {
+                element = this.#createPlayerElement(player);
+                fragment.appendChild(element);
+            } else {
+                element = existingPlayer.element;
+                this.#updatePlayerElement(element, player, existingPlayer);
+            }
+
+            this.#players.set(player.playerId, {
+                ...player,
+                element,
+            });
+        }
+        // Append all new elements to the DOM in one operation.
+        if (fragment.childNodes.length > 0) {
+            this.#listContainer.appendChild(fragment);
+        }
+
+        // Remove players that are no longer in the list.
+        for (const playerId of removedPlayers) {
+            this.removePlayerElement(playerId);
+        }
+
+        // Update the header with the player count
+        this.#playerCountElement.textContent = `(${this.getPlayerCount()})`;
     }
 
     /**
      * Creates or updates a player's DOM element.
      *
+     * @param {HTMLElement} element - The element to update.
      * @param {StoredPlayerInfo} player - The player data to update.
      * @param {StoredPlayerInfo} [existingPlayer] - The previous state of the player (if any).
-     * @returns {HTMLElement|null} Returns the element if newly created, null if updated.
      */
-    #updatePlayerElement(player, existingPlayer) {
-        let playerElement = player.element;
-
-        if (!playerElement) {
-            // Create a new DOM element if none exists for the player.
-            playerElement = document.createElement('li');
-            playerElement.setAttribute('role', 'listitem');
-            playerElement.setAttribute('data-player-id', player.playerId);
-
-            // Create and configure the player's head image.
-            const headImg = document.createElement('img');
-            headImg.className = 'player-head';
-            headImg.src = player.playerHead || STEVE_HEAD_BASE64;
-            headImg.alt = `${player.playerDisplayName}'s head`;
-            headImg.setAttribute('aria-hidden', 'true');
-
-            // Create and configure the player's display name span.
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'player-name';
-            nameSpan.textContent = player.playerDisplayName;
-            nameSpan.title = player.playerName;
-
-            // Specifically for aria labels show both playerDisplayName and playerName if they are different.
-            if (player.playerDisplayName !== player.playerName) {
-                nameSpan.setAttribute(
-                    'aria-label',
-                    `Display name: ${player.playerDisplayName}, Username: ${player.playerName}`,
-                );
-            } else {
-                nameSpan.setAttribute(
-                    'aria-label',
-                    `Player name: ${player.playerDisplayName}`,
-                );
-            }
-
-            // Add click event to insert the player name into the chat input
-            const playerClickHandler = () => {
-                const cursorPos = this.#chatInput.selectionStart;
-                const textBefore = this.#chatInput.value.substring(
-                    0,
-                    cursorPos,
-                );
-                const textAfter = this.#chatInput.value.substring(cursorPos);
-                this.#chatInput.value = `${textBefore}${player.playerDisplayName}${textAfter}`;
-                this.#chatInput.focus();
-                this.#chatInput.selectionStart = this.#chatInput.selectionEnd =
-                    cursorPos + player.playerDisplayName.length;
-            };
-
-            playerElement.addEventListener('click', playerClickHandler);
-
-            // Store the click handler for cleanup
-            player.playerClickHandler = playerClickHandler;
-
-            // Assemble the player element.
-            playerElement.appendChild(headImg);
-            playerElement.appendChild(nameSpan);
-
-            // Cache the created element in the player object for future use.
-            player.element = playerElement;
-            return playerElement;
-        }
-
+    #updatePlayerElement(element, player, existingPlayer) {
         // Update the existing element if properties have changed.
-        const headImg = /** @type {HTMLImageElement | null} */ (
-            playerElement.querySelector('.player-head')
+        const headContainer = /** @type {HTMLDivElement | null} */ (
+            element.querySelector('.player-head-container')
         );
-        const nameSpan = /** @type {HTMLSpanElement | null} */ (
-            playerElement.querySelector('.player-name')
-        );
-
-        if (
-            headImg &&
-            existingPlayer?.playerTextureUrl !== player.playerTextureUrl
-        ) {
-            headImg.src = player.playerHead || STEVE_HEAD_BASE64;
-            headImg.alt = `${player.playerDisplayName}'s head`;
+        if (headContainer) {
+            if (
+                existingPlayer?.playerDisplayName !== player.playerDisplayName
+            ) {
+                headContainer.title = `${player.playerDisplayName}'s head`;
+            }
         }
 
+        const headImg = /** @type {HTMLImageElement | null} */ (
+            element.querySelector('.player-head')
+        );
+        if (headImg) {
+            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
+                headImg.src = player.playerTextureUrl;
+            }
+        }
+
+        const headOverlay = /** @type {HTMLImageElement | null} */ (
+            element.querySelector('.player-head-overlay')
+        );
+        if (headOverlay) {
+            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
+                headOverlay.src = player.playerTextureUrl;
+            }
+        }
+
+        const nameSpan = /** @type {HTMLSpanElement | null} */ (
+            element.querySelector('.player-name')
+        );
         if (nameSpan) {
             if (
                 existingPlayer?.playerDisplayName !== player.playerDisplayName
@@ -289,9 +178,82 @@ class PlayerList {
                 nameSpan.title = player.playerName;
             }
         }
+    }
 
-        // No new element created. Any updates to the existing element have been done. So return null.
-        return null;
+    /**
+     * Creates a new player element.
+     * @param {StoredPlayerInfo} player
+     * @returns {HTMLElement}
+     */
+    #createPlayerElement(player) {
+        // Create a new DOM element if none exists for the player.
+        const playerElement = document.createElement('li');
+        playerElement.setAttribute('role', 'listitem');
+        playerElement.setAttribute('data-player-id', player.playerId);
+
+        const headContainer = document.createElement('div');
+        headContainer.className = 'player-head-container';
+        headContainer.title = `${player.playerDisplayName}'s head`;
+
+        // Create and configure the player's head image.
+        const headImg = document.createElement('img');
+        headImg.className = 'player-head';
+        headImg.src = player.playerTextureUrl;
+        headImg.setAttribute('aria-hidden', 'true');
+        headImg.onerror = () => {
+            headImg.src = '/img/steve.png';
+        };
+        headContainer.appendChild(headImg);
+
+        const headOverlay = document.createElement('img');
+        headOverlay.className = 'player-head-overlay';
+        headOverlay.src = player.playerTextureUrl;
+        headOverlay.setAttribute('aria-hidden', 'true');
+        headOverlay.onerror = () => {
+            headOverlay.src = '/img/steve.png';
+        };
+        headContainer.appendChild(headOverlay);
+
+        // Create and configure the player's display name span.
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'player-name';
+        nameSpan.textContent = player.playerDisplayName;
+        nameSpan.title = player.playerName;
+
+        // Specifically for aria labels show both playerDisplayName and playerName if they are different.
+        if (player.playerDisplayName !== player.playerName) {
+            nameSpan.setAttribute(
+                'aria-label',
+                `Display name: ${player.playerDisplayName}, Username: ${player.playerName}`,
+            );
+        } else {
+            nameSpan.setAttribute(
+                'aria-label',
+                `Player name: ${player.playerDisplayName}`,
+            );
+        }
+
+        // Add click event to insert the player name into the chat input
+        const playerClickHandler = () => {
+            const cursorPos = this.#chatInput.selectionStart;
+            const textBefore = this.#chatInput.value.substring(0, cursorPos);
+            const textAfter = this.#chatInput.value.substring(cursorPos);
+            this.#chatInput.value = `${textBefore}${player.playerDisplayName}${textAfter}`;
+            this.#chatInput.focus();
+            this.#chatInput.selectionStart = this.#chatInput.selectionEnd =
+                cursorPos + player.playerDisplayName.length;
+        };
+
+        playerElement.addEventListener('click', playerClickHandler);
+
+        // Store the click handler for cleanup
+        player.playerClickHandler = playerClickHandler;
+
+        // Assemble the player element.
+        playerElement.appendChild(headContainer);
+        playerElement.appendChild(nameSpan);
+
+        return playerElement;
     }
 
     /**

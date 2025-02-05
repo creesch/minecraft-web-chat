@@ -357,7 +357,7 @@ function connect() {
         updateWebsocketConnectionStatus('error');
     };
 
-    ws.onmessage = async function (event) {
+    ws.onmessage = function (event) {
         /** @type {string} */
         const rawJson = event.data;
         console.log('Got websocket message:', rawJson);
@@ -374,7 +374,7 @@ function connect() {
                     handleMinecraftServerConnectionState(message);
                     break;
                 case 'serverPlayerList':
-                    await playerList.updatePlayerList(message.payload);
+                    playerList.updatePlayerList(message.payload);
             }
         } catch (e) {
             console.error('Error processing message:', e);

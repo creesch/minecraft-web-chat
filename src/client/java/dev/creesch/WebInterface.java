@@ -88,8 +88,8 @@ public class WebInterface {
                 "default-src 'self'; " +
                 "script-src 'self' 'unsafe-inline'; " +
                 "style-src 'self' 'unsafe-inline'; " +
-                "img-src 'self' data:; " +
-                "connect-src 'self' https://textures.minecraft.net;" // Need to fetch player textures.
+                "img-src 'self' data: https://textures.minecraft.net; " + // Need to fetch player textures.
+                "connect-src 'self';"
             );
             ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
             ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
