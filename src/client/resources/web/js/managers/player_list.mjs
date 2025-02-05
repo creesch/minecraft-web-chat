@@ -119,7 +119,7 @@ class PlayerList {
 
         // Remove players that are no longer in the list.
         for (const playerId of removedPlayers) {
-            this.removePlayerElement(playerId);
+            this.#removePlayerElement(playerId);
         }
 
         // Update the header with the player count
@@ -261,7 +261,7 @@ class PlayerList {
      *
      * @param {string} playerId - The ID of the player to remove.
      */
-    removePlayerElement(playerId) {
+    #removePlayerElement(playerId) {
         const player = this.#players.get(playerId);
         if (!player || !player.element) {
             return;
@@ -288,7 +288,7 @@ class PlayerList {
         const playerIds = Array.from(this.#players.keys());
 
         for (const playerId of playerIds) {
-            this.removePlayerElement(playerId);
+            this.#removePlayerElement(playerId);
         }
 
         // Clear the map as a safety net in case any players weren't properly removed
