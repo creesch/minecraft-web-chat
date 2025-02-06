@@ -21,13 +21,21 @@ public class WebchatClient implements ClientModInitializer {
     private WebInterface webInterface;
     private ChatMessageRepository messageRepository;
     private int tickCounter = 0;
+    private static WebchatClient INSTANCE;
 
     @Override
     public void onInitializeClient() {
+        if (INSTANCE != null) {
+            throw new IllegalStateException(
+                "WebchatClient already initialized"
+            );
+        }
+
+        INSTANCE = this;
+
         ModConfig.init();
         messageRepository = new ChatMessageRepository();
         webInterface = new WebInterface(messageRepository);
-        ModConfig config = ModConfig.HANDLER.instance();
 
         LOGGER.info("web chat loaded");
 
@@ -93,20 +101,7 @@ public class WebchatClient implements ClientModInitializer {
                     WebsocketMessageBuilder.createPlayerList(client)
                 );
 
-                String webchatPort = String.valueOf(config.httpPortNumber);
-                Text message = Text.literal("Web chat: ").append(
-                    Text.literal("http://localhost:" + webchatPort)
-                        .formatted(Formatting.BLUE, Formatting.UNDERLINE)
-                        .styled(style ->
-                            style.withClickEvent(
-                                new ClickEvent(
-                                    ClickEvent.Action.OPEN_URL,
-                                    "http://localhost:" + webchatPort
-                                )
-                            )
-                        )
-                );
-                client.player.sendMessage(message, false);
+                showWebAddress(client);
             });
         });
 
@@ -150,5 +145,44 @@ public class WebchatClient implements ClientModInitializer {
                 tickCounter = 0; // Reset counter
             }
         });
+    }
+
+    public static void onConfigChanged() {
+        if (INSTANCE == null) {
+            return;
+        }
+        if (INSTANCE.webInterface == null) {
+            return;
+        }
+        if (
+            INSTANCE.webInterface.getCurrentPort() ==
+            ModConfig.HANDLER.instance().httpPortNumber
+        ) {
+            return;
+        }
+
+        // Port has changed, shutdown the old instance and create a new one.
+        INSTANCE.webInterface.shutdown();
+        INSTANCE.webInterface = new WebInterface(INSTANCE.messageRepository);
+        INSTANCE.showWebAddress(MinecraftClient.getInstance());
+    }
+
+    private void showWebAddress(MinecraftClient client) {
+        String webchatPort = String.valueOf(
+            ModConfig.HANDLER.instance().httpPortNumber
+        );
+        Text message = Text.literal("Web chat: ").append(
+            Text.literal("http://localhost:" + webchatPort)
+                .formatted(Formatting.BLUE, Formatting.UNDERLINE)
+                .styled(style ->
+                    style.withClickEvent(
+                        new ClickEvent(
+                            ClickEvent.Action.OPEN_URL,
+                            "http://localhost:" + webchatPort
+                        )
+                    )
+                )
+        );
+        client.player.sendMessage(message, false);
     }
 }

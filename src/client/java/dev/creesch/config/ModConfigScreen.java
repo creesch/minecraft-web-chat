@@ -85,9 +85,7 @@ public class ModConfigScreen {
                                         OptionDescription.of(
                                             Text.literal(
                                                 "Port number used to serve the web interface.\n" +
-                                                "Make sure that this port is available.\n" +
-                                                "\n" +
-                                                "IMPORTANT: You need to restart minecraft for this to take effect."
+                                                "Make sure that this port is available."
                                             )
                                         )
                                     )
@@ -118,7 +116,10 @@ public class ModConfigScreen {
                     )
                     .build()
             )
-            .save(() -> ModConfig.HANDLER.save())
+            .save(() -> {
+                ModConfig.HANDLER.save();
+                dev.creesch.WebchatClient.onConfigChanged();
+            })
             .build()
             .generateScreen(parent);
     }

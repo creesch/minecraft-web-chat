@@ -317,4 +317,8 @@ public class WebInterface {
             }
         });
     }
+
+    public int getCurrentPort() {
+        return server.port();
+    }
 }
