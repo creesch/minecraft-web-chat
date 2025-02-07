@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
@@ -40,6 +42,9 @@ public class WebInterface {
         "[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]"
     );
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
+
+    private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
+    private AtomicInteger connectionsToClose;
 
     public WebInterface(ChatMessageRepository messageRepository) {
         if (messageRepository == null) {
@@ -180,7 +185,14 @@ public class WebInterface {
                         ? ctx.session.getRemoteAddress()
                         : "unknown remote address"
                 );
-                connections.add(ctx);
+
+                if (!addConnection(ctx)) {
+                    LOGGER.warn(
+                        "Failed to add connection: {}",
+                        ctx.session.getRemoteAddress()
+                    );
+                    return;
+                }
 
                 // If minecraft is connected to a server the client needs to know.
                 // Client should never be null, but again better safe than sorry.
@@ -222,23 +234,60 @@ public class WebInterface {
                     ctx.status(),
                     ctx.reason()
                 );
-                connections.remove(ctx);
+                removeConnection(ctx);
             });
 
             ws.onMessage(ctx -> handleReceivedMessages(ctx));
 
             ws.onError(ctx -> {
                 LOGGER.error("WebSocket error: ", ctx.error());
-                connections.remove(ctx);
+                removeConnection(ctx);
             });
         });
     }
 
+    /**
+     * Adds a connection to the set of connections.
+     *
+     * @param ctx The WebSocket context to add.
+     * @return True if the connection was added.
+     */
+    private boolean addConnection(WsContext ctx) {
+        if (shutdownInitiated.get()) {
+            ctx.session.disconnect();
+            return false;
+        }
+
+        connections.add(ctx);
+
+        return true;
+    }
+
+    /**
+     * Removes a connection from the set of connections.
+     *
+     * @param ctx The WebSocket context to remove.
+     */
+    private void removeConnection(WsContext ctx) {
+        connections.remove(ctx);
+
+        if (shutdownInitiated.get()) {
+            connectionsToClose.decrementAndGet();
+        }
+    }
+
     public void shutdown() {
-        // Try to avoid log spam from connections that are not gracefully closed.
+        boolean wasInitiated = shutdownInitiated.getAndSet(true);
+        if (wasInitiated) {
+            return;
+        }
+
+        connectionsToClose = new AtomicInteger(connections.size());
+
         connections.forEach(ctx -> {
             try {
-                ctx.session.close(); // Close the WebSocket session
+                // Initiates an asynchronous close of the connection.
+                ctx.session.close();
             } catch (Exception e) {
                 LOGGER.warn(
                     "Failed to close WebSocket connection: {}",
@@ -247,7 +296,15 @@ public class WebInterface {
                 );
             }
         });
-        connections.clear();
+
+        // Wait until all connections have been closed.
+        while (connectionsToClose.get() != 0) {
+            try {
+                connectionsToClose.wait(100);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
 
         if (server == null) {
             return;
