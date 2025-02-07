@@ -306,10 +306,6 @@ public class WebInterface {
             }
         }
 
-        if (server == null) {
-            return;
-        }
-
         LOGGER.info("Shutting down web interface");
         server.stop();
     }
