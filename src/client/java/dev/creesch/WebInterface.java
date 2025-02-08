@@ -36,13 +36,14 @@ public class WebInterface {
     );
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
-    ModConfig config = ModConfig.HANDLER.instance();
+    private static final ModConfig config = ModConfig.HANDLER.instance();
     private final ChatMessageRepository messageRepository;
     private static final Pattern ILLEGAL_CHARACTERS = Pattern.compile(
         "[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]"
     );
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
 
+    private String staticFilesPath = "";
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private AtomicInteger connectionsToClose;
 
@@ -56,13 +57,23 @@ public class WebInterface {
         server = createServer();
         setupWebSocket();
 
-        server.start(config.httpPortNumber);
-        LOGGER.info("Web interface started on port {}", config.httpPortNumber);
+        server.start(WebInterface.config.httpPortNumber);
+        LOGGER.info(
+            "Web interface started on port {}",
+            WebInterface.config.httpPortNumber
+        );
     }
 
     private Javalin createServer() {
         return Javalin.create(config -> {
-            config.staticFiles.add("/web", Location.CLASSPATH);
+            staticFilesPath = WebInterface.config.staticFilesPath;
+
+            if (staticFilesPath.equals("")) {
+                config.staticFiles.add("/web", Location.CLASSPATH);
+            } else {
+                config.staticFiles.add(staticFilesPath, Location.EXTERNAL);
+            }
+
             config.http.defaultContentType = "text/plain";
         }).before(ctx -> {
             // Note, most things that are set here are overkill as users are _supposed_ to only uses this on their local machine through localhost.
@@ -373,5 +384,9 @@ public class WebInterface {
 
     public int getCurrentPort() {
         return server.port();
+    }
+
+    public String getCurrentPath() {
+        return staticFilesPath;
     }
 }

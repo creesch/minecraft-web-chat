@@ -36,6 +36,12 @@ public class ModConfig {
     @SerialEntry(comment = "Extra ping keywords")
     public List<String> pingKeywords = Arrays.asList();
 
+    @SerialEntry(comment = "Enable development mode")
+    public boolean developmentMode = false;
+
+    @SerialEntry(comment = "Web interface static files path")
+    public String staticFilesPath = "";
+
     public static void init() {
         HANDLER.load();
     }

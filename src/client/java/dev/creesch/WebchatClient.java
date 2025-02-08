@@ -154,17 +154,22 @@ public class WebchatClient implements ClientModInitializer {
         if (INSTANCE.webInterface == null) {
             return;
         }
-        if (
-            INSTANCE.webInterface.getCurrentPort() ==
-            ModConfig.HANDLER.instance().httpPortNumber
-        ) {
-            return;
-        }
 
-        // Port has changed, shutdown the old instance and create a new one.
-        INSTANCE.webInterface.shutdown();
-        INSTANCE.webInterface = new WebInterface(INSTANCE.messageRepository);
-        INSTANCE.showWebAddress(MinecraftClient.getInstance());
+        boolean portChanged =
+            INSTANCE.webInterface.getCurrentPort() !=
+            ModConfig.HANDLER.instance().httpPortNumber;
+
+        boolean pathChanged =
+            INSTANCE.webInterface.getCurrentPath() !=
+            ModConfig.HANDLER.instance().staticFilesPath;
+
+        if (portChanged || pathChanged) {
+            INSTANCE.webInterface.shutdown();
+            INSTANCE.webInterface = new WebInterface(
+                INSTANCE.messageRepository
+            );
+            INSTANCE.showWebAddress(MinecraftClient.getInstance());
+        }
     }
 
     private void showWebAddress(MinecraftClient client) {
