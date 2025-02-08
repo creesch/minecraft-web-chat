@@ -126,7 +126,7 @@ class PlayerList {
     }
 
     /**
-     * Creates or updates a player's DOM element.
+     * Updates a player's DOM element.
      *
      * @param {HTMLElement} element - The element to update.
      * @param {StoredPlayerInfo} player - The player data to update.
