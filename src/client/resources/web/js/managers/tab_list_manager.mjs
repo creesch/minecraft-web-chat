@@ -167,10 +167,16 @@ class TabListManager {
                 )
                 .map((match) => {
                     const li = document.createElement('li');
-                    li.textContent = match.playerDisplayName;
                     li.addEventListener('click', () =>
                         this.#insertPlayerName(),
                     );
+
+                    const displayNameUnchanged =
+                        match.playerDisplayName.toLocaleLowerCase() ===
+                        match.playerName.toLocaleLowerCase();
+                    li.textContent = displayNameUnchanged
+                        ? match.playerDisplayName
+                        : `${match.playerDisplayName} (${match.playerName})`;
 
                     return li;
                 }),
