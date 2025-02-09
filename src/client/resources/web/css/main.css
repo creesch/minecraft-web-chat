@@ -132,10 +132,12 @@ body {
     color: #ffffff;
 }
 
-#tab-list li:hover,
-#tab-list li.selected {
+#tab-list li.selected,
+#tab-list li:hover {
     background-color: #007bff;
-    color: #ffffff;
+}
+#tab-list:hover li.selected:not(:hover) {
+    background-color: transparent;
 }
 
 #messages {
