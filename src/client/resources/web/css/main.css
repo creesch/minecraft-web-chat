@@ -17,6 +17,7 @@ body {
 }
 
 #chat-area {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -105,6 +106,36 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+#tab-list {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #555;
+    border-radius: 0.3rem;
+    display: none;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+#tab-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#tab-list li {
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #ffffff;
+}
+
+#tab-list li:hover,
+#tab-list li.selected {
+    background-color: #007bff;
+    color: #ffffff;
 }
 
 #messages {

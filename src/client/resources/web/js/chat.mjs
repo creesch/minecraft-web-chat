@@ -12,6 +12,7 @@ import { serverInfo } from './managers/server_info.mjs';
 import { playerList } from './managers/player_list.mjs';
 import { parseModServerMessage } from './messages/message_types.mjs';
 import { faviconManager } from './managers/favicon_manager.mjs';
+import { tabListManager } from './managers/tab_list_manager.mjs';
 
 /**
  * Import all types we might need
@@ -89,12 +90,29 @@ messageSendButtonElement.addEventListener('click', () => {
 // Focus input on load
 chatInputElement.focus();
 
-// Allow Enter key to send messages
-chatInputElement.addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        sendChatMessage();
+chatInputElement.addEventListener('keydown', function (e) {
+    if (tabListManager.visible()) {
+        tabListManager.handleInputKeydown(e);
+        return;
     }
+
+    switch (e.key) {
+        case 'Escape':
+            chatInputElement.blur();
+            return;
+        case 'Tab':
+            e.preventDefault();
+            tabListManager.openTabList(playerList.getAllPlayers());
+            return;
+        case 'Enter':
+            e.preventDefault();
+            sendChatMessage();
+            return;
+    }
+});
+
+chatInputElement.addEventListener('input', function () {
+    tabListManager.hide();
 });
 
 // Load more button clicked
