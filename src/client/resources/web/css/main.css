@@ -99,6 +99,8 @@ body {
 }
 
 .player-name {
+    font-family: 'JetBrains Mono', monospace;
+
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -106,6 +108,8 @@ body {
 }
 
 #messages {
+    font-family: 'JetBrains Mono', monospace;
+
     flex: 1;
     overflow-y: auto;
     padding: 1rem;
@@ -180,6 +184,8 @@ body {
 }
 
 #input-area {
+    font-family: 'JetBrains Mono', monospace;
+
     padding: 1rem;
     background-color: rgba(0, 0, 0, 0.2);
     display: flex;

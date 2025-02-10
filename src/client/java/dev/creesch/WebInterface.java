@@ -91,6 +91,7 @@ public class WebInterface {
             ctx.header(
                 "Content-Security-Policy",
                 "default-src 'self'; " +
+                "font-src 'self'; " +
                 "script-src 'self' 'unsafe-inline'; " +
                 "style-src 'self' 'unsafe-inline'; " +
                 "img-src 'self' data: https://textures.minecraft.net; " + // Need to fetch player textures.
