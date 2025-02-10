@@ -43,6 +43,7 @@ const FORMATTING_CODES = {
 
 /** @type {Record<string, string>} */
 const TEXT_CODES = { ...COLOR_CODES, ...FORMATTING_CODES };
+export const TEXT_CODES_PATTERN = `§([${Object.keys(TEXT_CODES).join('')}])`;
 
 const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
 
@@ -647,7 +648,7 @@ function createFormattedElement(text, codes) {
  */
 function colorizeText(text) {
     const result = [];
-    const regex = new RegExp(`§([${Object.keys(TEXT_CODES).join('')}])`, 'g');
+    const regex = new RegExp(TEXT_CODES_PATTERN, 'g');
     let lastIndex = 0;
     let match = regex.exec(text);
 

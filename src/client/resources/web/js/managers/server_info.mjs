@@ -2,7 +2,10 @@
 'use strict';
 
 import { querySelectorWithAssertion } from '../utils.mjs';
-import { formatPlainText } from '../messages/message_parsing.mjs';
+import {
+    formatPlainText,
+    TEXT_CODES_PATTERN,
+} from '../messages/message_parsing.mjs';
 
 /**
  * Class to manage server information and related UI updates
@@ -46,7 +49,10 @@ class ServerInfo {
         this.#name = name;
         this.#id = id;
 
-        document.title = `${this.#baseTitle} - ${name.replace(/§[0-9a-frklmno]/g, '')}`;
+        document.title = `${this.#baseTitle} - ${name.replace(
+            new RegExp(TEXT_CODES_PATTERN, 'g'),
+            '',
+        )}`;
         this.#serverNameElement.textContent = name;
 
         formatPlainText(this.#serverNameElement, false);
