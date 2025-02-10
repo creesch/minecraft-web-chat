@@ -2,6 +2,7 @@
 'use strict';
 
 import { querySelectorWithAssertion } from '../utils.mjs';
+import { formatPlainText } from '../messages/message_parsing.mjs';
 
 /**
  * Class to manage server information and related UI updates
@@ -47,6 +48,8 @@ class ServerInfo {
 
         document.title = `${this.#baseTitle} - ${name}`;
         this.#serverNameElement.textContent = name;
+
+        formatPlainText(this.#serverNameElement, false);
     }
 
     /**
