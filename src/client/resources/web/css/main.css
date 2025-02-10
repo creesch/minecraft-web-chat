@@ -136,9 +136,6 @@ body {
 #tab-list li:hover {
     background-color: #007bff;
 }
-#tab-list:hover li.selected:not(:hover) {
-    background-color: transparent;
-}
 
 #messages {
     font-family: 'JetBrains Mono', monospace;

@@ -17,13 +17,13 @@ const chatInputElement = /** @type {HTMLTextAreaElement} */ (
 
 class TabListManager {
     /** @type {number} */
-    #currentTabSelectionIndex;
+    #selectedIndex;
 
     /** @type {PlayerInfo[]} */
     #players;
 
     constructor() {
-        this.#currentTabSelectionIndex = 0;
+        this.#selectedIndex = 0;
         this.#players = [];
     }
 
@@ -111,13 +111,12 @@ class TabListManager {
     show() {
         tabListElement.style.display = 'flex';
 
-        // Position relative to the bottom of the window and the input area.
+        // Position relative to the bottom of the window, above the input area.
         const inputAreaElement = querySelectorWithAssertion('#input-area');
         const inputRect = inputAreaElement.getBoundingClientRect();
-        // Calculate the distance from the bottom of the window
-        // plus the height of the input area (with a 5px margin)
         tabListElement.style.bottom = `${window.innerHeight - inputRect.bottom + inputRect.height + 5}px`;
-        // Position left relative to the cursor position.
+
+        // Position horizontally in line with the text cursor.
         const paddingLeft =
             window.getComputedStyle(inputAreaElement).paddingLeft;
         tabListElement.style.left = `calc(${this.#getPixelsToCursor()}px + ${paddingLeft})`;
@@ -136,7 +135,7 @@ class TabListManager {
 
         ul.replaceChildren();
         this.#players = [];
-        this.#currentTabSelectionIndex = 0;
+        this.#selectedIndex = 0;
     }
 
     /**
@@ -161,14 +160,19 @@ class TabListManager {
 
         ul.replaceChildren(
             ...matches
+                // Show names in alphabetical order.
                 .sort((a, b) =>
-                    // Show names in alphabetical order.
                     a.playerDisplayName.localeCompare(b.playerDisplayName),
                 )
-                .map((match) => {
+                // Show only first 5 matches.
+                .slice(0, 5)
+                .map((match, index) => {
                     const li = document.createElement('li');
                     li.addEventListener('click', () =>
                         this.#insertPlayerName(),
+                    );
+                    li.addEventListener('mouseenter', () =>
+                        this.#updateSelection(index),
                     );
 
                     const displayNameUnchanged =
@@ -204,15 +208,14 @@ class TabListManager {
             }
         });
 
-        this.#currentTabSelectionIndex = newIndex;
+        this.#selectedIndex = newIndex;
     }
 
     /**
      * Selects the next player in the list.
      */
     #selectNext() {
-        const newIndex =
-            (this.#currentTabSelectionIndex + 1) % this.#players.length;
+        const newIndex = (this.#selectedIndex + 1) % this.#players.length;
         this.#updateSelection(newIndex);
     }
 
@@ -221,7 +224,7 @@ class TabListManager {
      */
     #selectPrev() {
         const newIndex =
-            (this.#currentTabSelectionIndex - 1 + this.#players.length) %
+            (this.#selectedIndex - 1 + this.#players.length) %
             this.#players.length;
         this.#updateSelection(newIndex);
     }
@@ -230,7 +233,7 @@ class TabListManager {
      * Inserts the selected player name into the chat input.
      */
     #insertPlayerName() {
-        const selectedPlayer = this.#players[this.#currentTabSelectionIndex];
+        const selectedPlayer = this.#players[this.#selectedIndex];
         if (!selectedPlayer) {
             return;
         }
