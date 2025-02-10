@@ -46,7 +46,7 @@ class ServerInfo {
         this.#name = name;
         this.#id = id;
 
-        document.title = `${this.#baseTitle} - ${name}`;
+        document.title = `${this.#baseTitle} - ${name.replace(/§[0-9a-frklmno]/g, '')}`;
         this.#serverNameElement.textContent = name;
 
         formatPlainText(this.#serverNameElement, false);
