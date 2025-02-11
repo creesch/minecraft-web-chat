@@ -77,6 +77,8 @@ class TabListManager {
 
                 if (this.#players.length === 1) {
                     this.#insertPlayerName();
+                } else if (e.shiftKey) {
+                    this.#selectPrev();
                 } else {
                     this.#selectNext();
                 }
