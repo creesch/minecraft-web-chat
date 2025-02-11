@@ -245,19 +245,16 @@ class TabListManager {
         const beforeCursor = value.substring(0, cursorPos);
         const afterCursor = value.substring(cursorPos);
 
-        // Replace the word before the cursor with the selected text.
-        const playerName = selectedPlayer.playerDisplayName;
-        const wordMatch = beforeCursor.match(/(.*?)\b(\w+)$/);
-        if (wordMatch) {
-            const newBeforeCursor = wordMatch[1] + playerName;
-            chatInputElement.value = newBeforeCursor + afterCursor;
-            chatInputElement.selectionStart = chatInputElement.selectionEnd =
-                newBeforeCursor.length;
-        } else {
-            chatInputElement.value = playerName + afterCursor;
-            chatInputElement.selectionStart = chatInputElement.selectionEnd =
-                playerName.length;
-        }
+        // There is a partial player name before the cursor. Get everything before
+        // it and add the full player name after.
+        const prefix = beforeCursor.match(/(.*?)\b\w+$/);
+        const newBeforeCursor =
+            (prefix?.[1] ?? '') + selectedPlayer.playerDisplayName;
+        chatInputElement.value = newBeforeCursor + afterCursor;
+
+        // Update the cursor position.
+        chatInputElement.selectionStart = newBeforeCursor.length;
+        chatInputElement.selectionEnd = newBeforeCursor.length;
 
         this.hide();
     }
