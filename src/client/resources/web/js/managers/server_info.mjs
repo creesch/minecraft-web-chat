@@ -55,7 +55,7 @@ class ServerInfo {
         )}`;
         this.#serverNameElement.textContent = name;
 
-        formatPlainText(this.#serverNameElement, false);
+        formatPlainText(this.#serverNameElement);
     }
 
     /**

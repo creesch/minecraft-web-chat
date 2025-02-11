@@ -145,6 +145,7 @@ body {
     margin: 0.22rem 0;
     padding: 0.22rem 0.5rem;
     word-wrap: break-word;
+    white-space: pre-wrap;
     display: flex;
     flex-direction: row;
     align-items: flex-start; /* Ensure items start from the top */

@@ -1029,14 +1029,11 @@ function formatComponent(component) {
     return result;
 }
 
-const NON_BREAKING_SPACE = '\u00A0';
-
 /**
  * Transforms text content into HTML using § codes.
  * @param {Element} element
- * @param {boolean} preserveSpacing
  */
-export function formatPlainText(element, preserveSpacing) {
+export function formatPlainText(element) {
     const walker = document.createTreeWalker(
         element,
         NodeFilter.SHOW_TEXT,
@@ -1050,19 +1047,10 @@ export function formatPlainText(element, preserveSpacing) {
     }
 
     for (const textNode of textNodes) {
-        let text = textNode.textContent ?? '';
-
-        if (preserveSpacing) {
-            // Replace runs of 2+ spaces with non-breaking spaces
-            text = text.replace(/[ ]{2,}/g, (match) =>
-                NON_BREAKING_SPACE.repeat(match.length),
-            );
-        }
-
         const parent = textNode.parentNode;
         if (!parent) continue;
 
-        const linkedElements = linkifyText(text);
+        const linkedElements = linkifyText(textNode.textContent ?? '');
 
         const finalElements = linkedElements.flatMap((element) => {
             if (element instanceof HTMLAnchorElement) {
@@ -1100,7 +1088,7 @@ export function formatChatMessage(component) {
     }
 
     // Second pass: transform the text content of the element and its children
-    formatPlainText(element, true);
+    formatPlainText(element);
 
     return element;
 }

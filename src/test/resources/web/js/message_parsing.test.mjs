@@ -661,13 +661,6 @@ const COMPONENT_FORMATTING_TESTS = [
         },
         '<span class="mc-red">Unknown item \'<span class="mc-blue"><span class="mc-bold mc-dark-red">test</span></span>\'</span>',
     ],
-
-    // Non-breaking spaces
-    [
-        'multiple spaces',
-        { text: 'test   test' },
-        '<span>test&nbsp;&nbsp;&nbsp;test</span>',
-    ],
 ];
 
 for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
