@@ -352,6 +352,23 @@ public class WebInterface {
             }
 
             int maxLength = 256;
+            if (
+                message.startsWith("/msg ") ||
+                message.startsWith("/tell ") ||
+                message.startsWith("/w ")
+            ) {
+                String slash = "/";
+                int end = Math.min(
+                    message.length(),
+                    maxLength + slash.length()
+                );
+                // Remove the leading slash and truncate to maxLength.
+                player.networkHandler.sendChatCommand(
+                    message.substring(slash.length(), end)
+                );
+                return;
+            }
+
             if (message.length() <= maxLength) {
                 player.networkHandler.sendChatMessage(message);
                 return;
