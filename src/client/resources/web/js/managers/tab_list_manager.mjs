@@ -40,8 +40,8 @@ class TabListManager {
             return;
         }
 
-        const wordBeforeCursor = match[1]?.toLowerCase();
-        if (!wordBeforeCursor) {
+        const wordBefore = match[1]?.toLocaleLowerCase();
+        if (!wordBefore) {
             return;
         }
 
@@ -49,9 +49,9 @@ class TabListManager {
         const matches = players.filter(
             (player) =>
                 player.playerDisplayName
-                    .toLowerCase()
-                    .startsWith(wordBeforeCursor) ||
-                player.playerName.toLowerCase().startsWith(wordBeforeCursor),
+                    .toLocaleLowerCase()
+                    .startsWith(wordBefore) ||
+                player.playerName.toLocaleLowerCase().startsWith(wordBefore),
         );
         if (matches.length === 0) {
             this.hide();
@@ -245,8 +245,8 @@ class TabListManager {
         const beforeCursor = value.substring(0, cursorPos);
         const afterCursor = value.substring(cursorPos);
 
-        // There is a partial player name before the cursor. Get everything before
-        // it and add the full player name after.
+        // There is a partial player name before the cursor. Get everything
+        // before it and add the full player name after.
         const prefix = beforeCursor.match(/(.*?)\b\w+$/);
         const newBeforeCursor =
             (prefix?.[1] ?? '') + selectedPlayer.playerDisplayName;
@@ -273,7 +273,13 @@ class TabListManager {
         const style = window.getComputedStyle(chatInputElement);
         context.font =
             style.font ||
-            `${style.fontStyle} ${style.fontVariant} ${style.fontWeight} ${style.fontSize}/${style.lineHeight} ${style.fontFamily}`;
+            [
+                style.fontStyle,
+                style.fontVariant,
+                style.fontWeight,
+                `${style.fontSize}/${style.lineHeight}`,
+                style.fontFamily,
+            ].join(' ');
 
         const beforeCursor = chatInputElement.value.substring(
             0,
