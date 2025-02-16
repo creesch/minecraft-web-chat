@@ -355,7 +355,8 @@ public class WebInterface {
             if (
                 message.startsWith("/msg ") ||
                 message.startsWith("/tell ") ||
-                message.startsWith("/w ")
+                message.startsWith("/w ") ||
+                message.startsWith("/me ")
             ) {
                 String slash = "/";
                 int end = Math.min(
