@@ -42,6 +42,9 @@ public class WebInterface {
         "[\\n\\r§\u00A7\\u0000-\\u001F\\u200B-\\u200F\\u2028-\\u202F]"
     );
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
+    private static final Pattern SUPPORTED_COMMANDS = Pattern.compile(
+        "^/(msg|tell|w|me)(\\s|$)"
+    );
 
     private String staticFilesPath = "";
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
@@ -352,12 +355,7 @@ public class WebInterface {
             }
 
             int maxLength = 256;
-            if (
-                message.startsWith("/msg ") ||
-                message.startsWith("/tell ") ||
-                message.startsWith("/w ") ||
-                message.startsWith("/me ")
-            ) {
+            if (SUPPORTED_COMMANDS.matcher(message).matches()) {
                 String slash = "/";
                 int end = Math.min(
                     message.length(),
