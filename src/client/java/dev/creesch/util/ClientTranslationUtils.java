@@ -40,7 +40,7 @@ public class ClientTranslationUtils {
                 if (arg instanceof Text nestedText) {
                     collectTranslationKeys(nestedText, keys); // Recursively handle nested Text
                 } else if (arg instanceof String stringArg) {
-                    keys.putIfAbsent(stringArg, null); // Treat plain strings as potential keys
+                    keys.putIfAbsent(stringArg, null); // Treat plain strings as potential keys. Highly unlikely to ever happen, maybe impossible? Doesn't hurt to account for it.
                 }
             }
         }
