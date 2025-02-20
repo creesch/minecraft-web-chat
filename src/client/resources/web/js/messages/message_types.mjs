@@ -26,6 +26,7 @@
  *   payload: {
  *     history: boolean,
  *     component: Component,
+ *     translations: Record<string, string>,
  *     uuid: string,
  *     isPing: boolean,
  *   }

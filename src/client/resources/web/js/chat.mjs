@@ -203,25 +203,34 @@ function handleChatMessage(message) {
         try {
             // Format the chat message - this uses the Component format from message_parsing
             assertIsComponent(message.payload.component);
-            const chatContent = formatChatMessage(message.payload.component);
+            const chatContent = formatChatMessage(
+                message.payload.component,
+                message.payload.translations,
+            );
             messageElement.appendChild(chatContent);
         } catch (e) {
             console.error(message);
             if (e instanceof ComponentError) {
                 console.error('Invalid component:', e.toString());
                 messageElement.appendChild(
-                    formatChatMessage({
-                        text: 'Invalid message received from server',
-                        color: 'red',
-                    }),
+                    formatChatMessage(
+                        {
+                            text: 'Invalid message received from server',
+                            color: 'red',
+                        },
+                        {},
+                    ),
                 );
             } else {
                 console.error('Error parsing message:', e);
                 messageElement.appendChild(
-                    formatChatMessage({
-                        text: 'Error parsing message',
-                        color: 'red',
-                    }),
+                    formatChatMessage(
+                        {
+                            text: 'Error parsing message',
+                            color: 'red',
+                        },
+                        {},
+                    ),
                 );
             }
         }

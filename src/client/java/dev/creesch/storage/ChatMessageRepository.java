@@ -2,6 +2,7 @@ package dev.creesch.storage;
 
 import static dev.creesch.model.WebsocketMessageBuilder.createHistoricChatMessage;
 
+import com.google.gson.Gson;
 import dev.creesch.model.ChatMessagePayload;
 import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.util.NamedLogger;
@@ -18,11 +19,12 @@ public class ChatMessageRepository {
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
     private final SQLiteDataSource dataSource;
+    private static final Gson gson = new Gson();
 
     // DB constants
     private static final String DB_NAME = "chat_messages.db";
     private static final String DATA_DIR = "web-chat";
-    private static final int CURRENT_SCHEMA_VERSION = 1;
+    private static final int CURRENT_SCHEMA_VERSION = 2;
 
     // SQL queries
     private static final String CREATE_MESSAGES_TABLE_QUERY =
@@ -34,6 +36,7 @@ public class ChatMessageRepository {
             server_name TEXT NOT NULL,
             message_id TEXT NOT NULL,
             message_json TEXT NOT NULL,
+            translations_json TEXT NOT NULL,
             is_ping BOOLEAN NOT NULL,
             minecraft_version TEXT
         )
@@ -69,9 +72,10 @@ public class ChatMessageRepository {
             server_name,
             message_id,
             message_json,
+            translations_json,
             is_ping,
             minecraft_version
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
     // Base query, needs formatting
@@ -83,6 +87,7 @@ public class ChatMessageRepository {
             server_name,
             message_id,
             message_json,
+            translations_json,
             is_ping,
             minecraft_version
         FROM
@@ -94,6 +99,13 @@ public class ChatMessageRepository {
             timestamp DESC
         LIMIT
             ?
+        """;
+
+    private static final String V2_MIGRATION_QUERY =
+        """
+        ALTER TABLE messages ADD COLUMN translations_json TEXT NOT NULL DEFAULT '{}';
+
+        UPDATE schema_version SET version = 2;
         """;
 
     public ChatMessageRepository() {
@@ -137,6 +149,23 @@ public class ChatMessageRepository {
         }
     }
 
+    // To be used for future migrations as well. Does a rollback if the migration fails.
+    private void executeMigrationQuery(Connection conn, String migrationQuery) throws SQLException {
+        LOGGER.info("Executing migration query {}", migrationQuery);
+        conn.setAutoCommit(false);
+        try {
+            conn.createStatement().executeUpdate(migrationQuery);
+            conn.commit();
+            LOGGER.info("Migration completed successfully");
+        } catch (SQLException e) {
+            conn.rollback();
+            LOGGER.error("Migration failed", e);
+            throw e;
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    }
+
     private void checkSchemaVersion(Connection conn) throws SQLException {
         try (
             Statement stmt = conn.createStatement();
@@ -172,22 +201,12 @@ public class ChatMessageRepository {
                 );
             }
 
-            // Unless someone is messing with the database manually this should not happen yet.
-            // If they are messing with the database it likely isn't good. Throw an error.
-            // TODO: put in actual migration in the future when needed.
-            if (dbVersion < CURRENT_SCHEMA_VERSION) {
-                LOGGER.error(
-                    "Database schema version {} is older than supported version {}. Time travel?",
-                    dbVersion,
-                    CURRENT_SCHEMA_VERSION
-                );
-                throw new RuntimeException(
-                    "Database schema version " +
-                    dbVersion +
-                    " is older than supported version " +
-                    CURRENT_SCHEMA_VERSION
-                );
+            // Version 2 migration
+            if (dbVersion < 2) {
+                LOGGER.info("Migrating database to version 2");
+                executeMigrationQuery(conn, V2_MIGRATION_QUERY);
             }
+
         }
     }
 
@@ -213,8 +232,9 @@ public class ChatMessageRepository {
             statement.setString(3, message.getServer().getName());
             statement.setString(4, payload.getUuid());
             statement.setString(5, payload.getComponent().toString());
-            statement.setBoolean(6, payload.isPing());
-            statement.setString(7, message.getMinecraftVersion());
+            statement.setString(6, gson.toJson(payload.getTranslations()));
+            statement.setBoolean(7, payload.isPing());
+            statement.setString(8, message.getMinecraftVersion());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -256,6 +276,7 @@ public class ChatMessageRepository {
                     String serverName = rs.getString("server_name");
                     String messageId = rs.getString("message_id");
                     String messageJson = rs.getString("message_json");
+                    String translationsJson = rs.getString("translations_json");
                     boolean isPing = rs.getBoolean("is_ping");
                     String minecraftVersion = rs.getString("minecraft_version");
 
@@ -266,6 +287,7 @@ public class ChatMessageRepository {
                             serverName,
                             messageId,
                             messageJson,
+                            translationsJson,
                             isPing,
                             minecraftVersion
                         )

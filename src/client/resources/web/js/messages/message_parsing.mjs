@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-import { translations } from './translations.mjs';
+import { fallbackTranslations } from './fallback_translations.mjs';
 
 // Minecraft JSON message parsing to HTML.
 // A lot of the code below has been inspired (though not directly copied) by prismarine-chat: https://github.com/PrismarineJS/prismarine-chat
@@ -711,9 +711,10 @@ function colorizeText(text) {
  * Handles numbered substitution (%1$s, %2$s, etc.)
  * @param {string} template
  * @param {(number | string | Component)[]} args
+ * @param {Record<string, string>} translations
  * @returns {(Element | Text)[]}
  */
-function numberedSubstitution(template, args) {
+function numberedSubstitution(template, args, translations) {
     /** @type {(Element | Text)[]} */
     const result = [];
     const regex = /%(\d+)\$s/g;
@@ -740,7 +741,7 @@ function numberedSubstitution(template, args) {
         } else if (typeof value === 'number') {
             result.push(document.createTextNode(String(value)));
         } else {
-            result.push(formatComponent(value));
+            result.push(formatComponent(value, translations));
         }
 
         lastIndex = regex.lastIndex;
@@ -759,9 +760,10 @@ function numberedSubstitution(template, args) {
  * Handles simple %s placeholders.
  * @param {string} template
  * @param {(number | string | Component)[]} args
+ * @param {Record<string, string>} translations
  * @returns {(Element | Text)[]}
  */
-function simpleSubstitution(template, args) {
+function simpleSubstitution(template, args, translations) {
     /** @type {(Element | Text)[]} */
     const result = [];
     const regex = /%s/g;
@@ -791,7 +793,7 @@ function simpleSubstitution(template, args) {
         } else if (typeof value === 'number') {
             result.push(document.createTextNode(String(value)));
         } else {
-            result.push(formatComponent(value));
+            result.push(formatComponent(value, translations));
         }
 
         lastIndex = regex.lastIndex;
@@ -810,9 +812,10 @@ function simpleSubstitution(template, args) {
  * Supports both numbered (%1$s) and sequential (%s) placeholder formats.
  * @param {string} key
  * @param {(number | string | Component)[]} args
+ * @param {Record<string, string>} translations
  * @returns {(Element | Text)[]}
  */
-function formatTranslation(key, args) {
+function formatTranslation(key, args, translations) {
     if (!key) {
         console.warn('Translation key is missing');
         return [document.createTextNode(key)];
@@ -833,7 +836,7 @@ function formatTranslation(key, args) {
                 return document.createTextNode(String(value));
             }
 
-            return formatComponent(value);
+            return formatComponent(value, translations);
         });
     }
 
@@ -845,10 +848,10 @@ function formatTranslation(key, args) {
 
     try {
         if (template.includes('$s')) {
-            return numberedSubstitution(template, args);
+            return numberedSubstitution(template, args, translations);
         }
 
-        return simpleSubstitution(template, args);
+        return simpleSubstitution(template, args, translations);
     } catch (error) {
         console.error(`Error formatting translation for key: ${key}`, error);
         return [document.createTextNode(key)];
@@ -858,15 +861,20 @@ function formatTranslation(key, args) {
 /**
  * Separate plain text formatter for hover events where HTML isn't needed.
  * @param {Component} component
+ * @param {Record<string, string>} translations
  * @returns {string}
  */
-function formatComponentPlainText(component) {
+function formatComponentPlainText(component, translations) {
     let result = '';
 
     if (component.text) {
         result += component.text;
     } else if (component.translate) {
-        result += formatTranslation(component.translate, component.with ?? [])
+        result += formatTranslation(
+            component.translate,
+            component.with ?? [],
+            translations,
+        )
             .map((component) => component.textContent ?? '')
             .join('');
     }
@@ -881,7 +889,7 @@ function formatComponentPlainText(component) {
                     return String(component);
                 }
 
-                return formatComponentPlainText(component);
+                return formatComponentPlainText(component, translations);
             })
             .join('');
     }
@@ -892,9 +900,10 @@ function formatComponentPlainText(component) {
 /**
  * Formats a hover event into a string.
  * @param {HoverEvent} hoverEvent
+ * @param {Record<string, string>} translations
  * @returns {string}
  */
-function formatHoverEvent(hoverEvent) {
+function formatHoverEvent(hoverEvent, translations) {
     switch (hoverEvent.action) {
         case 'show_text': {
             const contents = hoverEvent.contents ?? hoverEvent.value;
@@ -920,12 +929,15 @@ function formatHoverEvent(hoverEvent) {
                             return String(component);
                         }
 
-                        return formatComponentPlainText(component);
+                        return formatComponentPlainText(
+                            component,
+                            translations,
+                        );
                     })
                     .join('');
             }
 
-            return formatComponentPlainText(contents);
+            return formatComponentPlainText(contents, translations);
         }
         case 'show_item': {
             if (!hoverEvent.contents) {
@@ -949,7 +961,10 @@ function formatHoverEvent(hoverEvent) {
             }
 
             if (typeof hoverEvent.contents.name === 'object') {
-                return formatComponentPlainText(hoverEvent.contents.name);
+                return formatComponentPlainText(
+                    hoverEvent.contents.name,
+                    translations,
+                );
             }
 
             return hoverEvent.contents.name || 'Unnamed Entity';
@@ -960,9 +975,10 @@ function formatHoverEvent(hoverEvent) {
 /**
  * Transforms component structure into HTML.
  * @param {Component} component
+ * @param {Record<string, string>} translations
  * @returns {Element}
  */
-function formatComponent(component) {
+function formatComponent(component, translations) {
     const result = document.createElement('span');
 
     // Using CSS classes for standard colors for consistency with Minecrafts palette
@@ -995,15 +1011,17 @@ function formatComponent(component) {
 
     // Hover events are implemented as titles for simplicity and broad browser compatibility
     if (component.hoverEvent) {
-        result.title = formatHoverEvent(component.hoverEvent);
+        result.title = formatHoverEvent(component.hoverEvent, translations);
     }
 
     if (component.text) {
         result.appendChild(document.createTextNode(component.text));
     } else if (component.translate) {
-        formatTranslation(component.translate, component.with ?? []).forEach(
-            (component) => result.appendChild(component),
-        );
+        formatTranslation(
+            component.translate,
+            component.with ?? [],
+            translations,
+        ).forEach((component) => result.appendChild(component));
     }
 
     if (component.extra) {
@@ -1016,7 +1034,7 @@ function formatComponent(component) {
                     return document.createTextNode(String(component));
                 }
 
-                return formatComponent(component);
+                return formatComponent(component, translations);
             })
             .forEach((component) => result.appendChild(component));
     }
@@ -1072,14 +1090,19 @@ export function formatPlainText(element) {
 /**
  * Transforms a Minecraft component into HTML.
  * @param {Component} component
+ * @param {Record<string, string>} translations Translation key-value pairs
  * @returns {Element | Text}
  */
-export function formatChatMessage(component) {
+export function formatChatMessage(component, translations) {
+    // Message payload should come with translations included. If not it likely is a legacy 1.21.1 message and the fallback translation file is used.
+    const usedTranslations = Object.keys(translations).length
+        ? translations
+        : fallbackTranslations;
     /** @type {Element} */
     let element;
     try {
         // First pass: create an HTML element from the component structure
-        element = formatComponent(component);
+        element = formatComponent(component, usedTranslations);
     } catch (error) {
         console.error('Error formatting component:', error);
         return document.createTextNode(

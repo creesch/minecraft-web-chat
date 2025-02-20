@@ -3,11 +3,15 @@ package dev.creesch.model;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import dev.creesch.config.ModConfig;
+import dev.creesch.util.ClientTranslationUtils;
 import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
+
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import net.minecraft.SharedConstants;
@@ -45,6 +50,9 @@ public class WebsocketMessageBuilder {
             );
         }
 
+        Map<String, String> translations =
+            ClientTranslationUtils.extractTranslations(message);
+
         // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
         String minecraftChatJson = Text.Serialization.toJsonString(
             message,
@@ -67,6 +75,7 @@ public class WebsocketMessageBuilder {
             .uuid(messageUUID)
             .component(gson.fromJson(minecraftChatJson, JsonObject.class))
             .isPing(!fromSelf && isPing(message, client))
+            .translations(translations)
             .build();
 
         return WebsocketJsonMessage.createChatMessage(
@@ -148,14 +157,19 @@ public class WebsocketMessageBuilder {
         String serverName,
         String messageId,
         String messageJson,
+        String translationsJson,
         boolean isPing,
         String minecraftVersion
     ) {
         // Back to objects we go
+        LOGGER.info(translationsJson);
+        Type type = new TypeToken<Map<String, String>>(){}.getType();
+        Map<String, String> translations = gson.fromJson(translationsJson, type);
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(true)
             .uuid(messageId)
             .component(gson.fromJson(messageJson, JsonObject.class))
+            .translations(translations)
             .isPing(isPing)
             .build();
 
