@@ -19,5 +19,5 @@ ext {
     // Generic java dependencies
     javalin_version = '6.4.0'
     lombok_version = '1.18.36'
-    xerial_version = '3.49.0.0'
+    xerial_version = '3.49.1.0'
 }
