@@ -10,7 +10,6 @@ import dev.creesch.config.ModConfig;
 import dev.creesch.util.ClientTranslationUtils;
 import dev.creesch.util.MinecraftServerIdentifier;
 import dev.creesch.util.NamedLogger;
-
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -163,8 +162,11 @@ public class WebsocketMessageBuilder {
     ) {
         // Back to objects we go
         LOGGER.info(translationsJson);
-        Type type = new TypeToken<Map<String, String>>(){}.getType();
-        Map<String, String> translations = gson.fromJson(translationsJson, type);
+        Type type = new TypeToken<Map<String, String>>() {}.getType();
+        Map<String, String> translations = gson.fromJson(
+            translationsJson,
+            type
+        );
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(true)
             .uuid(messageId)

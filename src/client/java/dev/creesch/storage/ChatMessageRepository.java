@@ -150,7 +150,8 @@ public class ChatMessageRepository {
     }
 
     // To be used for future migrations as well. Does a rollback if the migration fails.
-    private void executeMigrationQuery(Connection conn, String migrationQuery) throws SQLException {
+    private void executeMigrationQuery(Connection conn, String migrationQuery)
+        throws SQLException {
         LOGGER.info("Executing migration query {}", migrationQuery);
         conn.setAutoCommit(false);
         try {
@@ -206,7 +207,6 @@ public class ChatMessageRepository {
                 LOGGER.info("Migrating database to version 2");
                 executeMigrationQuery(conn, V2_MIGRATION_QUERY);
             }
-
         }
     }
 
