@@ -10,7 +10,6 @@ public class ClientTranslationUtils {
 
     /**
      * Extracts all translation keys from a Text object and returns a map of key-value pairs with their translations.
-     * Works in a client-side environment.
      *
      * @param text The Text object to process.
      * @return A map where keys are translation keys and values are the corresponding translations.
