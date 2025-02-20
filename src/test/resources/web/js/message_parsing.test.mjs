@@ -667,7 +667,7 @@ for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
     test(name, () => {
         expect(() => assertIsComponent(component)).not.toThrow();
 
-        const element = formatChatMessage(component);
+        const element = formatChatMessage(component, {});
         if (element instanceof Text) {
             expect(element.textContent).toBe(expected);
         } else {
