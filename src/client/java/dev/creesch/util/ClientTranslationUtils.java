@@ -2,6 +2,8 @@ package dev.creesch.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Language;
@@ -48,6 +50,32 @@ public class ClientTranslationUtils {
         // Collect keys from siblings (e.g., appended text)
         for (Text sibling : text.getSiblings()) {
             collectTranslationKeys(sibling, keys);
+        }
+
+        // Check hover event for additional text that may contain translation keys
+        HoverEvent hoverEvent = text.getStyle().getHoverEvent();
+        if (hoverEvent == null) {
+            return;
+        }
+
+        // Handle different hover event types
+        if (hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT) {
+            Text hoverText = hoverEvent.getValue(HoverEvent.Action.SHOW_TEXT);
+            if (hoverText != null) {
+                collectTranslationKeys(hoverText, keys);
+            }
+        }
+
+        if (hoverEvent.getAction() == HoverEvent.Action.SHOW_ENTITY) {
+            // Check if there's a translatable name for the entity
+            HoverEvent.EntityContent hoverEventEntityContent =
+                hoverEvent.getValue(HoverEvent.Action.SHOW_ENTITY);
+            if (hoverEventEntityContent != null) {
+                Optional<Text> entityName = hoverEventEntityContent.name;
+                entityName.ifPresent(value ->
+                    collectTranslationKeys(value, keys)
+                );
+            }
         }
     }
 
