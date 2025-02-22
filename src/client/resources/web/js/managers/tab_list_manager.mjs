@@ -245,11 +245,15 @@ class TabListManager {
         const beforeCursor = value.substring(0, cursorPos);
         const afterCursor = value.substring(cursorPos);
 
+        // Use playerName instead of playerDisplayName for direct-message commands
+        const playerNameToInsert = beforeCursor.match(/^\/(tell|msg|w)[ ]+$/)
+            ? selectedPlayer.playerName
+            : selectedPlayer.playerDisplayName;
+
         // There is a partial player name before the cursor. Get everything
         // before it and add the full player name after.
         const prefix = beforeCursor.match(/(.*?)\b\w+$/);
-        const newBeforeCursor =
-            (prefix?.[1] ?? '') + selectedPlayer.playerDisplayName;
+        const newBeforeCursor = (prefix?.[1] ?? '') + playerNameToInsert;
         chatInputElement.value = newBeforeCursor + afterCursor;
 
         // Update the cursor position.
