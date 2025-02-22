@@ -43,7 +43,8 @@ public class WebInterface {
     );
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s{2,}");
     private static final Pattern SUPPORTED_COMMANDS = Pattern.compile(
-        "^/(msg|tell|w|me)(\\s|$)"
+        "^/(msg|tell|w|me)(\\s.*|$)",
+        Pattern.CASE_INSENSITIVE
     );
 
     private String staticFilesPath = "";
