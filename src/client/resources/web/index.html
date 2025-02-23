@@ -26,6 +26,20 @@
         <link rel="stylesheet" href="css/message_formatting.css" />
     </head>
     <body>
+        <div id="modal-container" aria-hidden="true">
+            <div id="modal-content">
+                <div id="modal-text">
+                    <p>Are you sure you want to open the following website?</p>
+                    <p class="modal-url"></p>
+                    <p>Never open links from people you don't trust!</p>
+                </div>
+                <div class="modal-buttons">
+                    <button id="modal-cancel">Cancel</button>
+                    <button id="modal-copy">Copy to Clipboard</button>
+                    <button id="modal-confirm">Open</button>
+                </div>
+            </div>
+        </div>
         <div id="hover-container" aria-hidden="true"></div>
 
         <main id="container">
