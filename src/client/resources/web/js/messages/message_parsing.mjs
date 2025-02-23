@@ -988,7 +988,6 @@ function formatComponent(component, translations) {
                 hoverContainer.style.left = `${event.clientX}px`;
                 hoverContainer.style.top = `${event.clientY}px`;
                 hoverContainer.style.display = 'block';
-                hoverContainer.ariaHidden = 'false';
             };
             result.onmousemove = (event) => {
                 hoverContainer.style.left = `${event.clientX}px`;
@@ -997,7 +996,6 @@ function formatComponent(component, translations) {
             result.onmouseleave = () => {
                 hoverContainer.style.display = 'none';
                 hoverContainer.replaceChildren();
-                hoverContainer.ariaHidden = 'true';
             };
         }
     }
