@@ -17,11 +17,11 @@ body {
     top: 0;
     left: 0;
 
-    border: 2px solid #0000aa;
-    outline: 2px solid black;
+    border: 2px solid #25035c;
+    outline: 2px solid #130512;
     border-radius: 0.5rem;
     color: #ffffff;
-    background-color: black;
+    background-color: #130512;
     padding: 0.5rem;
 
     white-space: pre;
