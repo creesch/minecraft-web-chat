@@ -2,6 +2,7 @@
 'use strict';
 
 import { fallbackTranslations } from './fallback_translations.mjs';
+import { querySelectorWithAssertion } from '../utils.mjs';
 
 // Minecraft JSON message parsing to HTML.
 // A lot of the code below has been inspired (though not directly copied) by prismarine-chat: https://github.com/PrismarineJS/prismarine-chat
@@ -859,49 +860,10 @@ function formatTranslation(key, args, translations) {
 }
 
 /**
- * Separate plain text formatter for hover events where HTML isn't needed.
- * @param {Component} component
- * @param {Record<string, string>} translations
- * @returns {string}
- */
-function formatComponentPlainText(component, translations) {
-    let result = '';
-
-    if (component.text) {
-        result += component.text;
-    } else if (component.translate) {
-        result += formatTranslation(
-            component.translate,
-            component.with ?? [],
-            translations,
-        )
-            .map((component) => component.textContent ?? '')
-            .join('');
-    }
-
-    if (component.extra) {
-        result += component.extra
-            .map((component) => {
-                if (typeof component === 'string') {
-                    return component;
-                }
-                if (typeof component === 'number') {
-                    return String(component);
-                }
-
-                return formatComponentPlainText(component, translations);
-            })
-            .join('');
-    }
-
-    return result;
-}
-
-/**
  * Formats a hover event into a string.
  * @param {HoverEvent} hoverEvent
  * @param {Record<string, string>} translations
- * @returns {string}
+ * @returns {(Element | Text)[]}
  */
 function formatHoverEvent(hoverEvent, translations) {
     switch (hoverEvent.action) {
@@ -909,65 +871,65 @@ function formatHoverEvent(hoverEvent, translations) {
             const contents = hoverEvent.contents ?? hoverEvent.value;
             if (typeof contents === 'undefined') {
                 console.warn('HoverEvent.contents is undefined');
-                return '';
+                return [];
             }
 
             if (typeof contents === 'string') {
-                return contents;
+                return [document.createTextNode(contents)];
             }
             if (typeof contents === 'number') {
-                return String(contents);
+                return [document.createTextNode(String(contents))];
             }
 
             if (Array.isArray(contents)) {
-                return contents
-                    .map((component) => {
-                        if (typeof component === 'string') {
-                            return component;
-                        }
-                        if (typeof component === 'number') {
-                            return String(component);
-                        }
+                return contents.map((component) => {
+                    if (typeof component === 'string') {
+                        return document.createTextNode(component);
+                    }
+                    if (typeof component === 'number') {
+                        return document.createTextNode(String(component));
+                    }
 
-                        return formatComponentPlainText(
-                            component,
-                            translations,
-                        );
-                    })
-                    .join('');
+                    return formatComponent(component, translations);
+                });
             }
 
-            return formatComponentPlainText(contents, translations);
+            return [formatComponent(contents, translations)];
         }
         case 'show_item': {
             if (!hoverEvent.contents) {
                 // Don't attempt to parse SNBT data in hoverEvent.value
                 console.warn('Unsupported legacy hoverEvent');
-                return '';
+                return [];
             }
 
             if (hoverEvent.contents.count) {
-                return `${hoverEvent.contents.count}x ${hoverEvent.contents.id}`;
+                return [
+                    document.createTextNode(
+                        `${hoverEvent.contents.count}x ${hoverEvent.contents.id}`,
+                    ),
+                ];
             }
 
-            return hoverEvent.contents.id;
+            return [document.createTextNode(hoverEvent.contents.id)];
         }
 
         case 'show_entity': {
             if (!hoverEvent.contents) {
                 // Don't attempt to parse SNBT data in hoverEvent.value
                 console.warn('Unsupported legacy hoverEvent');
-                return '';
+                return [];
             }
 
             if (typeof hoverEvent.contents.name === 'object') {
-                return formatComponentPlainText(
-                    hoverEvent.contents.name,
-                    translations,
-                );
+                return [formatComponent(hoverEvent.contents.name, translations)];
             }
 
-            return hoverEvent.contents.name || 'Unnamed Entity';
+            return [
+                document.createTextNode(
+                    hoverEvent.contents.name || 'Unnamed Entity',
+                ),
+            ];
         }
     }
 }
@@ -1009,9 +971,35 @@ function formatComponent(component, translations) {
         result.classList.add('mc-obfuscated');
     }
 
-    // Hover events are implemented as titles for simplicity and broad browser compatibility
     if (component.hoverEvent) {
-        result.title = formatHoverEvent(component.hoverEvent, translations);
+        const hoverContents = formatHoverEvent(component.hoverEvent, translations);
+
+        if (hoverContents.length > 0) {
+            const hoverContainer = /** @type {HTMLDivElement} */ (
+                querySelectorWithAssertion('#hover-container')
+            );
+
+            result.ariaLabel = hoverContents
+                .map((component) => component.textContent)
+                .join(' ');
+
+            result.onmouseenter = (event) => {
+                hoverContainer.replaceChildren(...hoverContents);
+                hoverContainer.style.left = `${event.clientX}px`;
+                hoverContainer.style.top = `${event.clientY}px`;
+                hoverContainer.style.display = 'block';
+                hoverContainer.ariaHidden = 'false';
+            };
+            result.onmousemove = (event) => {
+                hoverContainer.style.left = `${event.clientX}px`;
+                hoverContainer.style.top = `${event.clientY}px`;
+            };
+            result.onmouseleave = () => {
+                hoverContainer.style.display = 'none';
+                hoverContainer.replaceChildren();
+                hoverContainer.ariaHidden = 'true';
+            };
+        }
     }
 
     if (component.text) {

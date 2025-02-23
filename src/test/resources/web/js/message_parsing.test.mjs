@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { expect, test } from 'vitest';
 import {
     assertIsComponent,
@@ -6,6 +7,11 @@ import {
 /**
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
  */
+
+const indexDocument = new DOMParser().parseFromString(
+    readFileSync('src/client/resources/web/index.html', 'utf-8'),
+    'text/html',
+);
 
 /**
  * @type {readonly [string, unknown, string | undefined][]}
@@ -450,7 +456,7 @@ const COMPONENT_FORMATTING_TESTS = [
             text: 'hover',
             hoverEvent: { action: 'show_text', contents: 'tooltip' },
         },
-        '<span title="tooltip">hover</span>',
+        '<span aria-label="tooltip">hover</span>',
     ],
     [
         'hover item',
@@ -461,7 +467,7 @@ const COMPONENT_FORMATTING_TESTS = [
                 contents: { id: 'minecraft:diamond' },
             },
         },
-        '<span title="minecraft:diamond">item</span>',
+        '<span aria-label="minecraft:diamond">item</span>',
     ],
     [
         'hover item with count',
@@ -472,7 +478,7 @@ const COMPONENT_FORMATTING_TESTS = [
                 contents: { id: 'minecraft:diamond', count: 64 },
             },
         },
-        '<span title="64x minecraft:diamond">items</span>',
+        '<span aria-label="64x minecraft:diamond">items</span>',
     ],
     [
         'hover entity',
@@ -483,12 +489,12 @@ const COMPONENT_FORMATTING_TESTS = [
                 contents: { type: 'minecraft:pig', id: '123', name: 'Mr. Pig' },
             },
         },
-        '<span title="Mr. Pig">entity</span>',
+        '<span aria-label="Mr. Pig">entity</span>',
     ],
     [
         'hover text with number',
         { text: 'hover', hoverEvent: { action: 'show_text', contents: 42 } },
-        '<span title="42">hover</span>',
+        '<span aria-label="42">hover</span>',
     ],
 
     // Complex nested components
@@ -590,7 +596,7 @@ const COMPONENT_FORMATTING_TESTS = [
             'Found item: ' +
             '<span class="mc-italic">' +
             "Unknown item '" +
-            '<span class="mc-aqua" title="1x minecraft:diamond_pickaxe">' +
+            '<span class="mc-aqua" aria-label="1x minecraft:diamond_pickaxe">' +
             'diamond_pickaxe' +
             "</span>'" +
             '</span>' +
@@ -665,6 +671,10 @@ const COMPONENT_FORMATTING_TESTS = [
 
 for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
     test(name, () => {
+        // Initialize the DOM for each test
+        // eslint-disable-next-line no-global-assign
+        document = indexDocument;
+
         expect(() => assertIsComponent(component)).not.toThrow();
 
         const element = formatChatMessage(component, {});

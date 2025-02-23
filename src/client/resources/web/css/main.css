@@ -8,6 +8,25 @@ body {
     overflow: hidden;
 }
 
+#hover-container {
+    font-family: 'JetBrains Mono', monospace;
+
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    border: 2px solid #0000aa;
+    outline: 2px solid black;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    background-color: black;
+    padding: 0.5rem;
+
+    white-space: pre;
+}
+
 #container {
     height: 100vh;
     display: flex;
