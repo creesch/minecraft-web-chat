@@ -8,10 +8,7 @@ import {
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
  */
 
-const indexDocument = new DOMParser().parseFromString(
-    readFileSync('src/client/resources/web/index.html', 'utf-8'),
-    'text/html',
-);
+const indexHTML = readFileSync('src/client/resources/web/index.html', 'utf-8');
 
 /**
  * @type {readonly [string, unknown, string | undefined][]}
@@ -673,7 +670,7 @@ for (const [name, component, expected] of COMPONENT_FORMATTING_TESTS) {
     test(name, () => {
         // Initialize the DOM for each test
         // eslint-disable-next-line no-global-assign
-        document = indexDocument;
+        document = new DOMParser().parseFromString(indexHTML, 'text/html');
 
         expect(() => assertIsComponent(component)).not.toThrow();
 

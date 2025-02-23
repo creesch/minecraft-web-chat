@@ -922,7 +922,9 @@ function formatHoverEvent(hoverEvent, translations) {
             }
 
             if (typeof hoverEvent.contents.name === 'object') {
-                return [formatComponent(hoverEvent.contents.name, translations)];
+                return [
+                    formatComponent(hoverEvent.contents.name, translations),
+                ];
             }
 
             return [
@@ -972,7 +974,10 @@ function formatComponent(component, translations) {
     }
 
     if (component.hoverEvent) {
-        const hoverContents = formatHoverEvent(component.hoverEvent, translations);
+        const hoverContents = formatHoverEvent(
+            component.hoverEvent,
+            translations,
+        );
 
         if (hoverContents.length > 0) {
             const hoverContainer = /** @type {HTMLDivElement} */ (
