@@ -27,6 +27,72 @@ body {
     white-space: pre;
 }
 
+#modal-container {
+    font-family: 'JetBrains Mono', monospace;
+
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#modal-content {
+    position: absolute;
+    display: flex;
+    z-index: 1001;
+    flex-direction: column;
+    gap: 1.5rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 300px;
+    min-height: 150px;
+    background-color: #130512;
+    border: 2px solid #25035c;
+    outline: 2px solid #130512;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+#modal-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#modal-content p {
+    margin: 0;
+}
+
+#modal-content .modal-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#modal-content .modal-url {
+    color: pink;
+    margin: 0.5rem 0;
+}
+
+#modal-content button {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.3rem;
+    background-color: #4caf50;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#modal-content button:hover {
+    background-color: #45a049;
+}
+
 #container {
     height: 100vh;
     display: flex;
