@@ -328,6 +328,10 @@ body {
     background-color: rgba(255, 255, 255, 0.15);
 }
 
+#message-input.error {
+    outline: 2px solid #f44336;
+}
+
 #message-send-button {
     padding: 0.6rem 1.5rem;
     border: none;

@@ -91,6 +91,8 @@ messageSendButtonElement.addEventListener('click', () => {
 chatInputElement.focus();
 
 chatInputElement.addEventListener('keydown', function (e) {
+    setChatInputError(false);
+
     if (tabListManager.visible()) {
         tabListManager.handleInputKeydown(e);
         return;
@@ -113,6 +115,7 @@ chatInputElement.addEventListener('keydown', function (e) {
 
 chatInputElement.addEventListener('input', function () {
     tabListManager.hide();
+    setChatInputError(false);
 });
 
 // Load more button clicked
@@ -437,13 +440,36 @@ function sendWebsocketMessage(type, payload) {
     );
 }
 
+/**
+ * Set the chat input error state
+ * @param {boolean} isError
+ */
+function setChatInputError(isError) {
+    if (isError) {
+        chatInputElement.classList.add('error');
+        chatInputElement.ariaInvalid = 'true';
+    } else {
+        chatInputElement.classList.remove('error');
+        chatInputElement.ariaInvalid = 'false';
+    }
+}
+
 function sendChatMessage() {
-    if (!chatInputElement.value.trim()) {
+    const message = chatInputElement.value;
+    if (!message.trim()) {
         return;
     }
-    console.log(`Sending chat message: ${chatInputElement.value}`);
 
-    sendWebsocketMessage('chat', chatInputElement.value);
+    if (message.startsWith('/')) {
+        if (!/^\/(tell|msg|w|me)(\s.*|$)/.test(message)) {
+            setChatInputError(true);
+            return;
+        }
+    }
+
+    console.log(`Sending chat message: ${message}`);
+
+    sendWebsocketMessage('chat', message);
     chatInputElement.value = '';
 }
 
