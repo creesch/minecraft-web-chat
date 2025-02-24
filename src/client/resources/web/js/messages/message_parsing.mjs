@@ -969,7 +969,7 @@ function formatHoverEvent(hoverEvent, translations) {
 /**
  * Builds a click handler for a click event.
  * @param {ClickEvent} clickEvent
- * @returns {((event: MouseEvent) => void)}
+ * @returns {((event: MouseEvent) => void) | null}
  */
 function buildClickHandler(clickEvent) {
     switch (clickEvent.action) {
@@ -1071,8 +1071,7 @@ function buildClickHandler(clickEvent) {
         case 'open_file':
         case 'change_page':
         case 'copy_to_clipboard':
-            // no-op
-            return () => {};
+            return null;
     }
 }
 
@@ -1136,11 +1135,12 @@ function formatComponent(component, translations) {
     }
 
     if (component.clickEvent) {
-        result.addEventListener(
-            'click',
-            buildClickHandler(component.clickEvent),
-        );
-        result.style.cursor = 'pointer';
+        const clickHandler = buildClickHandler(component.clickEvent);
+
+        if (clickHandler) {
+            result.addEventListener('click', clickHandler);
+            result.style.cursor = 'pointer';
+        }
     } else if (component.hoverEvent) {
         const hoverContents = formatHoverEvent(
             component.hoverEvent,
