@@ -1054,6 +1054,7 @@ function buildClickHandler(clickEvent) {
                 modalContainer.addEventListener('click', closeModal);
                 modalContent.addEventListener('click', contentClickHandler);
                 modalContainer.style.display = 'block';
+                modalConfirmButton.focus();
             };
         case 'suggest_command':
             return (event) => {
