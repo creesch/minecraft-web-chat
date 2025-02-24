@@ -1169,7 +1169,9 @@ function formatComponent(component, translations) {
             result.addEventListener('click', clickHandler);
             result.style.cursor = 'pointer';
         }
-    } else if (component.hoverEvent) {
+    }
+
+    if (component.hoverEvent) {
         const hoverContents = formatHoverEvent(
             component.hoverEvent,
             translations,
@@ -1187,6 +1189,12 @@ function formatComponent(component, translations) {
             result.onmouseenter = (event) => {
                 hoverContainer.replaceChildren(...hoverContents);
                 formatPlainText(hoverContainer);
+                if (result.textContent === hoverContainer.textContent) {
+                    // Don't show hover container if it shows the same text as
+                    // the element that is hovered.
+                    return;
+                }
+
                 hoverContainer.style.left = `${event.clientX}px`;
                 hoverContainer.style.top = `${event.clientY}px`;
                 hoverContainer.style.display = 'block';
