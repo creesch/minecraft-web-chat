@@ -1067,10 +1067,38 @@ function buildClickHandler(clickEvent) {
                 chatInputElement.value = clickEvent.value;
                 chatInputElement.focus();
             };
+        case 'copy_to_clipboard':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                navigator.clipboard.writeText(clickEvent.value);
+            };
         case 'run_command':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+                    querySelectorWithAssertion('#message-input')
+                );
+
+                chatInputElement.value = clickEvent.value;
+                chatInputElement.focus();
+
+                chatInputElement.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: 'Enter',
+                        code: 'Enter',
+                    }),
+                );
+            };
         case 'open_file':
         case 'change_page':
-        case 'copy_to_clipboard':
             return null;
     }
 }
