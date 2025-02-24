@@ -68,6 +68,7 @@ const VALID_CLICK_EVENTS = [
  * @property {boolean} [underlined] - Whether text should be underlined
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
+ * @property {string} [insertion] - Insertion string
  * @property {HoverEvent} [hoverEvent] - Hover event
  * @property {ClickEvent} [clickEvent] - Click event
  */
@@ -543,6 +544,15 @@ export function assertIsComponent(component, path = []) {
     if ('clickEvent' in component) {
         assertIsClickEvent(component.clickEvent, [...path, 'clickEvent']);
     }
+
+    if ('insertion' in component) {
+        if (typeof component.insertion !== 'string') {
+            throw new ComponentError('Component.insertion is not a string', [
+                ...path,
+                'insertion',
+            ]);
+        }
+    }
 }
 
 /**
@@ -959,7 +969,7 @@ function formatHoverEvent(hoverEvent, translations) {
 /**
  * Builds a click handler for a click event.
  * @param {ClickEvent} clickEvent
- * @returns {((ev: MouseEvent) => void) | null}
+ * @returns {((ev: MouseEvent) => void)}
  */
 function buildClickHandler(clickEvent) {
     switch (clickEvent.action) {
@@ -1053,7 +1063,8 @@ function buildClickHandler(clickEvent) {
         case 'open_file':
         case 'change_page':
         case 'copy_to_clipboard':
-            return null;
+            // no-op
+            return () => {};
     }
 }
 
@@ -1094,8 +1105,33 @@ function formatComponent(component, translations) {
         result.classList.add('mc-obfuscated');
     }
 
+    if (component.insertion) {
+        const insertion = component.insertion;
+
+        result.addEventListener('click', (event) => {
+            if (!event.shiftKey) {
+                return;
+            }
+
+            const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+                querySelectorWithAssertion('#message-input')
+            );
+
+            chatInputElement.setRangeText(
+                insertion,
+                chatInputElement.selectionStart,
+                chatInputElement.selectionEnd,
+                'end',
+            );
+            chatInputElement.focus();
+        });
+    }
+
     if (component.clickEvent) {
-        result.onclick = buildClickHandler(component.clickEvent);
+        result.addEventListener(
+            'click',
+            buildClickHandler(component.clickEvent),
+        );
         result.style.cursor = 'pointer';
     } else if (component.hoverEvent) {
         const hoverContents = formatHoverEvent(
