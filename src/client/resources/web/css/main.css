@@ -43,7 +43,6 @@ body {
 #modal-content {
     position: absolute;
     display: flex;
-    z-index: 1001;
     flex-direction: column;
     gap: 1.5rem;
     top: 50%;
