@@ -990,6 +990,7 @@ function formatComponent(component, translations) {
 
             result.onmouseenter = (event) => {
                 hoverContainer.replaceChildren(...hoverContents);
+                formatPlainText(hoverContainer);
                 hoverContainer.style.left = `${event.clientX}px`;
                 hoverContainer.style.top = `${event.clientY}px`;
                 hoverContainer.style.display = 'block';
