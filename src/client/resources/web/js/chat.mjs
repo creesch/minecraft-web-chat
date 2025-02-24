@@ -68,6 +68,10 @@ const loadMoreButtonElement = /** @type {HTMLButtonElement} */ (
     querySelectorWithAssertion('#load-more-button')
 );
 
+const inputAlertElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#input-alert')
+);
+
 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
@@ -445,12 +449,24 @@ function sendWebsocketMessage(type, payload) {
  * @param {boolean} isError
  */
 function setChatInputError(isError) {
+    const span = inputAlertElement.querySelector('span');
+    if (!span) {
+        return;
+    }
+
     if (isError) {
         chatInputElement.classList.add('error');
         chatInputElement.ariaInvalid = 'true';
+        inputAlertElement.style.display = 'flex';
+        inputAlertElement.ariaHidden = 'false';
+        span.textContent =
+            'Only /tell, /msg, /w and /me commands are supported.';
     } else {
         chatInputElement.classList.remove('error');
         chatInputElement.ariaInvalid = 'false';
+        inputAlertElement.style.display = 'none';
+        inputAlertElement.ariaHidden = 'true';
+        span.textContent = '';
     }
 }
 

@@ -63,16 +63,24 @@
                     </div>
                 </section>
                 <section id="input-area" aria-label="Message input">
-                    <textarea
-                        id="message-input"
-                        placeholder="Type your message..."
-                        rows="1"
-                        aria-label="Type a chat message"
-                        aria-invalid="false"
-                    ></textarea>
-                    <button id="message-send-button" aria-label="Send message">
-                        Send
-                    </button>
+                    <div id="input-alert" aria-hidden="true">
+                        <span></span>
+                    </div>
+                    <div id="message-input-container">
+                        <textarea
+                            id="message-input"
+                            placeholder="Type your message..."
+                            rows="1"
+                            aria-label="Type a chat message"
+                            aria-invalid="false"
+                        ></textarea>
+                        <button
+                            id="message-send-button"
+                            aria-label="Send message"
+                        >
+                            Send
+                        </button>
+                    </div>
                 </section>
             </section>
             <aside id="player-list-container" aria-label="Online players">
