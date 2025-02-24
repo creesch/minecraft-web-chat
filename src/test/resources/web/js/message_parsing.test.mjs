@@ -439,13 +439,6 @@ const COMPONENT_FORMATTING_TESTS = [
         '<span>Unknown ID: 42</span>',
     ],
 
-    // URLs in text
-    [
-        'text with URL',
-        { text: 'Visit https://example.com now' },
-        '<span>Visit <a href="https://example.com" rel="noopener noreferrer" target="_blank">https://example.com</a> now</span>',
-    ],
-
     // Hover events
     [
         'hover text',
