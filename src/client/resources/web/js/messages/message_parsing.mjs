@@ -68,7 +68,7 @@ const VALID_CLICK_EVENTS = [
  * @property {boolean} [underlined] - Whether text should be underlined
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
- * @property {string} [insertion] - Insertion string
+ * @property {string} [insertion] - String to insert when the component is shift-clicked
  * @property {HoverEvent} [hoverEvent] - Hover event
  * @property {ClickEvent} [clickEvent] - Click event
  */
@@ -969,12 +969,16 @@ function formatHoverEvent(hoverEvent, translations) {
 /**
  * Builds a click handler for a click event.
  * @param {ClickEvent} clickEvent
- * @returns {((ev: MouseEvent) => void)}
+ * @returns {((event: MouseEvent) => void)}
  */
 function buildClickHandler(clickEvent) {
     switch (clickEvent.action) {
         case 'open_url':
-            return () => {
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
                 const modalUrlElement = /** @type {HTMLParagraphElement} */ (
                     querySelectorWithAssertion('#modal-content .modal-url')
                 );
@@ -1052,7 +1056,11 @@ function buildClickHandler(clickEvent) {
                 modalContainer.style.display = 'block';
             };
         case 'suggest_command':
-            return () => {
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
                 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
                     querySelectorWithAssertion('#message-input')
                 );
