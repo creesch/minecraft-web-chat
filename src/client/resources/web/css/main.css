@@ -27,6 +27,71 @@ body {
     white-space: pre;
 }
 
+#modal-container {
+    font-family: 'JetBrains Mono', monospace;
+
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#modal-content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 300px;
+    min-height: 150px;
+    background-color: #130512;
+    border: 2px solid #25035c;
+    outline: 2px solid #130512;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+#modal-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#modal-content p {
+    margin: 0;
+}
+
+#modal-content .modal-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#modal-content .modal-url {
+    color: pink;
+    margin: 0.5rem 0;
+}
+
+#modal-content button {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.3rem;
+    background-color: #4caf50;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#modal-content button:hover {
+    background-color: #45a049;
+}
+
 #container {
     height: 100vh;
     display: flex;
@@ -240,11 +305,27 @@ body {
     padding: 1rem;
     background-color: rgba(0, 0, 0, 0.2);
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
 }
 
+#message-input-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+#input-alert {
+    display: none;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #aaa;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
 #message-input {
-    flex: 1;
+    width: 100%;
     padding: 0.5rem;
     border: none;
     border-radius: 0.3rem;
@@ -259,6 +340,10 @@ body {
 #message-input:focus {
     outline: none;
     background-color: rgba(255, 255, 255, 0.15);
+}
+
+#message-input.error {
+    outline: 2px solid #f44336;
 }
 
 #message-send-button {

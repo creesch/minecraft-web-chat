@@ -68,6 +68,10 @@ const loadMoreButtonElement = /** @type {HTMLButtonElement} */ (
     querySelectorWithAssertion('#load-more-button')
 );
 
+const inputAlertElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#input-alert')
+);
+
 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
@@ -91,6 +95,8 @@ messageSendButtonElement.addEventListener('click', () => {
 chatInputElement.focus();
 
 chatInputElement.addEventListener('keydown', function (e) {
+    setChatInputError(false);
+
     if (tabListManager.visible()) {
         tabListManager.handleInputKeydown(e);
         return;
@@ -113,6 +119,7 @@ chatInputElement.addEventListener('keydown', function (e) {
 
 chatInputElement.addEventListener('input', function () {
     tabListManager.hide();
+    setChatInputError(false);
 });
 
 // Hide tablist when textarea loses focus
@@ -256,7 +263,7 @@ function handleChatMessage(message) {
 
         // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
         // Let's fix that, if the user was near the bottom when a message was inserted we put them back there.
-        // Note: the values appear negative due to the flex column shenigans.
+        // Note: the values appear negative due to the flex column shenanigans.
         if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
             messagesElement.scrollTop = 0;
         }
@@ -442,13 +449,48 @@ function sendWebsocketMessage(type, payload) {
     );
 }
 
-function sendChatMessage() {
-    if (!chatInputElement.value.trim()) {
+/**
+ * Set the chat input error state
+ * @param {boolean} isError
+ */
+function setChatInputError(isError) {
+    const span = inputAlertElement.querySelector('span');
+    if (!span) {
         return;
     }
-    console.log(`Sending chat message: ${chatInputElement.value}`);
 
-    sendWebsocketMessage('chat', chatInputElement.value);
+    if (isError) {
+        chatInputElement.classList.add('error');
+        chatInputElement.ariaInvalid = 'true';
+        inputAlertElement.style.display = 'flex';
+        inputAlertElement.ariaHidden = 'false';
+        span.textContent =
+            'Only /tell, /msg, /w and /me commands are supported.';
+    } else {
+        chatInputElement.classList.remove('error');
+        chatInputElement.ariaInvalid = 'false';
+        inputAlertElement.style.display = 'none';
+        inputAlertElement.ariaHidden = 'true';
+        span.textContent = '';
+    }
+}
+
+function sendChatMessage() {
+    const message = chatInputElement.value;
+    if (!message.trim()) {
+        return;
+    }
+
+    if (message.startsWith('/')) {
+        if (!/^\/(tell|msg|w|me)(\s.*|$)/.test(message)) {
+            setChatInputError(true);
+            return;
+        }
+    }
+
+    console.log(`Sending chat message: ${message}`);
+
+    sendWebsocketMessage('chat', message);
     chatInputElement.value = '';
 }
 

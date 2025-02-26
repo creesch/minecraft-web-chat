@@ -26,6 +26,20 @@
         <link rel="stylesheet" href="css/message_formatting.css" />
     </head>
     <body>
+        <div id="modal-container" aria-hidden="true">
+            <div id="modal-content">
+                <div id="modal-text">
+                    <p>Are you sure you want to open the following website?</p>
+                    <p class="modal-url"></p>
+                    <p>Never open links from people you don't trust!</p>
+                </div>
+                <div class="modal-buttons">
+                    <button id="modal-confirm">Yes</button>
+                    <button id="modal-copy">Copy to Clipboard</button>
+                    <button id="modal-cancel">No</button>
+                </div>
+            </div>
+        </div>
         <div id="hover-container" aria-hidden="true"></div>
 
         <main id="container">
@@ -49,15 +63,24 @@
                     </div>
                 </section>
                 <section id="input-area" aria-label="Message input">
-                    <textarea
-                        id="message-input"
-                        placeholder="Type your message..."
-                        rows="1"
-                        aria-label="Type a chat message"
-                    ></textarea>
-                    <button id="message-send-button" aria-label="Send message">
-                        Send
-                    </button>
+                    <div id="input-alert" aria-hidden="true">
+                        <span></span>
+                    </div>
+                    <div id="message-input-container">
+                        <textarea
+                            id="message-input"
+                            placeholder="Type your message..."
+                            rows="1"
+                            aria-label="Type a chat message"
+                            aria-invalid="false"
+                        ></textarea>
+                        <button
+                            id="message-send-button"
+                            aria-label="Send message"
+                        >
+                            Send
+                        </button>
+                    </div>
                 </section>
             </section>
             <aside id="player-list-container" aria-label="Online players">

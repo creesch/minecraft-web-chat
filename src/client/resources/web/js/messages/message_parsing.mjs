@@ -47,6 +47,14 @@ const TEXT_CODES = { ...COLOR_CODES, ...FORMATTING_CODES };
 export const TEXT_CODES_PATTERN = `§([${Object.keys(TEXT_CODES).join('')}])`;
 
 const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
+const VALID_CLICK_EVENTS = [
+    'open_url',
+    'open_file',
+    'run_command',
+    'suggest_command',
+    'change_page',
+    'copy_to_clipboard',
+];
 
 /**
  * @typedef {Object} Component
@@ -60,7 +68,9 @@ const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
  * @property {boolean} [underlined] - Whether text should be underlined
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
+ * @property {string} [insertion] - String to insert when the component is shift-clicked
  * @property {HoverEvent} [hoverEvent] - Hover event
+ * @property {ClickEvent} [clickEvent] - Click event
  */
 
 /**
@@ -86,6 +96,12 @@ const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
  * @property {'show_entity'} action - Displays entity information
  * @property {{ type: string, id: unknown, name?: string | Component }} [contents] - The entity data to show
  * @property {string} [value] - Deprecated: SNBT representation of the entity data to show.
+ */
+
+/**
+ * @typedef {Object} ClickEvent
+ * @property {'open_url' | 'open_file' | 'run_command' | 'suggest_command' | 'change_page' | 'copy_to_clipboard'} action - The action to perform when clicked
+ * @property {string} value - The value to pass to the action
  */
 
 /**
@@ -365,6 +381,46 @@ export function assertIsComponent(component, path = []) {
         }
     }
 
+    /**
+     * Checks if a value is a valid click event.
+     * @param {unknown} clickEvent
+     * @param {string[]} path
+     * @throws If the clickEvent is not a valid {@link ClickEvent} object.
+     */
+    function assertIsClickEvent(clickEvent, path) {
+        if (typeof clickEvent !== 'object' || clickEvent === null) {
+            throw new ComponentError('ClickEvent is not an object', path);
+        }
+
+        if (!('action' in clickEvent) || !('value' in clickEvent)) {
+            throw new ComponentError(
+                'ClickEvent does not have an action or value property',
+                path,
+            );
+        }
+
+        if (typeof clickEvent.action !== 'string') {
+            throw new ComponentError('ClickEvent.action is not a string', [
+                ...path,
+                'action',
+            ]);
+        }
+
+        if (!VALID_CLICK_EVENTS.includes(clickEvent.action)) {
+            throw new ComponentError(
+                `ClickEvent.action is not a valid click event: ${clickEvent.action}`,
+                [...path, 'action'],
+            );
+        }
+
+        if (typeof clickEvent.value !== 'string') {
+            throw new ComponentError('ClickEvent.value is not a string', [
+                ...path,
+                'value',
+            ]);
+        }
+    }
+
     if (
         !('text' in component) &&
         !('translate' in component) &&
@@ -484,6 +540,19 @@ export function assertIsComponent(component, path = []) {
     if ('hoverEvent' in component) {
         assertIsHoverEvent(component.hoverEvent, [...path, 'hoverEvent']);
     }
+
+    if ('clickEvent' in component) {
+        assertIsClickEvent(component.clickEvent, [...path, 'clickEvent']);
+    }
+
+    if ('insertion' in component) {
+        if (typeof component.insertion !== 'string') {
+            throw new ComponentError('Component.insertion is not a string', [
+                ...path,
+                'insertion',
+            ]);
+        }
+    }
 }
 
 /**
@@ -516,7 +585,7 @@ export function initializeObfuscation() {
         ✈✉✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟
         ℃℉℗℘ℙℚℛℜℝ℞℟
         ™Ⓡ©
-    `.replace(/[\n\s]/g, ''); // Remove unnecessary whitespace and newlines so we can have a nicely formated template literal.
+    `.replace(/[\n\s]/g, ''); // Remove unnecessary whitespace and newlines so we can have a nicely formatted template literal.
     const charsLength = chars.length;
     const maxElements = 100; // Limit number of obfuscated elements
 
@@ -567,45 +636,6 @@ export function initializeObfuscation() {
             cancelAnimationFrame(animationFrameId);
         }
     };
-}
-
-/**
- * Handles URL detection and conversion while maintaining XSS protection.
- * @param {string} text
- * @returns {(HTMLAnchorElement | Text)[]}
- */
-function linkifyText(text) {
-    const result = [];
-    const regex = /(https?:\/\/[^\s]+)/g;
-    let lastIndex = 0;
-    let match = regex.exec(text);
-
-    while (match !== null) {
-        // Add text before the URL
-        if (lastIndex < match.index) {
-            result.push(
-                document.createTextNode(text.slice(lastIndex, match.index)),
-            );
-        }
-
-        const url = /** @type {string} */ (match[1]);
-        const a = document.createElement('a');
-        a.href = url;
-        a.rel = 'noopener noreferrer';
-        a.target = '_blank';
-        a.textContent = url;
-        result.push(a);
-
-        lastIndex = regex.lastIndex;
-        match = regex.exec(text);
-    }
-
-    // Add remaining text
-    if (lastIndex < text.length) {
-        result.push(document.createTextNode(text.slice(lastIndex)));
-    }
-
-    return result;
 }
 
 /**
@@ -937,6 +967,144 @@ function formatHoverEvent(hoverEvent, translations) {
 }
 
 /**
+ * Builds a click handler for a click event.
+ * @param {ClickEvent} clickEvent
+ * @returns {((event: MouseEvent) => void) | null}
+ */
+function buildClickHandler(clickEvent) {
+    switch (clickEvent.action) {
+        case 'open_url':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                const modalUrlElement = /** @type {HTMLParagraphElement} */ (
+                    querySelectorWithAssertion('#modal-content .modal-url')
+                );
+                const modalContainer = /** @type {HTMLDivElement} */ (
+                    querySelectorWithAssertion('#modal-container')
+                );
+                const modalContent = /** @type {HTMLDivElement} */ (
+                    querySelectorWithAssertion('#modal-content')
+                );
+                const modalCancelButton = /** @type {HTMLButtonElement} */ (
+                    querySelectorWithAssertion('#modal-cancel')
+                );
+                const modalCopyButton = /** @type {HTMLButtonElement} */ (
+                    querySelectorWithAssertion('#modal-copy')
+                );
+                const modalConfirmButton = /** @type {HTMLButtonElement} */ (
+                    querySelectorWithAssertion('#modal-confirm')
+                );
+
+                modalUrlElement.textContent = clickEvent.value;
+
+                const closeModal = () => {
+                    modalContainer.style.display = 'none';
+                    modalUrlElement.textContent = '';
+                    modalConfirmButton.removeEventListener(
+                        'click',
+                        confirmHandler,
+                    );
+                    modalCancelButton.removeEventListener(
+                        'click',
+                        cancelHandler,
+                    );
+                    modalCopyButton.removeEventListener('click', copyHandler);
+                    modalConfirmButton.removeEventListener(
+                        'click',
+                        confirmHandler,
+                    );
+                    modalContainer.removeEventListener('click', closeModal);
+                    modalContent.removeEventListener(
+                        'click',
+                        contentClickHandler,
+                    );
+                };
+
+                const contentClickHandler = (
+                    /** @type {MouseEvent} */ event,
+                ) => {
+                    event.stopPropagation();
+                };
+
+                const cancelHandler = () => {
+                    modalUrlElement.textContent = '';
+                    closeModal();
+                };
+
+                const copyHandler = () => {
+                    navigator.clipboard.writeText(clickEvent.value);
+                    closeModal();
+                };
+
+                const confirmHandler = () => {
+                    window.open(
+                        clickEvent.value,
+                        '_blank',
+                        'noopener,noreferrer',
+                    );
+                    closeModal();
+                };
+
+                modalCancelButton.addEventListener('click', cancelHandler);
+                modalCopyButton.addEventListener('click', copyHandler);
+                modalConfirmButton.addEventListener('click', confirmHandler);
+                modalContainer.addEventListener('click', closeModal);
+                modalContent.addEventListener('click', contentClickHandler);
+                modalContainer.style.display = 'block';
+                modalConfirmButton.focus();
+            };
+        case 'suggest_command':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+                    querySelectorWithAssertion('#message-input')
+                );
+                chatInputElement.value = clickEvent.value;
+                chatInputElement.focus();
+            };
+        case 'copy_to_clipboard':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                navigator.clipboard.writeText(clickEvent.value);
+            };
+        case 'run_command':
+            return (event) => {
+                if (event.shiftKey) {
+                    return;
+                }
+
+                const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+                    querySelectorWithAssertion('#message-input')
+                );
+
+                chatInputElement.value = clickEvent.value;
+                chatInputElement.focus();
+
+                chatInputElement.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: 'Enter',
+                        code: 'Enter',
+                    }),
+                );
+            };
+        case 'open_file':
+        case 'change_page':
+            return null;
+    }
+}
+
+/**
  * Transforms component structure into HTML.
  * @param {Component} component
  * @param {Record<string, string>} translations
@@ -973,6 +1141,37 @@ function formatComponent(component, translations) {
         result.classList.add('mc-obfuscated');
     }
 
+    if (component.insertion) {
+        const insertion = component.insertion;
+
+        result.addEventListener('click', (event) => {
+            if (!event.shiftKey) {
+                return;
+            }
+
+            const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+                querySelectorWithAssertion('#message-input')
+            );
+
+            chatInputElement.setRangeText(
+                insertion,
+                chatInputElement.selectionStart,
+                chatInputElement.selectionEnd,
+                'end',
+            );
+            chatInputElement.focus();
+        });
+    }
+
+    if (component.clickEvent) {
+        const clickHandler = buildClickHandler(component.clickEvent);
+
+        if (clickHandler) {
+            result.addEventListener('click', clickHandler);
+            result.style.cursor = 'pointer';
+        }
+    }
+
     if (component.hoverEvent) {
         const hoverContents = formatHoverEvent(
             component.hoverEvent,
@@ -991,6 +1190,12 @@ function formatComponent(component, translations) {
             result.onmouseenter = (event) => {
                 hoverContainer.replaceChildren(...hoverContents);
                 formatPlainText(hoverContainer);
+                if (result.textContent === hoverContainer.textContent) {
+                    // Don't show hover container if it shows the same text as
+                    // the element that is hovered.
+                    return;
+                }
+
                 hoverContainer.style.left = `${event.clientX}px`;
                 hoverContainer.style.top = `${event.clientY}px`;
                 hoverContainer.style.display = 'block';
@@ -1060,18 +1265,10 @@ export function formatPlainText(element) {
         const parent = textNode.parentNode;
         if (!parent) continue;
 
-        const linkedElements = linkifyText(textNode.textContent ?? '');
-
-        const finalElements = linkedElements.flatMap((element) => {
-            if (element instanceof HTMLAnchorElement) {
-                return element;
-            }
-
-            return colorizeText(element.textContent ?? '');
-        });
+        const coloredElements = colorizeText(textNode.textContent ?? '');
 
         const replacement = document.createDocumentFragment();
-        for (const element of finalElements) {
+        for (const element of coloredElements) {
             replacement.appendChild(element);
         }
 
