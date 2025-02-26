@@ -153,8 +153,7 @@ body {
     color: #ffffff;
 }
 
-#tab-list li.selected,
-#tab-list li:hover {
+#tab-list li.selected {
     background-color: #007bff;
 }
 
