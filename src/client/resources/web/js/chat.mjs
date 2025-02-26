@@ -115,6 +115,11 @@ chatInputElement.addEventListener('input', function () {
     tabListManager.hide();
 });
 
+// Hide tablist when textarea loses focus
+chatInputElement.addEventListener('blur', function () {
+    tabListManager.hide();
+});
+
 // Load more button clicked
 loadMoreButtonElement.addEventListener('click', () => {
     // No matter what, always hide the element.
