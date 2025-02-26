@@ -182,16 +182,15 @@ public class WebchatClient implements ClientModInitializer {
         String webchatPort = String.valueOf(
             ModConfig.HANDLER.instance().httpPortNumber
         );
-        String bindAddress = ModConfig.HANDLER.instance().httpBindAddress;
 
         Text message = Text.literal("Web chat: ").append(
-            Text.literal("http://" + bindAddress + ":" + webchatPort)
+            Text.literal("http://localhost:" + webchatPort)
                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
                 .styled(style ->
                     style.withClickEvent(
                         new ClickEvent(
                             ClickEvent.Action.OPEN_URL,
-                            "http://" + bindAddress + ":" + webchatPort
+                            "http://localhost:" + webchatPort
                         )
                     )
                 )
