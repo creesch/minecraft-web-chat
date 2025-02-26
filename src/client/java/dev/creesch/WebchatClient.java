@@ -159,11 +159,17 @@ public class WebchatClient implements ClientModInitializer {
             INSTANCE.webInterface.getCurrentPort() !=
             ModConfig.HANDLER.instance().httpPortNumber;
 
-        boolean pathChanged =
-            INSTANCE.webInterface.getCurrentPath() !=
-            ModConfig.HANDLER.instance().staticFilesPath;
+        boolean pathChanged = !INSTANCE.webInterface
+            .getCurrentPath()
+            .equals(ModConfig.HANDLER.instance().staticFilesPath);
 
-        if (portChanged || pathChanged) {
+        // Check if binding address has changed
+        boolean bindAddressChanged = !ModConfig.HANDLER.instance()
+            .httpBindAddress.equals(
+                INSTANCE.webInterface.getCurrentBindAddress()
+            );
+
+        if (portChanged || pathChanged || bindAddressChanged) {
             INSTANCE.webInterface.shutdown();
             INSTANCE.webInterface = new WebInterface(
                 INSTANCE.messageRepository
@@ -173,9 +179,14 @@ public class WebchatClient implements ClientModInitializer {
     }
 
     private void showWebAddress(MinecraftClient client) {
+        if (client == null || client.player == null) {
+            return;
+        }
+
         String webchatPort = String.valueOf(
             ModConfig.HANDLER.instance().httpPortNumber
         );
+
         Text message = Text.literal("Web chat: ").append(
             Text.literal("http://localhost:" + webchatPort)
                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
@@ -188,6 +199,7 @@ public class WebchatClient implements ClientModInitializer {
                     )
                 )
         );
+
         client.player.sendMessage(message, false);
     }
 }
