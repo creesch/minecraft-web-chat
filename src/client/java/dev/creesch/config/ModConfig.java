@@ -30,6 +30,11 @@ public class ModConfig {
     @SerialEntry(comment = "Port number used to serve the webinterface")
     public int httpPortNumber = 8080;
 
+    @SerialEntry(
+        comment = "Address to bind the web server to (localhost, 0.0.0.0, etc)"
+    )
+    public String httpBindAddress = "localhost";
+
     @SerialEntry(comment = "Enable ping on username")
     public boolean pingOnUsername = true;
 

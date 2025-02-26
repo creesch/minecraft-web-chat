@@ -106,6 +106,31 @@ public class ModConfigScreen {
                                 )
                                 .build()
                         )
+                        .option(
+                            Option.<String>createBuilder()
+                                .name(Text.literal("Binding Address"))
+                                .description(
+                                    OptionDescription.of(
+                                        Text.literal(
+                                            "Address to bind the web server to.\n" +
+                                            "Use 'localhost' to only allow connections from this computer.\n" +
+                                            "Use '0.0.0.0' to allow connections from any device on your network."
+                                        )
+                                    )
+                                )
+                                .binding(
+                                    ModConfig.HANDLER.defaults()
+                                        .httpBindAddress,
+                                    () ->
+                                        ModConfig.HANDLER.instance()
+                                            .httpBindAddress,
+                                    val ->
+                                        ModConfig.HANDLER.instance()
+                                            .httpBindAddress = val
+                                )
+                                .controller(StringControllerBuilder::create)
+                                .build()
+                        )
                         .build()
                 )
                 .build()

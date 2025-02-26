@@ -159,11 +159,17 @@ public class WebchatClient implements ClientModInitializer {
             INSTANCE.webInterface.getCurrentPort() !=
             ModConfig.HANDLER.instance().httpPortNumber;
 
-        boolean pathChanged =
-            INSTANCE.webInterface.getCurrentPath() !=
-            ModConfig.HANDLER.instance().staticFilesPath;
+        boolean pathChanged = !INSTANCE.webInterface
+            .getCurrentPath()
+            .equals(ModConfig.HANDLER.instance().staticFilesPath);
 
-        if (portChanged || pathChanged) {
+        // Check if binding address has changed
+        boolean bindAddressChanged = !ModConfig.HANDLER.instance()
+            .httpBindAddress.equals(
+                INSTANCE.webInterface.getCurrentBindAddress()
+            );
+
+        if (portChanged || pathChanged || bindAddressChanged) {
             INSTANCE.webInterface.shutdown();
             INSTANCE.webInterface = new WebInterface(
                 INSTANCE.messageRepository
@@ -176,14 +182,16 @@ public class WebchatClient implements ClientModInitializer {
         String webchatPort = String.valueOf(
             ModConfig.HANDLER.instance().httpPortNumber
         );
+        String bindAddress = ModConfig.HANDLER.instance().httpBindAddress;
+
         Text message = Text.literal("Web chat: ").append(
-            Text.literal("http://localhost:" + webchatPort)
+            Text.literal("http://" + bindAddress + ":" + webchatPort)
                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
                 .styled(style ->
                     style.withClickEvent(
                         new ClickEvent(
                             ClickEvent.Action.OPEN_URL,
-                            "http://localhost:" + webchatPort
+                            "http://" + bindAddress + ":" + webchatPort
                         )
                     )
                 )
