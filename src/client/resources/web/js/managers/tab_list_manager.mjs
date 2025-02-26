@@ -246,7 +246,7 @@ class TabListManager {
         const afterCursor = value.substring(cursorPos);
 
         // Use playerName instead of playerDisplayName for direct-message commands
-        const playerNameToInsert = beforeCursor.match(/^\/(tell|msg|w)[ ]+$/)
+        const playerNameToInsert = beforeCursor.match(/^\/(tell|msg|w)[ ]+\w+$/)
             ? selectedPlayer.playerName
             : selectedPlayer.playerDisplayName;
 
