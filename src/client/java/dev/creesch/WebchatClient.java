@@ -179,6 +179,10 @@ public class WebchatClient implements ClientModInitializer {
     }
 
     private void showWebAddress(MinecraftClient client) {
+        if (client == null || client.player == null) {
+            return;
+        }
+
         String webchatPort = String.valueOf(
             ModConfig.HANDLER.instance().httpPortNumber
         );
@@ -195,6 +199,7 @@ public class WebchatClient implements ClientModInitializer {
                     )
                 )
         );
+
         client.player.sendMessage(message, false);
     }
 }

@@ -294,7 +294,12 @@ public class WebInterface {
         connections.remove(ctx);
 
         if (shutdownInitiated.get()) {
-            connectionsToClose.decrementAndGet();
+            int remaining = connectionsToClose.decrementAndGet();
+            synchronized (connectionsToClose) {
+                if (remaining == 0) {
+                    connectionsToClose.notifyAll();
+                }
+            }
         }
     }
 
@@ -320,11 +325,13 @@ public class WebInterface {
         });
 
         // Wait until all connections have been closed.
-        while (connectionsToClose.get() != 0) {
-            try {
-                connectionsToClose.wait(100);
-            } catch (InterruptedException e) {
-                break;
+        synchronized (connectionsToClose) {
+            while (connectionsToClose.get() != 0) {
+                try {
+                    connectionsToClose.wait(100);
+                } catch (InterruptedException e) {
+                    break;
+                }
             }
         }
 
