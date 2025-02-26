@@ -258,7 +258,7 @@ function handleChatMessage(message) {
 
         // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
         // Let's fix that, if the user was near the bottom when a message was inserted we put them back there.
-        // Note: the values appear negative due to the flex column shenigans.
+        // Note: the values appear negative due to the flex column shenanigans.
         if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
             messagesElement.scrollTop = 0;
         }

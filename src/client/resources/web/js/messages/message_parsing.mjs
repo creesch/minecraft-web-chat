@@ -585,7 +585,7 @@ export function initializeObfuscation() {
         ✈✉✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟
         ℃℉℗℘ℙℚℛℜℝ℞℟
         ™Ⓡ©
-    `.replace(/[\n\s]/g, ''); // Remove unnecessary whitespace and newlines so we can have a nicely formated template literal.
+    `.replace(/[\n\s]/g, ''); // Remove unnecessary whitespace and newlines so we can have a nicely formatted template literal.
     const charsLength = chars.length;
     const maxElements = 100; // Limit number of obfuscated elements
 
