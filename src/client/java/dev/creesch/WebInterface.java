@@ -64,12 +64,16 @@ public class WebInterface {
         server = createServer();
         setupWebSocket();
 
-        server.start(bindAddress, WebInterface.config.httpPortNumber);
-        LOGGER.info(
-            "Web interface started on {}:{}",
-            bindAddress,
-            WebInterface.config.httpPortNumber
-        );
+        try {
+            server.start(bindAddress, WebInterface.config.httpPortNumber);
+            LOGGER.info(
+                "Web interface started on {}:{}",
+                bindAddress,
+                WebInterface.config.httpPortNumber
+            );
+        } catch (Exception e) {
+            LOGGER.error("Failed to start web interface: {}", e.getMessage());
+        }
     }
 
     private Javalin createServer() {
