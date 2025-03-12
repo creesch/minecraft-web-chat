@@ -47,7 +47,8 @@ public class WebInterface {
         Pattern.CASE_INSENSITIVE
     );
 
-    private String staticFilesPath = "";
+    private final String staticFilesPath;
+    private final String bindAddress;
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private AtomicInteger connectionsToClose;
 
@@ -58,20 +59,25 @@ public class WebInterface {
             );
         }
         this.messageRepository = messageRepository;
+        staticFilesPath = WebInterface.config.staticFilesPath;
+        bindAddress = WebInterface.config.httpBindAddress;
         server = createServer();
         setupWebSocket();
 
-        server.start(WebInterface.config.httpPortNumber);
-        LOGGER.info(
-            "Web interface started on port {}",
-            WebInterface.config.httpPortNumber
-        );
+        try {
+            server.start(bindAddress, WebInterface.config.httpPortNumber);
+            LOGGER.info(
+                "Web interface started on {}:{}",
+                bindAddress,
+                WebInterface.config.httpPortNumber
+            );
+        } catch (Exception e) {
+            LOGGER.error("Failed to start web interface: {}", e.getMessage());
+        }
     }
 
     private Javalin createServer() {
         return Javalin.create(config -> {
-            staticFilesPath = WebInterface.config.staticFilesPath;
-
             if (staticFilesPath.equals("")) {
                 config.staticFiles.add("/web", Location.CLASSPATH);
             } else {
@@ -288,7 +294,12 @@ public class WebInterface {
         connections.remove(ctx);
 
         if (shutdownInitiated.get()) {
-            connectionsToClose.decrementAndGet();
+            int remaining = connectionsToClose.decrementAndGet();
+            synchronized (connectionsToClose) {
+                if (remaining == 0) {
+                    connectionsToClose.notifyAll();
+                }
+            }
         }
     }
 
@@ -314,11 +325,13 @@ public class WebInterface {
         });
 
         // Wait until all connections have been closed.
-        while (connectionsToClose.get() != 0) {
-            try {
-                connectionsToClose.wait(100);
-            } catch (InterruptedException e) {
-                break;
+        synchronized (connectionsToClose) {
+            while (connectionsToClose.get() != 0) {
+                try {
+                    connectionsToClose.wait(100);
+                } catch (InterruptedException e) {
+                    break;
+                }
             }
         }
 
@@ -406,5 +419,9 @@ public class WebInterface {
 
     public String getCurrentPath() {
         return staticFilesPath;
+    }
+
+    public String getCurrentBindAddress() {
+        return bindAddress;
     }
 }
