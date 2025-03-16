@@ -151,9 +151,9 @@ body {
 }
 
 .player-head-container {
-    --texture-size: 64px;
     --scale: 3.75;
 
+    position: relative;
     width: 30px;
     height: 30px;
     overflow: hidden;
@@ -161,26 +161,22 @@ body {
 
 /* Base layer */
 .player-head {
-    width: var(--texture-size);
-    height: var(--texture-size);
+    position: absolute;
     transform: scale(var(--scale));
     transform-origin: top left;
     image-rendering: pixelated;
-    clip-path: inset(8px 48px 48px 8px);
-    margin-left: calc(-8px * var(--scale));
-    margin-top: calc(-8px * var(--scale));
+    top: calc(-8px * var(--scale));
+    left: calc(-8px * var(--scale));
 }
 
 /* Hat layer */
 .player-head-overlay {
-    width: var(--texture-size);
-    height: var(--texture-size);
+    position: absolute;
     transform: scale(var(--scale));
     transform-origin: top left;
     image-rendering: pixelated;
-    clip-path: inset(8px 16px 48px 40px);
-    margin-left: calc(-49px * var(--scale));
-    margin-top: calc(-8px * var(--scale));
+    top: calc(-8px * var(--scale));
+    left: calc(-40px * var(--scale));
 }
 
 .player-name {
