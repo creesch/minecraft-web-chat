@@ -1017,10 +1017,17 @@ function buildClickHandler(clickEvent) {
                         confirmHandler,
                     );
                     modalContainer.removeEventListener('click', closeModal);
+                    document.removeEventListener('keydown', escapeHandler);
                     modalContent.removeEventListener(
                         'click',
                         contentClickHandler,
                     );
+                };
+
+                const escapeHandler = (/** @type {KeyboardEvent} */ event) => {
+                    if (event.key === 'Escape') {
+                        closeModal();
+                    }
                 };
 
                 const contentClickHandler = (
@@ -1051,8 +1058,9 @@ function buildClickHandler(clickEvent) {
                 modalCancelButton.addEventListener('click', cancelHandler);
                 modalCopyButton.addEventListener('click', copyHandler);
                 modalConfirmButton.addEventListener('click', confirmHandler);
-                modalContainer.addEventListener('click', closeModal);
                 modalContent.addEventListener('click', contentClickHandler);
+                document.addEventListener('keydown', escapeHandler);
+                modalContainer.addEventListener('click', closeModal);
                 modalContainer.style.display = 'block';
                 modalConfirmButton.focus();
             };
