@@ -12,15 +12,15 @@ Web chat is a **client only** mod giving you access to the chat of the server yo
 - Tab notification for new messages when the browser isn't focused.
 - Fully client side, should work on any server.
 - Ping support for your username & configurable keywords. 
+- Support for `/tell`, `/msg`, `/w` and `/me` commands.
+- Tab completion of usernames.
 
 ![Demo screenshot](media/demo_screenshot.png)
 
 # Availability 
 
-- Minecraft version: 1.21.1
+- Minecraft version: 1.21.1 and up
 - Mod loader: Fabric only
-
-While the mod might work on newer Minecraft versions (honestly not sure, there is an [issue open for this](https://github.com/creesch/minecraft-web-chat/issues/23)), chat message rendering isn't guaranteed to work correctly. 
 
 There are no plans to support other mod loaders.
 
