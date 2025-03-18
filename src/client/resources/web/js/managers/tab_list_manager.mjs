@@ -170,12 +170,13 @@ class TabListManager {
                 .slice(0, 5)
                 .map((match, index) => {
                     const li = document.createElement('li');
-                    li.addEventListener('click', () =>
-                        this.#insertPlayerName(),
-                    );
-                    li.addEventListener('mouseenter', () =>
-                        this.#updateSelection(index),
-                    );
+                    // Using mousedown because clicking causes blur event on chat input hiding the selection.
+                    li.addEventListener('mousedown', () => {
+                        this.#insertPlayerName();
+                    });
+                    li.addEventListener('mouseenter', () => {
+                        this.#updateSelection(index);
+                    });
 
                     const displayNameUnchanged =
                         match.playerDisplayName.toLocaleLowerCase() ===
