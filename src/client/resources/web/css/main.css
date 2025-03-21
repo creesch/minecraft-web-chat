@@ -283,8 +283,10 @@ body {
 }
 
 .message a {
-    color: #5555ff;
     text-decoration: none;
+}
+.message a.mc-underlined {
+    text-decoration: underline;
 }
 
 .message-time {

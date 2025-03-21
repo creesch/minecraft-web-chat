@@ -976,8 +976,21 @@ function buildClickHandler(clickEvent) {
         case 'open_url':
             return (event) => {
                 if (event.shiftKey) {
+                    event.preventDefault();
                     return;
                 }
+
+                const target = event.target;
+                if (!(target instanceof HTMLAnchorElement)) {
+                    return;
+                }
+
+                if (target.textContent === clickEvent.value) {
+                    // Perform default behavior (open in new tab)
+                    return;
+                }
+
+                event.preventDefault();
 
                 const modalUrlElement = /** @type {HTMLParagraphElement} */ (
                     querySelectorWithAssertion('#modal-content .modal-url')
@@ -1017,10 +1030,17 @@ function buildClickHandler(clickEvent) {
                         confirmHandler,
                     );
                     modalContainer.removeEventListener('click', closeModal);
+                    document.removeEventListener('keydown', escapeHandler);
                     modalContent.removeEventListener(
                         'click',
                         contentClickHandler,
                     );
+                };
+
+                const escapeHandler = (/** @type {KeyboardEvent} */ event) => {
+                    if (event.key === 'Escape') {
+                        closeModal();
+                    }
                 };
 
                 const contentClickHandler = (
@@ -1051,8 +1071,9 @@ function buildClickHandler(clickEvent) {
                 modalCancelButton.addEventListener('click', cancelHandler);
                 modalCopyButton.addEventListener('click', copyHandler);
                 modalConfirmButton.addEventListener('click', confirmHandler);
-                modalContainer.addEventListener('click', closeModal);
                 modalContent.addEventListener('click', contentClickHandler);
+                document.addEventListener('keydown', escapeHandler);
+                modalContainer.addEventListener('click', closeModal);
                 modalContainer.style.display = 'block';
                 modalConfirmButton.focus();
             };
@@ -1111,7 +1132,10 @@ function buildClickHandler(clickEvent) {
  * @returns {Element}
  */
 function formatComponent(component, translations) {
-    const result = document.createElement('span');
+    const result =
+        component.clickEvent?.action === 'open_url'
+            ? document.createElement('a')
+            : document.createElement('span');
 
     // Using CSS classes for standard colors for consistency with Minecrafts palette
     // Direct style attributes only used for hex colors
@@ -1169,6 +1193,12 @@ function formatComponent(component, translations) {
         if (clickHandler) {
             result.addEventListener('click', clickHandler);
             result.style.cursor = 'pointer';
+
+            if (component.clickEvent.action === 'open_url') {
+                result.setAttribute('href', component.clickEvent.value);
+                result.setAttribute('target', '_blank');
+                result.setAttribute('rel', 'noopener noreferrer');
+            }
         }
     }
 
