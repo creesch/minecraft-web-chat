@@ -79,6 +79,7 @@ public class WebInterface {
             }
 
             config.http.defaultContentType = "text/plain";
+            config.showJavalinBanner = false;
         }).before(ctx -> {
             // Note, most things that are set here are overkill as users are _supposed_ to only uses this on their local machine through localhost.
             // Or if we are being generous through a device on their own network.
