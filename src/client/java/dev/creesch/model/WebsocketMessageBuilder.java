@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import dev.creesch.WebchatClient;
 import dev.creesch.config.ModConfig;
 import dev.creesch.util.ClientTranslationUtils;
 import dev.creesch.util.MinecraftServerIdentifier;
@@ -81,7 +82,8 @@ public class WebsocketMessageBuilder {
             timestamp,
             serverInfo,
             messageObject,
-            minecraftVersion
+            minecraftVersion,
+            WebchatClient.getModVersion()
         );
     }
 
@@ -182,7 +184,8 @@ public class WebsocketMessageBuilder {
             timestamp,
             serverInfo,
             messageObject,
-            minecraftVersion
+            minecraftVersion,
+            WebchatClient.getModVersion()
         );
     }
 
@@ -203,7 +206,8 @@ public class WebsocketMessageBuilder {
             timestamp,
             serverInfo,
             state,
-            minecraftVersion
+            minecraftVersion,
+            WebchatClient.getModVersion()
         );
     }
 
@@ -235,7 +239,8 @@ public class WebsocketMessageBuilder {
             serverInfo,
             oldestTimestamp,
             moreHistoryAvailable,
-            minecraftVersion
+            minecraftVersion,
+            WebchatClient.getModVersion()
         );
     }
 
@@ -347,7 +352,8 @@ public class WebsocketMessageBuilder {
             timestamp,
             serverInfo,
             playerList,
-            minecraftVersion
+            minecraftVersion,
+            WebchatClient.getModVersion()
         );
     }
 }

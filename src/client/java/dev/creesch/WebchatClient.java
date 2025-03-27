@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
@@ -22,6 +23,7 @@ public class WebchatClient implements ClientModInitializer {
     private ChatMessageRepository messageRepository;
     private int tickCounter = 0;
     private static WebchatClient INSTANCE;
+    private static String MOD_VERSION = "unknown";
 
     @Override
     public void onInitializeClient() {
@@ -32,6 +34,12 @@ public class WebchatClient implements ClientModInitializer {
         }
 
         INSTANCE = this;
+        MOD_VERSION = FabricLoader.getInstance()
+            .getModContainer("web-chat")
+            .get()
+            .getMetadata()
+            .getVersion()
+            .getFriendlyString();
 
         ModConfig.init();
         messageRepository = new ChatMessageRepository();
@@ -170,6 +178,10 @@ public class WebchatClient implements ClientModInitializer {
             );
             INSTANCE.showWebAddress(MinecraftClient.getInstance());
         }
+    }
+
+    public static String getModVersion() {
+        return MOD_VERSION;
     }
 
     private void showWebAddress(MinecraftClient client) {

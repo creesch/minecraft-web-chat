@@ -17,6 +17,7 @@
  * @property {number} timestamp
  * @property {ServerInfo} server
  * @property {string} minecraftVersion
+ * @property {string} modVersion
  */
 
 /**
