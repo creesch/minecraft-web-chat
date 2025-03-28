@@ -115,6 +115,14 @@ public class WebInterface {
             );
             ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
             ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
+
+            // Disable caching
+            ctx.header(
+                "Cache-Control",
+                "no-store, no-cache, must-revalidate, max-age=0"
+            );
+            ctx.header("Pragma", "no-cache");
+            ctx.header("Expires", "0");
         });
     }
 

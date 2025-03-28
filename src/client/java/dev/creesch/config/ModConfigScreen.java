@@ -1,5 +1,6 @@
 package dev.creesch.config;
 
+import dev.creesch.WebchatClient;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerFieldControllerBuilder;
@@ -150,7 +151,7 @@ public class ModConfigScreen {
 
         builder.save(() -> {
             ModConfig.HANDLER.save();
-            dev.creesch.WebchatClient.onConfigChanged();
+            WebchatClient.onConfigChanged();
         });
 
         return builder.build().generateScreen(parent);
