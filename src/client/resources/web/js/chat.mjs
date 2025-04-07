@@ -29,6 +29,9 @@ import { tabListManager } from './managers/tab_list_manager.mjs';
  * ======================
  */
 
+/** @type {string | null} */
+let modVersion = null;
+
 // WebSocket Management
 /** @type {number} */
 const maxReconnectAttempts = 300; // TODO: add a reconnect button after automatic retries are done.
@@ -400,8 +403,22 @@ function connect() {
         /** @type {string} */
         const rawJson = event.data;
         console.log('Got websocket message:', rawJson);
+
         try {
             const message = parseModServerMessage(rawJson);
+
+            if (modVersion === null) {
+                modVersion = message.modVersion;
+                console.log('Mod version:', modVersion);
+            } else if (modVersion !== message.modVersion) {
+                console.warn(
+                    'Mod version mismatch:',
+                    modVersion,
+                    message.modVersion,
+                );
+                location.reload();
+            }
+
             switch (message.type) {
                 case 'chatMessage':
                     handleChatMessage(message);

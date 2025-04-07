@@ -15,6 +15,7 @@ public class WebsocketJsonMessage {
     private ChatServerInfo server;
     private MessageType type;
     private String minecraftVersion;
+    private String modVersion;
     private Object payload;
 
     @Data
@@ -55,27 +56,31 @@ public class WebsocketJsonMessage {
         ChatServerInfo server,
         MessageType type,
         Object payload,
-        String minecraftVersion
+        String minecraftVersion,
+        String modVersion
     ) {
         this.timestamp = timestamp;
         this.server = server;
         this.type = type;
         this.payload = payload;
         this.minecraftVersion = minecraftVersion;
+        this.modVersion = modVersion;
     }
 
     public static WebsocketJsonMessage createChatMessage(
         long timestamp,
         ChatServerInfo server,
         ChatMessagePayload message,
-        String minecraftVersion
+        String minecraftVersion,
+        String modVersion
     ) {
         return new WebsocketJsonMessage(
             timestamp,
             server,
             MessageType.CHAT_MESSAGE,
             message,
-            minecraftVersion
+            minecraftVersion,
+            modVersion
         );
     }
 
@@ -83,14 +88,16 @@ public class WebsocketJsonMessage {
         long timestamp,
         ChatServerInfo server,
         ServerConnectionStates state,
-        String minecraftVersion
+        String minecraftVersion,
+        String modVersion
     ) {
         return new WebsocketJsonMessage(
             timestamp,
             server,
             MessageType.SERVER_CONNECTION_STATE,
             state,
-            minecraftVersion
+            minecraftVersion,
+            modVersion
         );
     }
 
@@ -99,7 +106,8 @@ public class WebsocketJsonMessage {
         ChatServerInfo server,
         long oldestMessageTimestamp,
         boolean moreHistoryAvailable,
-        String minecraftVersion
+        String minecraftVersion,
+        String modVersion
     ) {
         HistoryMetaDataPayload historyMetaDataPayload =
             HistoryMetaDataPayload.builder()
@@ -112,7 +120,8 @@ public class WebsocketJsonMessage {
             server,
             MessageType.HISTORY_META_DATA,
             historyMetaDataPayload,
-            minecraftVersion
+            minecraftVersion,
+            modVersion
         );
     }
 
@@ -120,14 +129,16 @@ public class WebsocketJsonMessage {
         long timestamp,
         ChatServerInfo server,
         List<PlayerListInfoEntry> playerList,
-        String minecraftVersion
+        String minecraftVersion,
+        String modVersion
     ) {
         return new WebsocketJsonMessage(
             timestamp,
             server,
             MessageType.SERVER_PLAYER_LIST,
             playerList,
-            minecraftVersion
+            minecraftVersion,
+            modVersion
         );
     }
 }
