@@ -29,6 +29,29 @@ function playerInfoEquals(a, b) {
     );
 }
 
+const sidebarContainerElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#player-list-container')
+);
+const sidebarToggleElement = /** @type {HTMLImageElement} */ (
+    querySelectorWithAssertion('#sidebar-toggle')
+);
+
+/**
+ * Toggle the sidebar in mobile mode.
+ * @param {boolean} [open] - Whether to open or close the sidebar. If not provided, the sidebar will be toggled.
+ */
+export function toggleSidebar(open = undefined) {
+    const nowOpen = sidebarContainerElement.classList.toggle(
+        'mobile-menu-open',
+        open,
+    );
+
+    sidebarToggleElement.src = nowOpen
+        ? 'img/heroicons/x-mark.svg'
+        : 'img/heroicons/bars-3.svg';
+    sidebarToggleElement.ariaLabel = nowOpen ? 'Close sidebar' : 'Open sidebar';
+}
+
 /**
  * Manages the player list UI component, handling player data storage, DOM updates and player head image caching.
  */
@@ -37,7 +60,7 @@ class PlayerList {
     #players = new Map();
 
     /** @type {HTMLElement} */
-    #listContainer;
+    #playerListElement;
 
     /** @type {HTMLTextAreaElement} */
     #chatInput;
@@ -46,12 +69,12 @@ class PlayerList {
     #playerCountElement;
 
     /**
-     * @param {HTMLElement} listContainer
+     * @param {HTMLElement} playerListElement
      * @param {HTMLTextAreaElement} chatInput
      * @param {HTMLSpanElement} playerCountElement
      */
-    constructor(listContainer, chatInput, playerCountElement) {
-        this.#listContainer = listContainer;
+    constructor(playerListElement, chatInput, playerCountElement) {
+        this.#playerListElement = playerListElement;
         this.#chatInput = chatInput;
         this.#playerCountElement = playerCountElement;
     }
@@ -113,7 +136,7 @@ class PlayerList {
         }
         // Append all new elements to the DOM in one operation.
         if (fragment.childNodes.length > 0) {
-            this.#listContainer.appendChild(fragment);
+            this.#playerListElement.appendChild(fragment);
         }
 
         // Remove players that are no longer in the list.
@@ -234,6 +257,8 @@ class PlayerList {
 
         // Add click event to insert the player name into the chat input
         playerElement.addEventListener('click', () => {
+            toggleSidebar(false);
+
             const cursorPos = this.#chatInput.selectionStart;
             const textBefore = this.#chatInput.value.substring(0, cursorPos);
             const textAfter = this.#chatInput.value.substring(cursorPos);
@@ -311,7 +336,7 @@ class PlayerList {
 }
 
 // Create and export a singleton instance since we only need one player list manager
-const listContainer = /** @type {HTMLElement} */ (
+const playerListElement = /** @type {HTMLUListElement} */ (
     querySelectorWithAssertion('#player-list')
 );
 const chatInput = /** @type {HTMLTextAreaElement} */ (
@@ -322,7 +347,7 @@ const playerCountElement = /** @type {HTMLSpanElement} */ (
 );
 
 export const playerList = new PlayerList(
-    listContainer,
+    playerListElement,
     chatInput,
     playerCountElement,
 );
