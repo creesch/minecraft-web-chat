@@ -9,7 +9,7 @@ import {
     initializeObfuscation,
 } from './messages/message_parsing.mjs';
 import { serverInfo } from './managers/server_info.mjs';
-import { playerList } from './managers/player_list.mjs';
+import { playerList, toggleSidebar } from './managers/player_list.mjs';
 import { parseModServerMessage } from './messages/message_types.mjs';
 import { faviconManager } from './managers/favicon_manager.mjs';
 import { tabListManager } from './managers/tab_list_manager.mjs';
@@ -57,6 +57,9 @@ const statusContainerElement = /** @type {HTMLDivElement} */ (
 const statusTextElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#status .connection-status')
 );
+const sidebarToggleElement = /** @type {HTMLImageElement} */ (
+    querySelectorWithAssertion('#sidebar-toggle')
+);
 
 const messagesElement = /** @type {HTMLElement} */ (
     querySelectorWithAssertion('#messages')
@@ -85,6 +88,10 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
  *  Event listeners and handlers
  * ======================
  */
+
+sidebarToggleElement.addEventListener('click', () => {
+    toggleSidebar();
+});
 
 // Clicked send button
 messageSendButtonElement.addEventListener('click', () => {

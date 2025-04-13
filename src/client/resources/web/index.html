@@ -91,15 +91,22 @@
                 <ul id="player-list"></ul>
             </aside>
         </main>
-        <div
-            id="status"
-            class="status-disconnected"
-            role="status"
-            aria-live="polite"
-        >
-            <span class="connection-status">Disconnected</span>
-            -
-            <span class="server-name">No server</span>
+        <div id="status-container">
+            <div
+                id="status"
+                class="status-disconnected"
+                role="status"
+                aria-live="polite"
+            >
+                <span class="connection-status">Disconnected</span>
+                -
+                <span class="server-name">No server</span>
+            </div>
+            <img
+                id="sidebar-toggle"
+                src="img/heroicons/bars-3.svg"
+                aria-label="Open sidebar"
+            />
         </div>
 
         <script type="module" src="js/chat.mjs"></script>

@@ -123,7 +123,7 @@ body {
 
 #player-list-container h2 {
     margin: 0;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     font-size: 1.1rem;
     background-color: rgba(0, 0, 0, 0.2);
 }
@@ -131,9 +131,10 @@ body {
 #player-list {
     list-style: none;
     margin: 0;
-    padding: 0.5rem;
+    padding: 0.5rem 1.25rem;
     overflow-y: auto;
     flex: 1;
+    min-height: 0; /* Important for flex child scrolling */
 }
 
 #player-list li {
@@ -358,17 +359,38 @@ body {
     background-color: #45a049;
 }
 
-#status {
+#status-container {
     position: fixed;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     width: 250px;
+    height: 1.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
-    padding: 0.3rem 0.6rem;
     border-radius: 0.3rem;
     background-color: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+}
+
+#status {
     font-size: 0.8rem;
     box-sizing: border-box;
-    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 0.5rem;
+}
+
+#sidebar-toggle {
+    display: none;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
 }
 
 .status-connected {
@@ -388,18 +410,44 @@ body {
 */
 @media (max-width: 620px) {
     #container {
-        padding-top: 2.5rem; /* Make room for status bar */
+        padding-top: 3.5rem; /* Make room for status bar */
     }
 
     #player-list-container {
         display: none;
     }
+    #player-list-container.mobile-menu-open {
+        display: flex;
+        position: absolute;
+        top: 3rem;
+        left: 0;
+        width: calc(100vw - 1rem);
+        height: calc(100vh - 3rem);
+        background-color: #2c2c2c;
+        padding: 0.5rem;
+        border-radius: 0;
+        margin: 0;
+        flex-direction: column;
+    }
+    #player-list-container.mobile-menu-open h2 {
+        border-radius: 0.3rem;
+        flex-shrink: 0;
+    }
 
     #status {
+        padding: 0 2.5rem 0 1.5rem;
+    }
+
+    #status-container {
         top: 0.5rem;
         bottom: auto;
         left: 0.5rem;
         right: 0.5rem;
         width: auto;
+        height: 2.5rem;
+    }
+
+    #sidebar-toggle {
+        display: block;
     }
 }
