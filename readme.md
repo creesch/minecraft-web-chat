@@ -52,7 +52,7 @@ There are no plans to support other mod loaders.
 
 # Security & Privacy
 
-This mod turns minecraft in a small web server on your computer that's only accessible locally (`localhost`) on your network. This means that you can access it on a different device on your network, but not from outside the internet. 
+This mod turns minecraft into a small web server on your computer that's only accessible locally (`localhost`) on your network. This means that you can access it on a different device on your network, but not from outside the internet. 
 No data is sent over the internet beyond your normal Minecraft traffic. 
 
 **Important:** This mod is designed for local use only. **Do not** expose the web chat port to the internet. If you need remote access, setup a VPN to your home network instead.
