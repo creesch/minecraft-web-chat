@@ -20,7 +20,7 @@ Web chat is a **client only** mod giving you access to the chat of the server yo
 # Availability 
 
 - Minecraft version: 1.21.1 and up
-- Mod loader: Fabric only
+- Mod loader: **Fabric only**
 
 There are no plans to support other mod loaders.
 
