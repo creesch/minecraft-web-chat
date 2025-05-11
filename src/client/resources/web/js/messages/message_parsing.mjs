@@ -969,6 +969,173 @@ function formatHoverEvent(hoverEvent, translations) {
 }
 
 /**
+ * Handle an `open_url` click event.
+ * @param {MouseEvent} event - The click event
+ * @param {string} url - The URL to open
+ */
+function handleOpenUrl(event, url) {
+    if (event.shiftKey) {
+        event.preventDefault();
+        return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof HTMLAnchorElement)) {
+        return;
+    }
+
+    if (target.textContent === url) {
+        // Perform default behavior (open in new tab)
+        return;
+    }
+
+    event.preventDefault();
+
+    const modalUrlElement = /** @type {HTMLParagraphElement} */ (
+        querySelectorWithAssertion('#modal-content .modal-url')
+    );
+    const modalContainer = /** @type {HTMLDivElement} */ (
+        querySelectorWithAssertion('#modal-container')
+    );
+    const modalContent = /** @type {HTMLDivElement} */ (
+        querySelectorWithAssertion('#modal-content')
+    );
+    const modalCancelButton = /** @type {HTMLButtonElement} */ (
+        querySelectorWithAssertion('#modal-cancel')
+    );
+    const modalCopyButton = /** @type {HTMLButtonElement} */ (
+        querySelectorWithAssertion('#modal-copy')
+    );
+    const modalConfirmButton = /** @type {HTMLButtonElement} */ (
+        querySelectorWithAssertion('#modal-confirm')
+    );
+
+    modalUrlElement.textContent = url;
+
+    const closeModal = () => {
+        modalContainer.style.display = 'none';
+        modalUrlElement.textContent = '';
+        modalConfirmButton.removeEventListener('click', confirmHandler);
+        modalCancelButton.removeEventListener('click', cancelHandler);
+        modalCopyButton.removeEventListener('click', copyHandler);
+        modalConfirmButton.removeEventListener('click', confirmHandler);
+        modalContainer.removeEventListener('click', closeModal);
+        document.removeEventListener('keydown', escapeHandler);
+        modalContent.removeEventListener('click', contentClickHandler);
+    };
+
+    const escapeHandler = (/** @type {KeyboardEvent} */ event) => {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    };
+
+    const contentClickHandler = (/** @type {MouseEvent} */ event) => {
+        event.stopPropagation();
+    };
+
+    const cancelHandler = () => {
+        modalUrlElement.textContent = '';
+        closeModal();
+    };
+
+    const copyHandler = () => {
+        navigator.clipboard.writeText(url);
+        closeModal();
+    };
+
+    const confirmHandler = () => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        closeModal();
+    };
+
+    modalCancelButton.addEventListener('click', cancelHandler);
+    modalCopyButton.addEventListener('click', copyHandler);
+    modalConfirmButton.addEventListener('click', confirmHandler);
+    modalContent.addEventListener('click', contentClickHandler);
+    document.addEventListener('keydown', escapeHandler);
+    modalContainer.addEventListener('click', closeModal);
+    modalContainer.style.display = 'block';
+    modalConfirmButton.focus();
+}
+
+/**
+ * Handle a `suggest_command` click event.
+ * @param {MouseEvent} event - The click event
+ * @param {string} command - The command to suggest
+ */
+function handleSuggestCommand(event, command) {
+    if (event.shiftKey) {
+        return;
+    }
+
+    const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+        querySelectorWithAssertion('#message-input')
+    );
+
+    const regex = /^\/(w|msg|tell) ([^\s]+)/;
+    const match = command.match(regex);
+    if (match) {
+        const playerName = /** @type {string} */ (match[2]);
+        const player = playerList.getPlayerByName(playerName);
+        const messagingPlayer = directMessageManager.getPlayer();
+
+        if (player && playerName !== messagingPlayer?.playerName) {
+            const playerChatButton = /** @type {HTMLImageElement} */ (
+                querySelectorWithAssertion(
+                    `[data-player-id="${player.playerId}"] .player-chat-icon`,
+                )
+            );
+            playerChatButton.click();
+        }
+    } else {
+        chatInputElement.value = command;
+    }
+
+    chatInputElement.focus();
+}
+
+/**
+ * Handle a `copy_to_clipboard` click event.
+ * @param {MouseEvent} event - The click event
+ * @param {string} text - The text to copy
+ */
+function handleCopyToClipboard(event, text) {
+    if (event.shiftKey) {
+        return;
+    }
+
+    navigator.clipboard.writeText(text);
+}
+
+/**
+ * Handle a `run_command` click event.
+ * @param {MouseEvent} event - The click event
+ * @param {string} command - The command to run
+ */
+function handleRunCommand(event, command) {
+    if (event.shiftKey) {
+        return;
+    }
+
+    const chatInputElement = /** @type {HTMLTextAreaElement} */ (
+        querySelectorWithAssertion('#message-input')
+    );
+
+    chatInputElement.value = command;
+    chatInputElement.focus();
+
+    chatInputElement.dispatchEvent(
+        new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'Enter',
+            code: 'Enter',
+        }),
+    );
+}
+
+/**
  * Builds a click handler for a click event.
  * @param {ClickEvent} clickEvent
  * @returns {((event: MouseEvent) => void) | null}
@@ -976,172 +1143,13 @@ function formatHoverEvent(hoverEvent, translations) {
 function buildClickHandler(clickEvent) {
     switch (clickEvent.action) {
         case 'open_url':
-            return (event) => {
-                if (event.shiftKey) {
-                    event.preventDefault();
-                    return;
-                }
-
-                const target = event.target;
-                if (!(target instanceof HTMLAnchorElement)) {
-                    return;
-                }
-
-                if (target.textContent === clickEvent.value) {
-                    // Perform default behavior (open in new tab)
-                    return;
-                }
-
-                event.preventDefault();
-
-                const modalUrlElement = /** @type {HTMLParagraphElement} */ (
-                    querySelectorWithAssertion('#modal-content .modal-url')
-                );
-                const modalContainer = /** @type {HTMLDivElement} */ (
-                    querySelectorWithAssertion('#modal-container')
-                );
-                const modalContent = /** @type {HTMLDivElement} */ (
-                    querySelectorWithAssertion('#modal-content')
-                );
-                const modalCancelButton = /** @type {HTMLButtonElement} */ (
-                    querySelectorWithAssertion('#modal-cancel')
-                );
-                const modalCopyButton = /** @type {HTMLButtonElement} */ (
-                    querySelectorWithAssertion('#modal-copy')
-                );
-                const modalConfirmButton = /** @type {HTMLButtonElement} */ (
-                    querySelectorWithAssertion('#modal-confirm')
-                );
-
-                modalUrlElement.textContent = clickEvent.value;
-
-                const closeModal = () => {
-                    modalContainer.style.display = 'none';
-                    modalUrlElement.textContent = '';
-                    modalConfirmButton.removeEventListener(
-                        'click',
-                        confirmHandler,
-                    );
-                    modalCancelButton.removeEventListener(
-                        'click',
-                        cancelHandler,
-                    );
-                    modalCopyButton.removeEventListener('click', copyHandler);
-                    modalConfirmButton.removeEventListener(
-                        'click',
-                        confirmHandler,
-                    );
-                    modalContainer.removeEventListener('click', closeModal);
-                    document.removeEventListener('keydown', escapeHandler);
-                    modalContent.removeEventListener(
-                        'click',
-                        contentClickHandler,
-                    );
-                };
-
-                const escapeHandler = (/** @type {KeyboardEvent} */ event) => {
-                    if (event.key === 'Escape') {
-                        closeModal();
-                    }
-                };
-
-                const contentClickHandler = (
-                    /** @type {MouseEvent} */ event,
-                ) => {
-                    event.stopPropagation();
-                };
-
-                const cancelHandler = () => {
-                    modalUrlElement.textContent = '';
-                    closeModal();
-                };
-
-                const copyHandler = () => {
-                    navigator.clipboard.writeText(clickEvent.value);
-                    closeModal();
-                };
-
-                const confirmHandler = () => {
-                    window.open(
-                        clickEvent.value,
-                        '_blank',
-                        'noopener,noreferrer',
-                    );
-                    closeModal();
-                };
-
-                modalCancelButton.addEventListener('click', cancelHandler);
-                modalCopyButton.addEventListener('click', copyHandler);
-                modalConfirmButton.addEventListener('click', confirmHandler);
-                modalContent.addEventListener('click', contentClickHandler);
-                document.addEventListener('keydown', escapeHandler);
-                modalContainer.addEventListener('click', closeModal);
-                modalContainer.style.display = 'block';
-                modalConfirmButton.focus();
-            };
+            return (event) => handleOpenUrl(event, clickEvent.value);
         case 'suggest_command':
-            return (event) => {
-                if (event.shiftKey) {
-                    return;
-                }
-
-                const suggestedCommand = clickEvent.value;
-                const chatInputElement = /** @type {HTMLTextAreaElement} */ (
-                    querySelectorWithAssertion('#message-input')
-                );
-
-                const regex = /^\/(w|msg|tell) ([^\s]+)/;
-                const match = suggestedCommand.match(regex);
-                if (match) {
-                    const playerName = /** @type {string} */ (match[2]);
-                    const player = playerList.getPlayerByName(playerName);
-                    const messagingPlayer = directMessageManager.getPlayer();
-
-                    if (player && playerName !== messagingPlayer?.playerName) {
-                        const playerChatButton =
-                            /** @type {HTMLImageElement} */ (
-                                querySelectorWithAssertion(
-                                    `[data-player-id="${player.playerId}"] .player-chat-icon`,
-                                )
-                            );
-                        playerChatButton.click();
-                    }
-                } else {
-                    chatInputElement.value = suggestedCommand;
-                }
-
-                chatInputElement.focus();
-            };
+            return (event) => handleSuggestCommand(event, clickEvent.value);
         case 'copy_to_clipboard':
-            return (event) => {
-                if (event.shiftKey) {
-                    return;
-                }
-
-                navigator.clipboard.writeText(clickEvent.value);
-            };
+            return (event) => handleCopyToClipboard(event, clickEvent.value);
         case 'run_command':
-            return (event) => {
-                if (event.shiftKey) {
-                    return;
-                }
-
-                const chatInputElement = /** @type {HTMLTextAreaElement} */ (
-                    querySelectorWithAssertion('#message-input')
-                );
-
-                chatInputElement.value = clickEvent.value;
-                chatInputElement.focus();
-
-                chatInputElement.dispatchEvent(
-                    new KeyboardEvent('keydown', {
-                        bubbles: true,
-                        cancelable: true,
-                        key: 'Enter',
-                        code: 'Enter',
-                    }),
-                );
-            };
+            return (event) => handleRunCommand(event, clickEvent.value);
         case 'open_file':
         case 'change_page':
             return null;
