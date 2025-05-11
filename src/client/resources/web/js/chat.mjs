@@ -10,6 +10,7 @@ import {
 } from './messages/message_parsing.mjs';
 import { serverInfo } from './managers/server_info.mjs';
 import { playerList, toggleSidebar } from './managers/player_list.mjs';
+import { directMessageManager } from './managers/direct_message.mjs';
 import { parseModServerMessage } from './messages/message_types.mjs';
 import { faviconManager } from './managers/favicon_manager.mjs';
 import { tabListManager } from './managers/tab_list_manager.mjs';
@@ -78,6 +79,10 @@ const inputAlertElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#input-alert')
 );
 
+const clearRecipientElement = /** @type {HTMLImageElement} */ (
+    querySelectorWithAssertion('#direct-message-clear')
+);
+
 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
@@ -94,6 +99,10 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
 
 sidebarToggleElement.addEventListener('click', () => {
     toggleSidebar();
+});
+
+clearRecipientElement.addEventListener('click', () => {
+    directMessageManager.clearPlayer();
 });
 
 // Clicked send button
@@ -500,9 +509,14 @@ function setChatInputError(isError) {
 }
 
 function sendChatMessage() {
-    const message = chatInputElement.value;
+    let message = chatInputElement.value;
     if (!message.trim()) {
         return;
+    }
+
+    const player = directMessageManager.getPlayer();
+    if (player) {
+        message = `/w ${player.playerName} ${message}`;
     }
 
     if (message.startsWith('/')) {

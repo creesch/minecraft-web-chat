@@ -1,6 +1,8 @@
 // @ts-check
 'use strict';
 
+import { playerList } from '../managers/player_list.mjs';
+import { directMessageManager } from '../managers/direct_message.mjs';
 import { fallbackTranslations } from './fallback_translations.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
@@ -1083,10 +1085,31 @@ function buildClickHandler(clickEvent) {
                     return;
                 }
 
+                const suggestedCommand = clickEvent.value;
                 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
                     querySelectorWithAssertion('#message-input')
                 );
-                chatInputElement.value = clickEvent.value;
+
+                const regex = /^\/(w|msg|tell) ([^\s]+)/;
+                const match = suggestedCommand.match(regex);
+                if (match) {
+                    const playerName = /** @type {string} */ (match[2]);
+                    const player = playerList.getPlayerByName(playerName);
+                    const messagingPlayer = directMessageManager.getPlayer();
+
+                    if (player && playerName !== messagingPlayer?.playerName) {
+                        const playerChatButton =
+                            /** @type {HTMLImageElement} */ (
+                                querySelectorWithAssertion(
+                                    `[data-player-id="${player.playerId}"] .player-chat-icon`,
+                                )
+                            );
+                        playerChatButton.click();
+                    }
+                } else {
+                    chatInputElement.value = suggestedCommand;
+                }
+
                 chatInputElement.focus();
             };
         case 'copy_to_clipboard':

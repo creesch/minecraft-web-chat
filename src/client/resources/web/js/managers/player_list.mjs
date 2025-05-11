@@ -1,6 +1,7 @@
 // @ts-check
 'use strict';
 
+import { directMessageManager } from './direct_message.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
@@ -62,20 +63,15 @@ class PlayerList {
     /** @type {HTMLElement} */
     #playerListElement;
 
-    /** @type {HTMLTextAreaElement} */
-    #chatInput;
-
     /** @type {HTMLSpanElement} */
     #playerCountElement;
 
     /**
      * @param {HTMLElement} playerListElement
-     * @param {HTMLTextAreaElement} chatInput
      * @param {HTMLSpanElement} playerCountElement
      */
-    constructor(playerListElement, chatInput, playerCountElement) {
+    constructor(playerListElement, playerCountElement) {
         this.#playerListElement = playerListElement;
-        this.#chatInput = chatInput;
         this.#playerCountElement = playerCountElement;
     }
 
@@ -212,6 +208,7 @@ class PlayerList {
         const playerElement = document.createElement('li');
         playerElement.setAttribute('role', 'listitem');
         playerElement.setAttribute('data-player-id', player.playerId);
+        playerElement.title = `Chat with ${player.playerDisplayName}`;
 
         const headContainer = document.createElement('div');
         headContainer.className = 'player-head-container';
@@ -240,7 +237,6 @@ class PlayerList {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'player-name';
         nameSpan.textContent = player.playerDisplayName;
-        nameSpan.title = player.playerName;
 
         // Specifically for aria labels show both playerDisplayName and playerName if they are different.
         if (player.playerDisplayName !== player.playerName) {
@@ -255,22 +251,44 @@ class PlayerList {
             );
         }
 
-        // Add click event to insert the player name into the chat input
-        playerElement.addEventListener('click', () => {
-            toggleSidebar(false);
+        const chatIcon = document.createElement('img');
+        chatIcon.className = 'player-chat-icon';
+        chatIcon.src = 'img/heroicons/chat-bubble-left-right.svg';
 
-            const cursorPos = this.#chatInput.selectionStart;
-            const textBefore = this.#chatInput.value.substring(0, cursorPos);
-            const textAfter = this.#chatInput.value.substring(cursorPos);
-            this.#chatInput.value = `${textBefore}${player.playerDisplayName}${textAfter}`;
-            this.#chatInput.focus();
-            this.#chatInput.selectionStart = this.#chatInput.selectionEnd =
-                cursorPos + player.playerDisplayName.length;
+        playerElement.addEventListener('click', () => {
+            /**
+             * Selects a player and updates the chat icon.
+             * @param {PlayerInfo} player
+             */
+            function selectPlayer(player) {
+                toggleSidebar(false);
+                directMessageManager.setPlayer(player, deselectPlayer);
+                playerElement.setAttribute(
+                    'aria-label',
+                    'Stop chat with player',
+                );
+                playerElement.title = `Stop chat with ${player.playerDisplayName}`;
+                chatIcon.style.display = 'block';
+            }
+
+            function deselectPlayer() {
+                playerElement.setAttribute('aria-label', 'Chat with player');
+                playerElement.title = `Chat with ${player.playerDisplayName}`;
+                chatIcon.style.display = 'none';
+            }
+
+            const currentPlayer = directMessageManager.getPlayer();
+            if (currentPlayer?.playerId === player.playerId) {
+                directMessageManager.clearPlayer();
+            } else {
+                selectPlayer(player);
+            }
         });
 
         // Assemble the player element.
         playerElement.appendChild(headContainer);
         playerElement.appendChild(nameSpan);
+        playerElement.appendChild(chatIcon);
 
         return playerElement;
     }
@@ -317,6 +335,22 @@ class PlayerList {
     }
 
     /**
+     * Retrieves a player's data by their name.
+     *
+     * @param {string} playerName - The name of the player to retrieve.
+     * @returns {StoredPlayerInfo|null} The player's data, or null if not found.
+     */
+    getPlayerByName(playerName) {
+        for (const player of this.#players.values()) {
+            if (player.playerName.toLowerCase() === playerName.toLowerCase()) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Retrieves all players as an array.
      *
      * @returns {StoredPlayerInfo[]} An array of all players' data.
@@ -339,15 +373,8 @@ class PlayerList {
 const playerListElement = /** @type {HTMLUListElement} */ (
     querySelectorWithAssertion('#player-list')
 );
-const chatInput = /** @type {HTMLTextAreaElement} */ (
-    querySelectorWithAssertion('#message-input')
-);
 const playerCountElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#player-count')
 );
 
-export const playerList = new PlayerList(
-    playerListElement,
-    chatInput,
-    playerCountElement,
-);
+export const playerList = new PlayerList(playerListElement, playerCountElement);
