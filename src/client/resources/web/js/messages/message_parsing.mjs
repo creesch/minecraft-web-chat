@@ -1,7 +1,6 @@
 // @ts-check
 'use strict';
 
-import { fallbackTranslations } from './fallback_translations.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 // Minecraft JSON message parsing to HTML.
@@ -1313,15 +1312,11 @@ export function formatPlainText(element) {
  * @returns {Element | Text}
  */
 export function formatChatMessage(component, translations) {
-    // Message payload should come with translations included. If not it likely is a legacy 1.21.1 message and the fallback translation file is used.
-    const usedTranslations = Object.keys(translations).length
-        ? translations
-        : fallbackTranslations;
     /** @type {Element} */
     let element;
     try {
         // First pass: create an HTML element from the component structure
-        element = formatComponent(component, usedTranslations);
+        element = formatComponent(component, translations);
     } catch (error) {
         console.error('Error formatting component:', error);
         return document.createTextNode(
