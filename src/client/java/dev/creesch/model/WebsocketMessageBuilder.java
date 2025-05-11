@@ -49,19 +49,23 @@ public class WebsocketMessageBuilder {
         String minecraftChatJson;
 
         try {
-            translations =
-                ClientTranslationUtils.extractTranslations(message);
+            translations = ClientTranslationUtils.extractTranslations(message);
 
             minecraftChatJson = Text.Serialization.toJsonString(
                 message,
                 client.world.getRegistryManager()
             );
         } catch (JsonParseException exception) {
-            LOGGER.warn("Failed to serialize chat message: " + message.getString());
+            LOGGER.warn(
+                "Failed to serialize chat message: " + message.getString()
+            );
             LOGGER.warn("Exception info: ", exception);
 
             // Get plain string message and show as error in chat.
-            minecraftChatJson = "{\"text\":\"Could not convert message: %s\"}".formatted(message.getString());
+            minecraftChatJson =
+                "{\"text\":\"Could not convert message: %s\"}".formatted(
+                        message.getString()
+                    );
             translations = Map.of();
         }
 
@@ -76,7 +80,10 @@ public class WebsocketMessageBuilder {
         ).toString();
 
         // Back to objects we go
-        JsonObject jsonObject= gson.fromJson(minecraftChatJson, JsonObject.class);
+        JsonObject jsonObject = gson.fromJson(
+            minecraftChatJson,
+            JsonObject.class
+        );
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(false)
             .uuid(messageUUID)
