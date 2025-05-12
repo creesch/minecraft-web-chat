@@ -200,10 +200,9 @@ function handleChatMessage(message) {
 
     displayedMessageIds.add(message.payload.uuid);
 
-    faviconManager.handleNewMessage(
-        message.payload.isPing,
-        message.payload.history,
-    );
+    if (!message.payload.history) {
+        faviconManager.handleNewMessage(message.payload.isPing);
+    }
 
     requestAnimationFrame(() => {
         const messageElement = document.createElement('article');
