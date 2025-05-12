@@ -36,11 +36,10 @@ class FaviconManager {
     /**
      * Increment the message count and update ping status if tab is not visible
      * @param {boolean} isPing - Whether this message is a ping
-     * @param {boolean} isHistory - Whether this message is from history
      */
-    handleNewMessage(isPing, isHistory = false) {
+    handleNewMessage(isPing) {
         if (document.visibilityState !== 'visible') {
-            if (!isHistory && isPing) {
+            if (isPing) {
                 this.#hasPing = true;
             }
             this.#messageCount++;
