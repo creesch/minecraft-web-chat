@@ -9,5 +9,6 @@ export default defineConfig({
             'src/test/resources/web/js/**/*.test.mjs',
             'src/test/resources/web/js/**/*.test.js',
         ],
+        setupFiles: ['src/test/setup.mjs'],
     },
 });
