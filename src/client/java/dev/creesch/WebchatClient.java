@@ -28,9 +28,8 @@ public class WebchatClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         if (INSTANCE != null) {
-            throw new IllegalStateException(
-                "WebchatClient already initialized"
-            );
+            LOGGER.error("WebchatClient already initialized");
+            return;
         }
 
         INSTANCE = this;
@@ -58,27 +57,41 @@ public class WebchatClient implements ClientModInitializer {
                 boolean fromSelf = sender == null
                     ? false
                     : sender.getName().equals(selfName);
-                WebsocketJsonMessage chatMessage =
-                    WebsocketMessageBuilder.createLiveChatMessage(
-                        message,
-                        fromSelf,
-                        client
+                try {
+                    WebsocketJsonMessage chatMessage =
+                        WebsocketMessageBuilder.createLiveChatMessage(
+                            message,
+                            fromSelf,
+                            client
+                        );
+                    messageRepository.saveMessage(chatMessage);
+                    webInterface.broadcastMessage(chatMessage);
+                } catch (Exception e) {
+                    LOGGER.warn(
+                        "Could not process chat message.",
+                        e
                     );
-                messageRepository.saveMessage(chatMessage);
-                webInterface.broadcastMessage(chatMessage);
+                }
             }
         );
 
         // System messages (joins, leaves, deaths, etc.)
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            WebsocketJsonMessage chatMessage =
-                WebsocketMessageBuilder.createLiveChatMessage(
-                    message,
-                    false,
-                    MinecraftClient.getInstance()
+            try {
+                WebsocketJsonMessage chatMessage =
+                    WebsocketMessageBuilder.createLiveChatMessage(
+                        message,
+                        false,
+                        MinecraftClient.getInstance()
+                    );
+                messageRepository.saveMessage(chatMessage);
+                webInterface.broadcastMessage(chatMessage);
+            } catch (Exception e) {
+                LOGGER.warn(
+                    "Could not process game message.",
+                    e
                 );
-            messageRepository.saveMessage(chatMessage);
-            webInterface.broadcastMessage(chatMessage);
+            }
         });
 
         // Send state to client so history can be cleared

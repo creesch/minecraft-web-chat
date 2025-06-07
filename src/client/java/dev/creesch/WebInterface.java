@@ -50,22 +50,35 @@ public class WebInterface {
     private String staticFilesPath = "";
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
     private AtomicInteger connectionsToClose;
+    private final AtomicBoolean isServerRunning = new AtomicBoolean(false);
 
     public WebInterface(ChatMessageRepository messageRepository) {
         if (messageRepository == null) {
-            throw new IllegalArgumentException(
-                "MessageRepository cannot be null"
+            LOGGER.error(
+                "WebInterface cannot be initialized, ChatMessageRepository cannot be null"
             );
+            this.messageRepository = null;
+            this.server = null;
+            return;
         }
         this.messageRepository = messageRepository;
         server = createServer();
         setupWebSocket();
 
-        server.start(WebInterface.config.httpPortNumber);
-        LOGGER.info(
-            "Web interface started on port {}",
-            WebInterface.config.httpPortNumber
-        );
+        try {
+            server.start(WebInterface.config.httpPortNumber);
+            isServerRunning.getAndSet(true);
+            LOGGER.info(
+                "Web interface started on port {}",
+                WebInterface.config.httpPortNumber
+            );
+        } catch (Exception e) {
+            LOGGER.error(
+                "Failed to start web interface on port {}",
+                WebInterface.config.httpPortNumber,
+                e
+            );
+        }
     }
 
     private Javalin createServer() {
@@ -307,6 +320,10 @@ public class WebInterface {
     }
 
     public void shutdown() {
+        // If server null there is nothing to clear up.
+        if (server == null) {
+            return;
+        }
         boolean wasInitiated = shutdownInitiated.getAndSet(true);
         if (wasInitiated) {
             return;
@@ -333,9 +350,17 @@ public class WebInterface {
                 try {
                     connectionsToClose.wait(100);
                 } catch (InterruptedException e) {
+                    LOGGER.warn("Web interface shutdown interrupted", e);
+                    Thread.currentThread().interrupt();
                     break;
                 }
             }
+        }
+
+        // Server is not running.
+        // Since there is a tiny change there were connections that needed cleaning up we return here instead of sooner.
+        if (!isServerRunning.get()) {
+            return;
         }
 
         LOGGER.info("Shutting down web interface");
@@ -401,6 +426,9 @@ public class WebInterface {
     }
 
     public void broadcastMessage(WebsocketJsonMessage message) {
+        if (server == null || connections == null || connections.isEmpty()) {
+            return;
+        }
         String jsonMessage = gson.toJson(message);
         connections.forEach(ctx -> {
             try {
@@ -417,10 +445,16 @@ public class WebInterface {
     }
 
     public int getCurrentPort() {
+        if (server == null || !isServerRunning.get()) {
+            return -1;
+        }
         return server.port();
     }
 
     public String getCurrentPath() {
+        if (server == null) {
+            return "";
+        }
         return staticFilesPath;
     }
 }
