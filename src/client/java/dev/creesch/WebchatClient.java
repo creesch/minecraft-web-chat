@@ -67,10 +67,7 @@ public class WebchatClient implements ClientModInitializer {
                     messageRepository.saveMessage(chatMessage);
                     webInterface.broadcastMessage(chatMessage);
                 } catch (Exception e) {
-                    LOGGER.warn(
-                        "Could not process chat message.",
-                        e
-                    );
+                    LOGGER.warn("Could not process chat message.", e);
                 }
             }
         );
@@ -87,10 +84,7 @@ public class WebchatClient implements ClientModInitializer {
                 messageRepository.saveMessage(chatMessage);
                 webInterface.broadcastMessage(chatMessage);
             } catch (Exception e) {
-                LOGGER.warn(
-                    "Could not process game message.",
-                    e
-                );
+                LOGGER.warn("Could not process game message.", e);
             }
         });
 
