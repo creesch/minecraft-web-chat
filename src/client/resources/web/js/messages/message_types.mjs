@@ -30,6 +30,7 @@
  *     translations: Record<string, string>,
  *     uuid: string,
  *     isPing: boolean,
+ *     notify: boolean,
  *   }
  * }} ChatMessage
  */

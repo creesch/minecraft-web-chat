@@ -79,6 +79,8 @@ public class WebsocketMessageBuilder {
             (timestamp + minecraftChatJson).getBytes()
         ).toString();
 
+        boolean ping = !fromSelf && isPing(message, client);
+        boolean notify = ping && doNotify(client);
         // Back to objects we go
         JsonObject jsonObject = gson.fromJson(
             minecraftChatJson,
@@ -88,7 +90,8 @@ public class WebsocketMessageBuilder {
             .history(false)
             .uuid(messageUUID)
             .component(jsonObject)
-            .isPing(!fromSelf && isPing(message, client))
+            .isPing(ping)
+            .notify(notify)
             .translations(translations)
             .build();
 
@@ -161,6 +164,17 @@ public class WebsocketMessageBuilder {
             patternBuilder.toString(),
             Pattern.CASE_INSENSITIVE
         );
+    }
+
+    /**
+     * Whether the web clients should send a system notification.
+     */
+    private static boolean doNotify(MinecraftClient client) {
+        if (client.isWindowFocused()) {
+            return false;
+        }
+
+        return ModConfig.HANDLER.instance().systemNotifications;
     }
 
     /**

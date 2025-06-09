@@ -1337,10 +1337,10 @@ export function formatPlainText(element) {
 /**
  * Transforms a Minecraft component into HTML.
  * @param {Component} component
- * @param {Record<string, string>} translations Translation key-value pairs
+ * @param {Record<string, string>} [translations] Translation key-value pairs
  * @returns {Element | Text}
  */
-export function formatChatMessage(component, translations) {
+export function formatChatMessage(component, translations = {}) {
     // Message payload should come with translations included. If not it likely is a legacy 1.21.1 message and the fallback translation file is used.
     const usedTranslations = Object.keys(translations).length
         ? translations

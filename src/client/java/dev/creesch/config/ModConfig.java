@@ -33,6 +33,9 @@ public class ModConfig {
     @SerialEntry(comment = "Enable ping on username")
     public boolean pingOnUsername = true;
 
+    @SerialEntry(comment = "Enable system notifications")
+    public boolean systemNotifications = false;
+
     @SerialEntry(comment = "Extra ping keywords")
     public List<String> pingKeywords = Arrays.asList();
 

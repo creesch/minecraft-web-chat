@@ -14,6 +14,7 @@ import { directMessageManager } from './managers/direct_message.mjs';
 import { parseModServerMessage } from './messages/message_types.mjs';
 import { faviconManager } from './managers/favicon_manager.mjs';
 import { tabListManager } from './managers/tab_list_manager.mjs';
+import { notificationManager } from './managers/notification_manager.mjs';
 
 /**
  * Import all types we might need
@@ -162,6 +163,19 @@ loadMoreButtonElement.addEventListener('click', () => {
     }
 });
 
+async function enableNotificationsOnClick() {
+    if (await notificationManager.enableNotifications()) {
+        console.log('Notifications enabled');
+    } else {
+        console.log('Notifications not enabled');
+    }
+
+    document.body.removeEventListener('click', enableNotificationsOnClick);
+}
+if (!notificationManager.isEnabled()) {
+    document.body.addEventListener('click', enableNotificationsOnClick);
+}
+
 /**
  * ======================
  *  Chat related functions
@@ -210,79 +224,76 @@ function handleChatMessage(message) {
         faviconManager.handleNewMessage(message.payload.isPing);
     }
 
-    requestAnimationFrame(() => {
-        const messageElement = document.createElement('article');
-        messageElement.classList.add('message');
+    const messageElement = document.createElement('article');
+    messageElement.classList.add('message');
 
-        if (message.payload.isPing) {
-            messageElement.classList.add('ping');
+    if (message.payload.isPing) {
+        messageElement.classList.add('ping');
+    }
+
+    // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen.
+    const { timeString, fullDateTime } = formatTimestamp(message.timestamp);
+    const timeElement = document.createElement('time');
+    timeElement.dateTime = new Date(message.timestamp).toISOString();
+    timeElement.textContent = timeString;
+    timeElement.title = fullDateTime;
+    timeElement.className = 'message-time';
+    messageElement.appendChild(timeElement);
+
+    try {
+        // Format the chat message - this uses the Component format from message_parsing
+        assertIsComponent(message.payload.component);
+        const chatContent = formatChatMessage(
+            message.payload.component,
+            message.payload.translations,
+        );
+
+        if (message.payload.notify && chatContent.textContent) {
+            notificationManager.sendNotification(chatContent.textContent);
         }
 
-        // Create timestamp outside of try block. That way errors can be timestamped as well for the moment they did happen.
-        const { timeString, fullDateTime } = formatTimestamp(message.timestamp);
-        const timeElement = document.createElement('time');
-        timeElement.dateTime = new Date(message.timestamp).toISOString();
-        timeElement.textContent = timeString;
-        timeElement.title = fullDateTime;
-        timeElement.className = 'message-time';
-        messageElement.appendChild(timeElement);
-
-        try {
-            // Format the chat message - this uses the Component format from message_parsing
-            assertIsComponent(message.payload.component);
-            const chatContent = formatChatMessage(
-                message.payload.component,
-                message.payload.translations,
+        messageElement.appendChild(chatContent);
+    } catch (e) {
+        console.error(message);
+        if (e instanceof ComponentError) {
+            console.error('Invalid component:', e.toString());
+            messageElement.appendChild(
+                formatChatMessage({
+                    text: 'Invalid message received from server',
+                    color: 'red',
+                }),
             );
-            messageElement.appendChild(chatContent);
-        } catch (e) {
-            console.error(message);
-            if (e instanceof ComponentError) {
-                console.error('Invalid component:', e.toString());
-                messageElement.appendChild(
-                    formatChatMessage(
-                        {
-                            text: 'Invalid message received from server',
-                            color: 'red',
-                        },
-                        {},
-                    ),
-                );
-            } else {
-                console.error('Error parsing message:', e);
-                messageElement.appendChild(
-                    formatChatMessage(
-                        {
-                            text: 'Error parsing message',
-                            color: 'red',
-                        },
-                        {},
-                    ),
-                );
-            }
-        }
-
-        // Storing raw scroll value. To be used to fix the scroll position down the line.
-        const scrolledFromTop = messagesElement.scrollTop;
-
-        if (message.payload.history) {
-            // Insert the message after the load-more button
-            loadMoreContainerElement.before(messageElement);
         } else {
-            // For new messages, insert at the start
-            messagesElement.insertBefore(
-                messageElement,
-                messagesElement.firstChild,
+            console.error('Error parsing message:', e);
+            messageElement.appendChild(
+                formatChatMessage({
+                    text: 'Error parsing message',
+                    color: 'red',
+                }),
             );
         }
+    }
 
-        // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
-        // Let's fix that, if the user was near the bottom when a message was inserted we put them back there.
-        // Note: the values appear negative due to the flex column shenanigans.
-        if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
-            messagesElement.scrollTop = 0;
-        }
-    });
+    // Storing raw scroll value. To be used to fix the scroll position down the line.
+    const scrolledFromTop = messagesElement.scrollTop;
+
+    if (message.payload.history) {
+        // Insert the message after the load-more button
+        loadMoreContainerElement.before(messageElement);
+    } else {
+        // For new messages, insert at the start
+        messagesElement.insertBefore(
+            messageElement,
+            messagesElement.firstChild,
+        );
+    }
+
+    // If it is due to the flex column reverse or something else, once the user has scrolled it doesn't "lock" at the bottom.
+    // Let's fix that, if the user was near the bottom when a message was inserted we put them back there.
+    // Note: the values appear negative due to the flex column shenanigans.
+    if (scrolledFromTop <= 1 && scrolledFromTop >= -35) {
+        messagesElement.scrollTop = 0;
+    }
 }
 
 function clearMessageHistory() {

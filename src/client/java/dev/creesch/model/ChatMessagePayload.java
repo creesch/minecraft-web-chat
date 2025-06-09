@@ -14,4 +14,5 @@ public class ChatMessagePayload {
     private JsonObject component;
     private Map<String, String> translations;
     private boolean isPing;
+    private boolean notify;
 }
