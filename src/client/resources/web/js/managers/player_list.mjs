@@ -9,9 +9,9 @@ import { querySelectorWithAssertion } from '../utils.mjs';
  */
 
 /**
- * Extends PlayerInfo to include the cached player head image and DOM element.
+ * Extends PlayerInfo to include their DOM element.
  * @typedef {PlayerInfo & {
- *   element?: HTMLElement, // Cached reference to the player's DOM element.
+ *   element: HTMLLIElement, // Player's element in the player list.
  * }} StoredPlayerInfo
  */
 
@@ -113,23 +113,16 @@ class PlayerList {
         const fragment = document.createDocumentFragment();
         for (const player of updatedPlayers) {
             const existingPlayer = this.#players.get(player.playerId);
-
-            // Create or update the player element.
-            /** @type {HTMLElement | undefined} */
-            let element;
-            if (!existingPlayer?.element) {
-                element = this.#createPlayerElement(player);
-                fragment.appendChild(element);
-            } else {
-                element = existingPlayer.element;
-                this.#updatePlayerElement(element, player, existingPlayer);
-            }
+            const element = existingPlayer
+                ? this.#updatePlayerElement(existingPlayer)
+                : fragment.appendChild(this.#createPlayerElement(player));
 
             this.#players.set(player.playerId, {
                 ...player,
                 element,
             });
         }
+
         // Append all new elements to the DOM in one operation.
         if (fragment.childNodes.length > 0) {
             this.#playerListElement.appendChild(fragment);
@@ -147,61 +140,47 @@ class PlayerList {
     /**
      * Updates a player's DOM element.
      *
-     * @param {HTMLElement} element - The element to update.
      * @param {StoredPlayerInfo} player - The player data to update.
-     * @param {StoredPlayerInfo} [existingPlayer] - The previous state of the player (if any).
+     * @returns {HTMLLIElement} The updated element.
      */
-    #updatePlayerElement(element, player, existingPlayer) {
+    #updatePlayerElement(player) {
         // Update the existing element if properties have changed.
         const headContainer = /** @type {HTMLDivElement | null} */ (
-            element.querySelector('.player-head-container')
+            player.element.querySelector('.player-head-container')
         );
         if (headContainer) {
-            if (
-                existingPlayer?.playerDisplayName !== player.playerDisplayName
-            ) {
-                headContainer.title = `${player.playerDisplayName}'s head`;
-            }
+            headContainer.title = `${player.playerDisplayName}'s head`;
         }
 
         const headImg = /** @type {HTMLImageElement | null} */ (
-            element.querySelector('.player-head')
+            player.element.querySelector('.player-head')
         );
         if (headImg) {
-            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
-                headImg.src = player.playerTextureUrl;
-            }
+            headImg.src = player.playerTextureUrl;
         }
 
         const headOverlay = /** @type {HTMLImageElement | null} */ (
-            element.querySelector('.player-head-overlay')
+            player.element.querySelector('.player-head-overlay')
         );
         if (headOverlay) {
-            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
-                headOverlay.src = player.playerTextureUrl;
-            }
+            headOverlay.src = player.playerTextureUrl;
         }
 
         const nameSpan = /** @type {HTMLSpanElement | null} */ (
-            element.querySelector('.player-name')
+            player.element.querySelector('.player-name')
         );
         if (nameSpan) {
-            if (
-                existingPlayer?.playerDisplayName !== player.playerDisplayName
-            ) {
-                nameSpan.textContent = player.playerDisplayName;
-            }
-
-            if (existingPlayer?.playerName !== player.playerName) {
-                nameSpan.title = player.playerName;
-            }
+            nameSpan.textContent = player.playerDisplayName;
+            nameSpan.title = player.playerName;
         }
+
+        return player.element;
     }
 
     /**
      * Creates a new player element.
-     * @param {StoredPlayerInfo} player
-     * @returns {HTMLElement}
+     * @param {PlayerInfo} player
+     * @returns {HTMLLIElement}
      */
     #createPlayerElement(player) {
         // Create a new DOM element if none exists for the player.
