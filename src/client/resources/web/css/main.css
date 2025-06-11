@@ -118,7 +118,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     /* Add margin at bottom to make room for fixed status bar */
-    margin-bottom: 2.1rem;
+    margin-bottom: 5rem;
 }
 
 #player-list-container h2 {
@@ -394,7 +394,7 @@ body {
     align-items: center;
     justify-content: center;
     width: calc(min(20rem, 30vw));
-    height: 1.5rem;
+    height: 4.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
     border-radius: 0.3rem;
@@ -403,12 +403,25 @@ body {
 }
 
 #status {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     padding: 0 0.5rem;
+}
+#status[data-status='connected'] {
+    color: #ffffff;
+}
+#status[data-status='in-game'] {
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+}
+#status[data-status='disconnected'] {
+    color: #f44336;
+}
+#status[data-status='error'] {
+    color: #ff9800;
 }
 
 #sidebar-toggle {
@@ -419,18 +432,6 @@ body {
     width: 1.5rem;
     height: 1.5rem;
     cursor: pointer;
-}
-
-.status-connected {
-    color: #4caf50;
-}
-
-.status-disconnected {
-    color: #f44336;
-}
-
-.status-error {
-    color: #ff9800;
 }
 
 @media (max-width: 620px) {
