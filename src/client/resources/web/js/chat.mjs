@@ -55,11 +55,8 @@ const displayedMessageIds = new Set();
  * ======================
  */
 
-const statusContainerElement = /** @type {HTMLDivElement} */ (
+const statusElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#status')
-);
-const statusTextElement = /** @type {HTMLSpanElement} */ (
-    querySelectorWithAssertion('#status .connection-status')
 );
 const sidebarToggleElement = /** @type {HTMLImageElement} */ (
     querySelectorWithAssertion('#sidebar-toggle')
@@ -354,6 +351,8 @@ function handleMinecraftServerConnectionState(message) {
         case 'disconnect':
             console.log('Received disconnect event. Sad to see you go.');
             serverInfo.clear();
+            playerList.clearAll();
+            clearMessageHistory();
             break;
     }
 }
@@ -369,24 +368,21 @@ function handleMinecraftServerConnectionState(message) {
  * @param {'connected' | 'disconnected' | 'error'} connectionStatus
  */
 function updateWebsocketConnectionStatus(connectionStatus) {
-    // Update connection status if provided
-    if (connectionStatus) {
-        switch (connectionStatus) {
-            case 'connected':
-                statusContainerElement.className = 'status-connected';
-                statusTextElement.textContent = 'Connected';
-                break;
-            case 'disconnected':
-                serverInfo.clear();
-                statusContainerElement.className = 'status-disconnected';
-                statusTextElement.textContent = 'Disconnected';
-                break;
-            case 'error':
-                serverInfo.clear();
-                statusContainerElement.className = 'status-disconnected';
-                statusTextElement.textContent = 'Error: see browser console';
-                break;
-        }
+    switch (connectionStatus) {
+        case 'connected':
+            statusElement.textContent = 'Main Menu';
+            statusElement.dataset['status'] = 'connected';
+            break;
+        case 'disconnected':
+            serverInfo.clear();
+            statusElement.dataset['status'] = 'disconnected';
+            statusElement.textContent = 'Disconnected from Minecraft';
+            break;
+        case 'error':
+            serverInfo.clear();
+            statusElement.dataset['status'] = 'error';
+            statusElement.textContent = 'Error: See browser console';
+            break;
     }
 }
 

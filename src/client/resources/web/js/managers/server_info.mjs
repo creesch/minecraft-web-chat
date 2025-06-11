@@ -21,16 +21,18 @@ class ServerInfo {
     /** @type {string} */
     #baseTitle;
 
-    /** @type {HTMLSpanElement} */
-    #serverNameElement;
+    /** @type {HTMLDivElement} */
+    #statusElement;
 
-    constructor() {
+    /**
+     *
+     * @param {HTMLDivElement} statusElement
+     */
+    constructor(statusElement) {
         this.#name = undefined;
         this.#id = undefined;
         this.#baseTitle = document.title;
-        this.#serverNameElement = /** @type {HTMLSpanElement} */ (
-            querySelectorWithAssertion('#status .server-name')
-        );
+        this.#statusElement = statusElement;
     }
 
     /**
@@ -53,9 +55,10 @@ class ServerInfo {
             new RegExp(TEXT_CODES_PATTERN, 'g'),
             '',
         )}`;
-        this.#serverNameElement.textContent = name;
+        this.#statusElement.textContent = name;
+        this.#statusElement.dataset['status'] = 'in-game';
 
-        formatPlainText(this.#serverNameElement);
+        formatPlainText(this.#statusElement);
     }
 
     /**
@@ -65,7 +68,8 @@ class ServerInfo {
         this.#name = undefined;
         this.#id = undefined;
         document.title = this.#baseTitle;
-        this.#serverNameElement.textContent = 'No server';
+        this.#statusElement.textContent = 'Main Menu';
+        this.#statusElement.dataset['status'] = 'connected';
     }
 
     /**
@@ -85,5 +89,9 @@ class ServerInfo {
     }
 }
 
+const statusElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#status')
+);
+
 // Export a singleton instance since we only need one serverInfo instance.
-export const serverInfo = new ServerInfo();
+export const serverInfo = new ServerInfo(statusElement);
