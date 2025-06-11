@@ -87,7 +87,7 @@ const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
 
-const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
+const messageSendButtonElement = /** @type {HTMLImageElement} */ (
     querySelectorWithAssertion('#message-send-button')
 );
 
@@ -529,6 +529,9 @@ function sendChatMessage() {
 
     sendWebsocketMessage('chat', message);
     chatInputElement.value = '';
+
+    // Keep focus on input to prevent keyboard from disappearing on mobile
+    chatInputElement.focus();
 }
 
 /**
