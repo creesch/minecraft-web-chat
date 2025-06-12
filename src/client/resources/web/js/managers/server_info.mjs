@@ -68,7 +68,7 @@ class ServerInfo {
         this.#name = undefined;
         this.#id = undefined;
         document.title = this.#baseTitle;
-        this.#statusElement.textContent = 'Main Menu';
+        this.#statusElement.textContent = 'Join a server to chat';
         this.#statusElement.dataset['status'] = 'connected';
     }
 

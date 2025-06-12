@@ -370,7 +370,7 @@ function handleMinecraftServerConnectionState(message) {
 function updateWebsocketConnectionStatus(connectionStatus) {
     switch (connectionStatus) {
         case 'connected':
-            statusElement.textContent = 'Main Menu';
+            statusElement.textContent = 'Join a server to chat';
             statusElement.dataset['status'] = 'connected';
             break;
         case 'disconnected':
