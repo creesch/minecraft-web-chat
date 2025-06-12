@@ -433,9 +433,6 @@ body {
     color: #ff9800;
 }
 
-/*
- Primitive but functional phone support by hiding the player list.
-*/
 @media (max-width: 620px) {
     #container {
         padding: 3rem 0 0 0; /* Make room for status bar */
