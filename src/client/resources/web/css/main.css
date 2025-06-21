@@ -393,22 +393,22 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    width: calc(min(20rem, 30vw));
-    height: 4.5rem;
+    width: calc(min(20rem, 30vw) - 2rem);
+    height: 2.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
     border-radius: 0.3rem;
     background-color: rgba(0, 0, 0, 0.5);
     color: #ffffff;
+    padding: 1rem;
 }
 
 #status {
     font-size: 0.9rem;
     box-sizing: border-box;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0 0.5rem;
+    white-space: normal;
+    max-height: 2.5rem;
 }
 #status[data-status='connected'] {
     color: #ffffff;
@@ -478,6 +478,7 @@ body {
 
     #status {
         padding: 0 2.5rem 0 1.5rem;
+        max-height: 1.25rem;
     }
 
     #status-container {
@@ -486,7 +487,7 @@ body {
         left: 0;
         right: 0;
         width: auto;
-        height: 3rem;
+        height: 1rem;
         border-radius: 0;
     }
 
