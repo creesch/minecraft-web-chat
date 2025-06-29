@@ -669,7 +669,7 @@ function createFormattedElement(text, codes) {
     }
 
     const span = document.createElement('span');
-    codes.forEach((code) => span.classList.add(className(code)));
+    span.classList.add(...codes.map(className));
     span.textContent = text;
     return span;
 }
@@ -892,7 +892,7 @@ function formatTranslation(key, args, translations) {
 }
 
 /**
- * Formats a hover event into a string.
+ * Formats a hover event into an array of DOM nodes.
  * @param {HoverEvent} hoverEvent
  * @param {Record<string, string>} translations
  * @returns {(Element | Text)[]}
@@ -1018,7 +1018,6 @@ function handleOpenUrl(event, url) {
         modalConfirmButton.removeEventListener('click', confirmHandler);
         modalCancelButton.removeEventListener('click', cancelHandler);
         modalCopyButton.removeEventListener('click', copyHandler);
-        modalConfirmButton.removeEventListener('click', confirmHandler);
         modalContainer.removeEventListener('click', closeModal);
         document.removeEventListener('keydown', escapeHandler);
         modalContent.removeEventListener('click', contentClickHandler);
@@ -1049,14 +1048,14 @@ function handleOpenUrl(event, url) {
         closeModal();
     };
 
+    modalConfirmButton.addEventListener('click', confirmHandler);
     modalCancelButton.addEventListener('click', cancelHandler);
     modalCopyButton.addEventListener('click', copyHandler);
-    modalConfirmButton.addEventListener('click', confirmHandler);
-    modalContent.addEventListener('click', contentClickHandler);
-    document.addEventListener('keydown', escapeHandler);
     modalContainer.addEventListener('click', closeModal);
     modalContainer.style.display = 'block';
+    document.addEventListener('keydown', escapeHandler);
     modalConfirmButton.focus();
+    modalContent.addEventListener('click', contentClickHandler);
 }
 
 /**
@@ -1275,16 +1274,18 @@ function formatComponent(component, translations) {
     if (component.text) {
         result.appendChild(document.createTextNode(component.text));
     } else if (component.translate) {
-        formatTranslation(
-            component.translate,
-            component.with ?? [],
-            translations,
-        ).forEach((component) => result.appendChild(component));
+        result.append(
+            ...formatTranslation(
+                component.translate,
+                component.with ?? [],
+                translations,
+            ),
+        );
     }
 
     if (component.extra) {
-        component.extra
-            .map((component) => {
+        result.append(
+            ...component.extra.map((component) => {
                 if (typeof component === 'string') {
                     return document.createTextNode(component);
                 }
@@ -1293,8 +1294,8 @@ function formatComponent(component, translations) {
                 }
 
                 return formatComponent(component, translations);
-            })
-            .forEach((component) => result.appendChild(component));
+            }),
+        );
     }
 
     if (result.textContent && result.textContent.length > MAX_CHAT_LENGTH) {
@@ -1326,12 +1327,8 @@ export function formatPlainText(element) {
         const parent = textNode.parentNode;
         if (!parent) continue;
 
-        const coloredElements = colorizeText(textNode.textContent ?? '');
-
         const replacement = document.createDocumentFragment();
-        for (const element of coloredElements) {
-            replacement.appendChild(element);
-        }
+        replacement.append(...colorizeText(textNode.textContent ?? ''));
 
         parent.replaceChild(replacement, textNode);
     }
