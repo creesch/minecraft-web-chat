@@ -352,7 +352,6 @@ function handleMinecraftServerConnectionState(message) {
             console.log('Received disconnect event. Sad to see you go.');
             serverInfo.clear();
             playerList.clearAll();
-            clearMessageHistory();
             break;
     }
 }
