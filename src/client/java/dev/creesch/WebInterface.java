@@ -358,7 +358,7 @@ public class WebInterface {
         }
 
         // Server is not running.
-        // Since there is a tiny change there were connections that needed cleaning up we return here instead of sooner.
+        // Since there is a tiny chance there were connections that needed cleaning up we return here instead of sooner.
         if (!isServerRunning.get()) {
             return;
         }
