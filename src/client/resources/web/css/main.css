@@ -288,6 +288,15 @@ body {
     border-radius: 2px;
     background-color: #4caf50;
 }
+/*
+ * Merge together the ::before pseudo-elements for successive ping messages by
+ * extending ::before's height by 4 pixels.
+ */
+.message.ping + .message.ping::before {
+    height: calc(100% + 4px);
+    top: 0;
+    bottom: -4px;
+}
 
 .message a {
     text-decoration: none;
