@@ -258,18 +258,24 @@ function handleChatMessage(message) {
         if (e instanceof ComponentError) {
             console.error('Invalid component:', e.toString());
             messageElement.appendChild(
-                formatChatMessage({
-                    text: 'Invalid message received from server',
-                    color: 'red',
-                }),
+                formatChatMessage(
+                    {
+                        text: 'Invalid message received from server',
+                        color: 'red',
+                    },
+                    {},
+                ),
             );
         } else {
             console.error('Error parsing message:', e);
             messageElement.appendChild(
-                formatChatMessage({
-                    text: 'Error parsing message',
-                    color: 'red',
-                }),
+                formatChatMessage(
+                    {
+                        text: 'Error parsing message',
+                        color: 'red',
+                    },
+                    {},
+                ),
             );
         }
     }
