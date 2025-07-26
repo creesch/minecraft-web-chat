@@ -16,6 +16,8 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.net.URI;
+
 public class WebchatClient implements ClientModInitializer {
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
@@ -206,9 +208,10 @@ public class WebchatClient implements ClientModInitializer {
                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
                 .styled(style ->
                     style.withClickEvent(
-                        new ClickEvent(
-                            ClickEvent.Action.OPEN_URL,
+                        new ClickEvent.OpenUrl(
+                            URI.create(
                             "http://localhost:" + webchatPort
+                            )
                         )
                     )
                 )
