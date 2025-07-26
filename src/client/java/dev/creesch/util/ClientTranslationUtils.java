@@ -65,7 +65,12 @@ public class ClientTranslationUtils {
             }
         }
 
-        if (hoverEvent instanceof HoverEvent.ShowEntity(HoverEvent.EntityContent hoverEventEntityContent)) {
+        if (
+            hoverEvent instanceof
+            HoverEvent.ShowEntity(
+                HoverEvent.EntityContent hoverEventEntityContent
+            )
+        ) {
             if (hoverEventEntityContent != null) {
                 Optional<Text> entityName = hoverEventEntityContent.name;
                 entityName.ifPresent(value ->
