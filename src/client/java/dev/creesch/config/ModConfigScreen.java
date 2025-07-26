@@ -45,6 +45,31 @@ public class ModConfigScreen {
                                 .controller(BooleanControllerBuilder::create)
                                 .build()
                         )
+                        .option(
+                            Option.<Boolean>createBuilder()
+                                .name(Text.literal("System Notifications"))
+                                .description(
+                                    OptionDescription.of(
+                                        Text.literal(
+                                            "Send system notifications when pinged.\n" +
+                                            "Notifications are only sent when the game and chat browser tab are " +
+                                            "loaded and unfocused."
+                                        )
+                                    )
+                                )
+                                .binding(
+                                    ModConfig.HANDLER.defaults()
+                                        .systemNotifications,
+                                    () ->
+                                        ModConfig.HANDLER.instance()
+                                            .systemNotifications,
+                                    val ->
+                                        ModConfig.HANDLER.instance()
+                                            .systemNotifications = val
+                                )
+                                .controller(BooleanControllerBuilder::create)
+                                .build()
+                        )
                         .build()
                 )
                 .group(
