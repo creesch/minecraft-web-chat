@@ -5,6 +5,7 @@ import dev.creesch.model.WebsocketJsonMessage;
 import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.storage.ChatMessageRepository;
 import dev.creesch.util.NamedLogger;
+import java.net.URI;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,8 +16,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-
-import java.net.URI;
 
 public class WebchatClient implements ClientModInitializer {
 
@@ -209,9 +208,7 @@ public class WebchatClient implements ClientModInitializer {
                 .styled(style ->
                     style.withClickEvent(
                         new ClickEvent.OpenUrl(
-                            URI.create(
-                            "http://localhost:" + webchatPort
-                            )
+                            URI.create("http://localhost:" + webchatPort)
                         )
                     )
                 )
