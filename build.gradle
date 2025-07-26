@@ -3,7 +3,7 @@ buildscript {
 }
 
 plugins {
-	id 'fabric-loom' version '1.9-SNAPSHOT'
+	id 'fabric-loom' version '1.11-SNAPSHOT'
 	id 'maven-publish'
 	id 'com.gradleup.shadow' version '8.3.8'
 }
@@ -17,8 +17,8 @@ base {
 
 repositories {
     mavenCentral()
-	maven { url "https://maven.terraformersmc.com/releases/" } // Mod Menu
-	maven { url "https://maven.isxander.dev/releases" } // YACL
+	maven { url = uri("https://maven.terraformersmc.com/releases/") } // Mod Menu
+	maven { url = uri("https://maven.isxander.dev/releases") } // YACL
 }
 
 loom {
@@ -61,11 +61,15 @@ dependencies {
 
 }
 
+// Capture values at configuration time to avoid Task.project at execution
+def modVersion = version
+def archiveBaseName = base.archivesName.get()
+
 processResources {
-	inputs.property "version", project.version
+	inputs.property "version", modVersion
 
 	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+		expand "version": modVersion
 	}
 }
 
@@ -87,7 +91,7 @@ java {
 
 jar {
 	from("LICENSE") {
-		rename { "${it}_${project.base.archivesName.get()}"}
+		rename { original -> "${original}_${archiveBaseName}" }
 	}
 
 }
@@ -97,7 +101,7 @@ shadowJar {
 	from sourceSets.main.output
     from sourceSets.client.output
     configurations = [project.configurations.shadow] // Include shadow dependencies
-    archiveClassifier.set("") // Make sure we end up with just one unified jar
+    archiveClassifier.set("shadow") // Make sure we end up with just one unified jar
 
     // Relocate dependencies to avoid conflicts
     relocate "io.javalin", "dev.creesch.shadow.io.javalin"
