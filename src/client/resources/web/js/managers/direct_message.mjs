@@ -1,6 +1,7 @@
 // @ts-check
 'use strict';
 
+import { formatComponentToString } from '../messages/message_parsing.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
@@ -47,11 +48,12 @@ class DirectMessageManager {
             this.#resetCallback = null;
         }
 
-        this.#chatInputElement.placeholder = `Message ${player.playerDisplayName}...`;
+        const displayName = formatComponentToString(player.playerDisplayName);
+        this.#chatInputElement.placeholder = `Message ${displayName}...`;
         this.#chatInputElement.focus();
         this.#currentPlayer = player;
         this.#clearButton.style.display = 'block';
-        this.#clearButton.title = `Stop chat with ${player.playerDisplayName}`;
+        this.#clearButton.title = `Stop chat with ${displayName}`;
 
         if (onReset) {
             this.#resetCallback = onReset;

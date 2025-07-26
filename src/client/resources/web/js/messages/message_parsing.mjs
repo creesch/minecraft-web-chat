@@ -1418,6 +1418,17 @@ export function formatPlainText(element) {
 }
 
 /**
+ * Transforms a Minecraft component into plain text.
+ * @param {Component} component
+ * @returns {string}
+ */
+export function formatComponentToString(component) {
+    const element = formatComponent(component, {});
+    formatPlainText(element);
+    return element.textContent ?? '';
+}
+
+/**
  * Transforms a Minecraft component into HTML.
  * @param {Component} component
  * @param {Record<string, string>} translations Translation key-value pairs

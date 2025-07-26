@@ -50,7 +50,7 @@
  * @typedef {Object} PlayerInfo
  * @property {string} playerId
  * @property {string} playerName
- * @property {string} playerDisplayName
+ * @property {Component} playerDisplayName
  * @property {string} playerTextureUrl
  */
 
