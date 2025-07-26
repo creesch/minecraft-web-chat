@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.serialization.JsonOps;
 import dev.creesch.WebchatClient;
 import dev.creesch.config.ModConfig;
 import dev.creesch.util.ClientTranslationUtils;
@@ -18,11 +19,16 @@ import java.util.regex.Pattern;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextCodecs;
 
 public class WebsocketMessageBuilder {
 
     private static final Gson gson = new Gson();
+    private static final Gson gsonWithoutHtmlEscaping = new GsonBuilder()
+        .disableHtmlEscaping()
+        .create();
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
 
     /**
@@ -51,7 +57,7 @@ public class WebsocketMessageBuilder {
         try {
             translations = ClientTranslationUtils.extractTranslations(message);
 
-            minecraftChatJson = Text.Serialization.toJsonString(
+            minecraftChatJson = toJsonString(
                 message,
                 client.world.getRegistryManager()
             );
@@ -73,7 +79,7 @@ public class WebsocketMessageBuilder {
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
         WebsocketJsonMessage.ChatServerInfo serverInfo =
             MinecraftServerIdentifier.getCurrentServerInfo();
-        String minecraftVersion = SharedConstants.getGameVersion().getName();
+        String minecraftVersion = SharedConstants.getGameVersion().name();
         // UUID used to prevent duplicates when doing
         String messageUUID = UUID.nameUUIDFromBytes(
             (timestamp + minecraftChatJson).getBytes()
@@ -99,6 +105,23 @@ public class WebsocketMessageBuilder {
             minecraftVersion,
             WebchatClient.getModVersion()
         );
+    }
+
+    /**
+     *
+     * @param message The minecraft text message to process
+     * @param registries Minecraft registries used to map the message to Json.
+     * @return JsonString representation of the message
+     */
+    private static String toJsonString(
+        Text message,
+        RegistryWrapper.WrapperLookup registries
+    ) {
+        JsonElement jsonElement = TextCodecs.CODEC.encodeStart(
+            registries.getOps(JsonOps.INSTANCE),
+            message
+        ).getOrThrow(JsonParseException::new);
+        return gsonWithoutHtmlEscaping.toJson(jsonElement);
     }
 
     /**
@@ -214,7 +237,7 @@ public class WebsocketMessageBuilder {
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
         WebsocketJsonMessage.ChatServerInfo serverInfo =
             MinecraftServerIdentifier.getCurrentServerInfo();
-        String minecraftVersion = SharedConstants.getGameVersion().getName();
+        String minecraftVersion = SharedConstants.getGameVersion().id();
 
         return WebsocketJsonMessage.createServerConnectionStateMessage(
             timestamp,
@@ -246,7 +269,7 @@ public class WebsocketMessageBuilder {
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
         WebsocketJsonMessage.ChatServerInfo serverInfo =
             MinecraftServerIdentifier.getCurrentServerInfo();
-        String minecraftVersion = SharedConstants.getGameVersion().getName();
+        String minecraftVersion = SharedConstants.getGameVersion().id();
 
         return WebsocketJsonMessage.createHistoryMetaDataMessage(
             timestamp,
@@ -360,7 +383,7 @@ public class WebsocketMessageBuilder {
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
         WebsocketJsonMessage.ChatServerInfo serverInfo =
             MinecraftServerIdentifier.getCurrentServerInfo();
-        String minecraftVersion = SharedConstants.getGameVersion().getName();
+        String minecraftVersion = SharedConstants.getGameVersion().id();
 
         return WebsocketJsonMessage.createServerPlayerListMessage(
             timestamp,

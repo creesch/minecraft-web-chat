@@ -59,17 +59,18 @@ public class ClientTranslationUtils {
         }
 
         // Handle different hover event types
-        if (hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT) {
-            Text hoverText = hoverEvent.getValue(HoverEvent.Action.SHOW_TEXT);
-            if (hoverText != null) {
-                collectTranslationKeys(hoverText, keys);
+        if (hoverEvent instanceof HoverEvent.ShowText(Text value)) {
+            if (value != null) {
+                collectTranslationKeys(value, keys);
             }
         }
 
-        if (hoverEvent.getAction() == HoverEvent.Action.SHOW_ENTITY) {
-            // Check if there's a translatable name for the entity
-            HoverEvent.EntityContent hoverEventEntityContent =
-                hoverEvent.getValue(HoverEvent.Action.SHOW_ENTITY);
+        if (
+            hoverEvent instanceof
+            HoverEvent.ShowEntity(
+                HoverEvent.EntityContent hoverEventEntityContent
+            )
+        ) {
             if (hoverEventEntityContent != null) {
                 Optional<Text> entityName = hoverEventEntityContent.name;
                 entityName.ifPresent(value ->

@@ -55,6 +55,8 @@ const VALID_CLICK_EVENTS = [
     'suggest_command',
     'change_page',
     'copy_to_clipboard',
+    'show_dialog',
+    'custom',
 ];
 
 /**
@@ -70,12 +72,16 @@ const VALID_CLICK_EVENTS = [
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
  * @property {string} [insertion] - String to insert when the component is shift-clicked
- * @property {HoverEvent} [hoverEvent] - Hover event
- * @property {ClickEvent} [clickEvent] - Click event
+ * @property {HoverEvent} [hover_event] - Hover event
+ * @property {ClickEvent} [click_event] - Click event
  */
 
 /**
- * @typedef {ShowTextHoverEvent | ShowItemHoverEvent | ShowEntityHoverEvent} HoverEvent
+ * @typedef {
+     | ShowTextHoverEvent
+     | ShowItemHoverEvent
+     | ShowEntityHoverEvent
+   } HoverEvent
  */
 
 /**
@@ -88,21 +94,78 @@ const VALID_CLICK_EVENTS = [
 /**
  * @typedef {Object} ShowItemHoverEvent
  * @property {'show_item'} action - Displays an item's tooltip
- * @property {{ id: string, count?: number, tag?: string }} [contents] - The item data to show
- * @property {string} [value] - Deprecated: SNBT representation of the item data to show.
+ * @property {string} id - The item ID
+ * @property {number} [count] - The number of items to show
+ * @property {string} [tag] - The tag of the item to show
  */
 
 /**
  * @typedef {Object} ShowEntityHoverEvent
  * @property {'show_entity'} action - Displays entity information
- * @property {{ type: string, id: unknown, name?: string | Component }} [contents] - The entity data to show
- * @property {string} [value] - Deprecated: SNBT representation of the entity data to show.
+ * @property {string} id - The entity ID
+ * @property {string | Component} [name] - The name of the entity to show
  */
 
 /**
- * @typedef {Object} ClickEvent
- * @property {'open_url' | 'open_file' | 'run_command' | 'suggest_command' | 'change_page' | 'copy_to_clipboard'} action - The action to perform when clicked
- * @property {string} value - The value to pass to the action
+ * @typedef {
+     | OpenUrlClickEvent
+     | OpenFileClickEvent
+     | RunCommandClickEvent
+     | SuggestCommandClickEvent
+     | ChangePageClickEvent
+     | CopyToClipboardClickEvent
+     | ShowDialogClickEvent
+     | CustomClickEvent
+   } ClickEvent
+ */
+
+/**
+ * @typedef {Object} OpenUrlClickEvent
+ * @property {'open_url'} action - Opens a URL
+ * @property {string} url - The URL to open
+ */
+
+/**
+ * @typedef {Object} OpenFileClickEvent
+ * @property {'open_file'} action - Opens a file
+ * @property {string} path - The file to open
+ */
+
+/**
+ * @typedef {Object} RunCommandClickEvent
+ * @property {'run_command'} action - Runs a command
+ * @property {string} command - The command to run
+ */
+
+/**
+ * @typedef {Object} SuggestCommandClickEvent
+ * @property {'suggest_command'} action - Suggests a command
+ * @property {string} command - The command to suggest
+ */
+
+/**
+ * @typedef {Object} ChangePageClickEvent
+ * @property {'change_page'} action - Changes the page
+ * @property {number} page - The page to change to
+ */
+
+/**
+ * @typedef {Object} CopyToClipboardClickEvent
+ * @property {'copy_to_clipboard'} action - Copies text to clipboard
+ * @property {string} value - The text to copy
+ */
+
+/**
+ * @typedef {Object} ShowDialogClickEvent
+ * @property {'show_dialog'} action - Shows a dialog
+ * @property {unknown} dialog - The dialog to show
+ */
+
+/**
+ * @typedef {Object} CustomClickEvent
+ * @property {'custom'} action - Performs a custom action
+ * @property {string} id - The id of the custom action
+ * @property {unknown} [payload] - Optional payload
  */
 
 /**
@@ -237,68 +300,32 @@ export function assertIsComponent(component, path = []) {
      * @throws If the hoverEvent is not a valid {@link ShowItemHoverEvent} object.
      */
     function assertIsShowItemHoverEvent(hoverEvent, path) {
-        if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
-            throw new ComponentError(
-                'HoverEvent does not have a contents or value property',
-                path,
-            );
-        }
-
-        if ('value' in hoverEvent) {
-            if (typeof hoverEvent.value !== 'string') {
-                throw new ComponentError('HoverEvent.value is not a string', [
-                    ...path,
-                    'value',
-                ]);
-            }
-
-            return;
-        }
-
-        if (
-            typeof hoverEvent.contents !== 'object' ||
-            hoverEvent.contents === null
-        ) {
-            throw new ComponentError('HoverEvent.contents is not an object', [
+        if (!('id' in hoverEvent)) {
+            throw new ComponentError('HoverEvent.id is not present', [
                 ...path,
-                'contents',
-            ]);
-        }
-
-        if (!('id' in hoverEvent.contents)) {
-            throw new ComponentError('HoverEvent.contents.id is not present', [
-                ...path,
-                'contents',
                 'id',
             ]);
         }
 
-        if (typeof hoverEvent.contents.id !== 'string') {
-            throw new ComponentError('HoverEvent.contents.id is not a string', [
+        if (typeof hoverEvent.id !== 'string') {
+            throw new ComponentError('HoverEvent.id is not a string', [
                 ...path,
-                'contents',
                 'id',
             ]);
         }
 
-        if (
-            'count' in hoverEvent.contents &&
-            typeof hoverEvent.contents.count !== 'number'
-        ) {
-            throw new ComponentError(
-                'HoverEvent.contents.count is not a number',
-                [...path, 'contents', 'count'],
-            );
+        if ('count' in hoverEvent && typeof hoverEvent.count !== 'number') {
+            throw new ComponentError('HoverEvent.count is not a number', [
+                ...path,
+                'count',
+            ]);
         }
 
-        if (
-            'tag' in hoverEvent.contents &&
-            typeof hoverEvent.contents.tag !== 'string'
-        ) {
-            throw new ComponentError(
-                'HoverEvent.contents.tag is not a string',
-                [...path, 'contents', 'tag'],
-            );
+        if ('tag' in hoverEvent && typeof hoverEvent.tag !== 'string') {
+            throw new ComponentError('HoverEvent.tag is not a string', [
+                ...path,
+                'tag',
+            ]);
         }
     }
 
@@ -309,76 +336,33 @@ export function assertIsComponent(component, path = []) {
      * @throws If the hoverEvent is not a valid {@link ShowEntityHoverEvent} object.
      */
     function assertIsShowEntityHoverEvent(hoverEvent, path) {
-        if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
-            throw new ComponentError(
-                'HoverEvent does not have a contents or value property',
-                path,
-            );
-        }
-
-        if ('value' in hoverEvent) {
-            if (typeof hoverEvent.value !== 'string') {
-                throw new ComponentError('HoverEvent.value is not a string', [
-                    ...path,
-                    'value',
-                ]);
-            }
-
-            return;
-        }
-
-        if (
-            typeof hoverEvent.contents !== 'object' ||
-            hoverEvent.contents === null
-        ) {
-            throw new ComponentError('HoverEvent.contents is not an object', [
+        if (!('id' in hoverEvent)) {
+            throw new ComponentError('HoverEvent.id is not present', [
                 ...path,
-                'contents',
-            ]);
-        }
-
-        if (!('type' in hoverEvent.contents)) {
-            throw new ComponentError(
-                'HoverEvent.contents.type is not present',
-                [...path, 'contents', 'type'],
-            );
-        }
-
-        if (typeof hoverEvent.contents.type !== 'string') {
-            throw new ComponentError(
-                'HoverEvent.contents.type is not a string',
-                [...path, 'contents', 'type'],
-            );
-        }
-
-        if (!('id' in hoverEvent.contents)) {
-            throw new ComponentError('HoverEvent.contents.id is not present', [
-                ...path,
-                'contents',
                 'id',
             ]);
         }
 
-        if (
-            'name' in hoverEvent.contents &&
-            hoverEvent.contents.name !== null
-        ) {
-            if (typeof hoverEvent.contents.name === 'string') {
+        if (typeof hoverEvent.id !== 'string') {
+            throw new ComponentError('HoverEvent.id is not a string', [
+                ...path,
+                'id',
+            ]);
+        }
+
+        if ('name' in hoverEvent && hoverEvent.name !== null) {
+            if (typeof hoverEvent.name === 'string') {
                 return;
             }
 
-            if (typeof hoverEvent.contents.name !== 'object') {
+            if (typeof hoverEvent.name !== 'object') {
                 throw new ComponentError(
-                    'HoverEvent.contents.name is not a string or valid component',
-                    [...path, 'contents', 'name'],
+                    'HoverEvent.name is not a string or valid component',
+                    [...path, 'name'],
                 );
             }
 
-            assertIsComponent(hoverEvent.contents.name, [
-                ...path,
-                'contents',
-                'name',
-            ]);
+            assertIsComponent(hoverEvent.name, [...path, 'name']);
         }
     }
 
@@ -393,9 +377,9 @@ export function assertIsComponent(component, path = []) {
             throw new ComponentError('ClickEvent is not an object', path);
         }
 
-        if (!('action' in clickEvent) || !('value' in clickEvent)) {
+        if (!('action' in clickEvent)) {
             throw new ComponentError(
-                'ClickEvent does not have an action or value property',
+                'ClickEvent does not have an action property',
                 path,
             );
         }
@@ -414,11 +398,125 @@ export function assertIsComponent(component, path = []) {
             );
         }
 
-        if (typeof clickEvent.value !== 'string') {
-            throw new ComponentError('ClickEvent.value is not a string', [
-                ...path,
-                'value',
-            ]);
+        switch (clickEvent.action) {
+            case 'open_url':
+                if (!('url' in clickEvent)) {
+                    throw new ComponentError('ClickEvent.url is not present', [
+                        ...path,
+                        'url',
+                    ]);
+                }
+
+                if (typeof clickEvent.url !== 'string') {
+                    throw new ComponentError('ClickEvent.url is not a string', [
+                        ...path,
+                        'url',
+                    ]);
+                }
+                break;
+            case 'open_file':
+                if (!('path' in clickEvent)) {
+                    throw new ComponentError('ClickEvent.path is not present', [
+                        ...path,
+                        'path',
+                    ]);
+                }
+
+                if (typeof clickEvent.path !== 'string') {
+                    throw new ComponentError(
+                        'ClickEvent.path is not a string',
+                        [...path, 'path'],
+                    );
+                }
+                break;
+            case 'run_command':
+                if (!('command' in clickEvent)) {
+                    throw new ComponentError(
+                        'ClickEvent.command is not present',
+                        [...path, 'command'],
+                    );
+                }
+
+                if (typeof clickEvent.command !== 'string') {
+                    throw new ComponentError(
+                        'ClickEvent.command is not a string',
+                        [...path, 'command'],
+                    );
+                }
+                break;
+            case 'suggest_command':
+                if (!('command' in clickEvent)) {
+                    throw new ComponentError(
+                        'ClickEvent.command is not present',
+                        [...path, 'command'],
+                    );
+                }
+
+                if (typeof clickEvent.command !== 'string') {
+                    throw new ComponentError(
+                        'ClickEvent.command is not a string',
+                        [...path, 'command'],
+                    );
+                }
+                break;
+            case 'change_page':
+                if (!('page' in clickEvent)) {
+                    throw new ComponentError('ClickEvent.page is not present', [
+                        ...path,
+                        'page',
+                    ]);
+                }
+
+                if (typeof clickEvent.page !== 'number') {
+                    throw new ComponentError(
+                        'ClickEvent.page is not a number',
+                        [...path, 'page'],
+                    );
+                }
+                break;
+            case 'copy_to_clipboard':
+                if (!('value' in clickEvent)) {
+                    throw new ComponentError(
+                        'ClickEvent.value is not present',
+                        [...path, 'value'],
+                    );
+                }
+
+                if (typeof clickEvent.value !== 'string') {
+                    throw new ComponentError(
+                        'ClickEvent.value is not a string',
+                        [...path, 'value'],
+                    );
+                }
+                break;
+            case 'show_dialog':
+                if (!('dialog' in clickEvent)) {
+                    throw new ComponentError(
+                        'ClickEvent.dialog is not present',
+                        [...path, 'dialog'],
+                    );
+                }
+                break;
+            case 'custom':
+                if (!('id' in clickEvent)) {
+                    throw new ComponentError('ClickEvent.id is not present', [
+                        ...path,
+                        'id',
+                    ]);
+                }
+
+                if (typeof clickEvent.id !== 'string') {
+                    throw new ComponentError('ClickEvent.id is not a string', [
+                        ...path,
+                        'id',
+                    ]);
+                }
+                break;
+            default:
+                throw new ComponentError(
+                    `ClickEvent.action is not valid: ${clickEvent.action}`,
+                    [...path, 'action'],
+                );
         }
     }
 
@@ -538,12 +636,12 @@ export function assertIsComponent(component, path = []) {
         });
     }
 
-    if ('hoverEvent' in component) {
-        assertIsHoverEvent(component.hoverEvent, [...path, 'hoverEvent']);
+    if ('hover_event' in component) {
+        assertIsHoverEvent(component.hover_event, [...path, 'hover_event']);
     }
 
-    if ('clickEvent' in component) {
-        assertIsClickEvent(component.clickEvent, [...path, 'clickEvent']);
+    if ('click_event' in component) {
+        assertIsClickEvent(component.click_event, [...path, 'click_event']);
     }
 
     if ('insertion' in component) {
@@ -928,40 +1026,24 @@ function formatHoverEvent(hoverEvent, translations) {
             return [formatComponent(contents, translations)];
         }
         case 'show_item': {
-            if (!hoverEvent.contents) {
-                // Don't attempt to parse SNBT data in hoverEvent.value
-                console.warn('Unsupported legacy hoverEvent');
-                return [];
-            }
-
-            if (hoverEvent.contents.count) {
+            if (hoverEvent.count) {
                 return [
                     document.createTextNode(
-                        `${hoverEvent.contents.count}x ${hoverEvent.contents.id}`,
+                        `${hoverEvent.count}x ${hoverEvent.id}`,
                     ),
                 ];
             }
 
-            return [document.createTextNode(hoverEvent.contents.id)];
+            return [document.createTextNode(hoverEvent.id)];
         }
 
         case 'show_entity': {
-            if (!hoverEvent.contents) {
-                // Don't attempt to parse SNBT data in hoverEvent.value
-                console.warn('Unsupported legacy hoverEvent');
-                return [];
-            }
-
-            if (typeof hoverEvent.contents.name === 'object') {
-                return [
-                    formatComponent(hoverEvent.contents.name, translations),
-                ];
+            if (typeof hoverEvent.name === 'object') {
+                return [formatComponent(hoverEvent.name, translations)];
             }
 
             return [
-                document.createTextNode(
-                    hoverEvent.contents.name || 'Unnamed Entity',
-                ),
+                document.createTextNode(hoverEvent.name || 'Unnamed Entity'),
             ];
         }
     }
@@ -1141,15 +1223,17 @@ function handleRunCommand(event, command) {
 function buildClickHandler(clickEvent) {
     switch (clickEvent.action) {
         case 'open_url':
-            return (event) => handleOpenUrl(event, clickEvent.value);
+            return (event) => handleOpenUrl(event, clickEvent.url);
         case 'suggest_command':
-            return (event) => handleSuggestCommand(event, clickEvent.value);
+            return (event) => handleSuggestCommand(event, clickEvent.command);
         case 'copy_to_clipboard':
             return (event) => handleCopyToClipboard(event, clickEvent.value);
         case 'run_command':
-            return (event) => handleRunCommand(event, clickEvent.value);
+            return (event) => handleRunCommand(event, clickEvent.command);
         case 'open_file':
         case 'change_page':
+        case 'show_dialog':
+        case 'custom':
             return null;
     }
 }
@@ -1162,7 +1246,7 @@ function buildClickHandler(clickEvent) {
  */
 function formatComponent(component, translations) {
     const result =
-        component.clickEvent?.action === 'open_url'
+        component.click_event?.action === 'open_url'
             ? document.createElement('a')
             : document.createElement('span');
 
@@ -1216,24 +1300,24 @@ function formatComponent(component, translations) {
         });
     }
 
-    if (component.clickEvent) {
-        const clickHandler = buildClickHandler(component.clickEvent);
+    if (component.click_event) {
+        const clickHandler = buildClickHandler(component.click_event);
 
         if (clickHandler) {
             result.addEventListener('click', clickHandler);
             result.style.cursor = 'pointer';
 
-            if (component.clickEvent.action === 'open_url') {
-                result.setAttribute('href', component.clickEvent.value);
+            if (component.click_event.action === 'open_url') {
+                result.setAttribute('href', component.click_event.url);
                 result.setAttribute('target', '_blank');
                 result.setAttribute('rel', 'noopener noreferrer');
             }
         }
     }
 
-    if (component.hoverEvent) {
+    if (component.hover_event) {
         const hoverContents = formatHoverEvent(
-            component.hoverEvent,
+            component.hover_event,
             translations,
         );
 

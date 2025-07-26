@@ -129,37 +129,37 @@ const COMPONENT_VALIDATION_TESTS = [
 
     // Hover event validation
     [
-        'hoverEvent must be object',
-        { text: 'test', hoverEvent: 'not object' },
+        'hover_event must be object',
+        { text: 'test', hover_event: 'not object' },
         'HoverEvent is not an object',
     ],
     [
-        'hoverEvent requires action',
-        { text: 'test', hoverEvent: {} },
+        'hover_event requires action',
+        { text: 'test', hover_event: {} },
         'HoverEvent.action is not present',
     ],
     [
-        'hoverEvent action must be string',
-        { text: 'test', hoverEvent: { action: 42 } },
+        'hover_event action must be string',
+        { text: 'test', hover_event: { action: 42 } },
         'HoverEvent.action is not a string',
     ],
     [
-        'hoverEvent action must be one of show_text, show_item, show_entity',
-        { text: 'test', hoverEvent: { action: 'invalid' } },
+        'hover_event action must be one of show_text, show_item, show_entity',
+        { text: 'test', hover_event: { action: 'invalid' } },
         'HoverEvent.action is not a valid hover event: invalid',
     ],
 
     // show_text hover event validation
     [
         'show_text requires contents or value',
-        { text: 'test', hoverEvent: { action: 'show_text' } },
+        { text: 'test', hover_event: { action: 'show_text' } },
         'HoverEvent does not have a contents or value property',
     ],
     [
         'show_text contents can be string',
         {
             text: 'test',
-            hoverEvent: { action: 'show_text', contents: 'hover' },
+            hover_event: { action: 'show_text', contents: 'hover' },
         },
         undefined,
     ],
@@ -167,7 +167,7 @@ const COMPONENT_VALIDATION_TESTS = [
         'show_text contents can be component',
         {
             text: 'test',
-            hoverEvent: { action: 'show_text', contents: { text: 'hover' } },
+            hover_event: { action: 'show_text', contents: { text: 'hover' } },
         },
         undefined,
     ],
@@ -175,7 +175,7 @@ const COMPONENT_VALIDATION_TESTS = [
         'show_text contents can be an array',
         {
             text: 'test',
-            hoverEvent: { action: 'show_text', contents: ['hover', 'test'] },
+            hover_event: { action: 'show_text', contents: ['hover', 'test'] },
         },
         undefined,
     ],
@@ -183,97 +183,81 @@ const COMPONENT_VALIDATION_TESTS = [
         'show_text value can be a component',
         {
             text: 'test',
-            hoverEvent: { action: 'show_text', value: { text: 'hover' } },
+            hover_event: { action: 'show_text', value: { text: 'hover' } },
         },
         undefined,
     ],
     [
         'show_text value can be a string',
-        { text: 'test', hoverEvent: { action: 'show_text', value: 'hover' } },
+        { text: 'test', hover_event: { action: 'show_text', value: 'hover' } },
         undefined,
     ],
     [
         'show_text value can be an array',
         {
             text: 'test',
-            hoverEvent: { action: 'show_text', value: ['hover', 'test'] },
+            hover_event: { action: 'show_text', value: ['hover', 'test'] },
         },
         undefined,
     ],
     [
         'show_text contents can be number',
-        { text: 'test', hoverEvent: { action: 'show_text', contents: 42 } },
+        { text: 'test', hover_event: { action: 'show_text', contents: 42 } },
         undefined,
     ],
     [
         'show_text value can be number',
-        { text: 'test', hoverEvent: { action: 'show_text', value: 42 } },
+        { text: 'test', hover_event: { action: 'show_text', value: 42 } },
         undefined,
     ],
 
     // show_item hover event validation
     [
-        'show_item requires contents or value',
-        { text: 'test', hoverEvent: { action: 'show_item' } },
-        'HoverEvent does not have a contents or value property',
-    ],
-    [
-        'show_item contents must be object',
-        {
-            text: 'test',
-            hoverEvent: { action: 'show_item', contents: 'not object' },
-        },
-        'HoverEvent.contents is not an object',
-    ],
-    [
         'show_item contents requires id',
-        { text: 'test', hoverEvent: { action: 'show_item', contents: {} } },
-        'HoverEvent.contents.id is not present',
+        { text: 'test', hover_event: { action: 'show_item' } },
+        'HoverEvent.id is not present',
     ],
     [
         'show_item id must be string',
         {
             text: 'test',
-            hoverEvent: { action: 'show_item', contents: { id: 42 } },
+            hover_event: { action: 'show_item', id: 42 },
         },
-        'HoverEvent.contents.id is not a string',
-    ],
-    [
-        'show_item value can be a string',
-        { text: 'test', hoverEvent: { action: 'show_item', value: 'hover' } },
-        undefined,
+        'HoverEvent.id is not a string',
     ],
 
     // show_entity hover event validation
     [
-        'show_entity requires contents or value',
-        { text: 'test', hoverEvent: { action: 'show_entity' } },
-        'HoverEvent does not have a contents or value property',
-    ],
-    [
-        'show_entity contents must be object',
+        'show_entity id is required',
         {
             text: 'test',
-            hoverEvent: { action: 'show_entity', contents: 'not object' },
+            hover_event: { action: 'show_entity' },
         },
-        'HoverEvent.contents is not an object',
+        'HoverEvent.id is not present',
     ],
     [
         'show_entity contents requires type',
-        { text: 'test', hoverEvent: { action: 'show_entity', contents: {} } },
-        'HoverEvent.contents.type is not present',
+        { text: 'test', hover_event: { action: 'show_entity' } },
+        'HoverEvent.id is not present',
     ],
     [
-        'show_entity type must be string',
+        'show_entity id must be string',
         {
             text: 'test',
-            hoverEvent: { action: 'show_entity', contents: { type: 42 } },
+            hover_event: { action: 'show_entity', id: 23 },
         },
-        'HoverEvent.contents.type is not a string',
+        'HoverEvent.id is not a string',
     ],
     [
         'show_entity value can be a string',
-        { text: 'test', hoverEvent: { action: 'show_entity', value: 'hover' } },
+        {
+            text: 'test',
+            hover_event: {
+                action: 'show_entity',
+                id: 'minecraft:pig',
+                value: 'hover',
+            },
+        },
         undefined,
     ],
 
@@ -472,7 +456,7 @@ const COMPONENT_FORMATTING_TESTS = [
         'hover text',
         {
             text: 'hover',
-            hoverEvent: { action: 'show_text', contents: 'tooltip' },
+            hover_event: { action: 'show_text', contents: 'tooltip' },
         },
         {},
         '<span aria-label="tooltip">hover</span>',
@@ -481,9 +465,9 @@ const COMPONENT_FORMATTING_TESTS = [
         'hover item',
         {
             text: 'item',
-            hoverEvent: {
+            hover_event: {
                 action: 'show_item',
-                contents: { id: 'minecraft:diamond' },
+                id: 'minecraft:diamond',
             },
         },
         {},
@@ -493,9 +477,10 @@ const COMPONENT_FORMATTING_TESTS = [
         'hover item with count',
         {
             text: 'items',
-            hoverEvent: {
+            hover_event: {
                 action: 'show_item',
-                contents: { id: 'minecraft:diamond', count: 64 },
+                id: 'minecraft:diamond',
+                count: 64,
             },
         },
         {},
@@ -505,9 +490,10 @@ const COMPONENT_FORMATTING_TESTS = [
         'hover entity',
         {
             text: 'entity',
-            hoverEvent: {
+            hover_event: {
                 action: 'show_entity',
-                contents: { type: 'minecraft:pig', id: '123', name: 'Mr. Pig' },
+                id: 'minecraft:pig',
+                name: 'Mr. Pig',
             },
         },
         {},
@@ -515,8 +501,7 @@ const COMPONENT_FORMATTING_TESTS = [
     ],
     [
         'hover text with number',
-        { text: 'hover', hoverEvent: { action: 'show_text', contents: 42 } },
-        {},
+        { text: 'hover', hover_event: { action: 'show_text', contents: 42 } },
         '<span aria-label="42">hover</span>',
     ],
 
@@ -608,12 +593,10 @@ const COMPONENT_FORMATTING_TESTS = [
                         {
                             text: 'diamond_pickaxe',
                             color: 'aqua',
-                            hoverEvent: {
+                            hover_event: {
                                 action: 'show_item',
-                                contents: {
-                                    id: 'minecraft:diamond_pickaxe',
-                                    count: 1,
-                                },
+                                id: 'minecraft:diamond_pickaxe',
+                                count: 1,
                             },
                         },
                     ],
