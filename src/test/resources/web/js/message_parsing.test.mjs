@@ -502,6 +502,7 @@ const COMPONENT_FORMATTING_TESTS = [
     [
         'hover text with number',
         { text: 'hover', hover_event: { action: 'show_text', contents: 42 } },
+        {},
         '<span aria-label="42">hover</span>',
     ],
 
