@@ -234,6 +234,11 @@ function handleChatMessage(message) {
                 message.payload.component,
                 message.payload.translations,
             );
+            if (chatContent.textContent?.startsWith('Web chat: http://')) {
+                // Ignore web chat links.
+                return;
+            }
+
             messageElement.appendChild(chatContent);
         } catch (e) {
             console.error(message);
