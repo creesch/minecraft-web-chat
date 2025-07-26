@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs';
-import { expect, test } from 'vitest';
+import { expect, test, beforeAll, beforeEach } from 'vitest';
 import {
     assertIsComponent,
     formatChatMessage,
@@ -8,7 +7,14 @@ import {
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
  */
 
-const indexHTML = readFileSync('src/client/resources/web/index.html', 'utf-8');
+// Save copy of the DOM before any tests run
+/** @type {Document} */
+let originalDocument;
+
+beforeAll(() => {
+    // Clone the document before any tests run
+    originalDocument = /** @type {Document} */ (document.cloneNode(true));
+});
 
 /**
  * @type {readonly [string, unknown, string | undefined][]}
@@ -330,6 +336,12 @@ for (const [name, component, expectedError] of COMPONENT_VALIDATION_TESTS) {
         }
     });
 }
+
+beforeEach(() => {
+    // Restore the original document before each test
+    // eslint-disable-next-line no-global-assign
+    document = /** @type {Document} */ (originalDocument.cloneNode(true));
+});
 
 /**
  * @type {readonly [string, Component, Record<string, string>, string][]}
@@ -710,10 +722,6 @@ for (const [
     expected,
 ] of COMPONENT_FORMATTING_TESTS) {
     test(name, () => {
-        // Initialize the DOM for each test
-        // eslint-disable-next-line no-global-assign
-        document = new DOMParser().parseFromString(indexHTML, 'text/html');
-
         expect(() => assertIsComponent(component)).not.toThrow();
 
         const element = formatChatMessage(component, translations);

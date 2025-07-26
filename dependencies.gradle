@@ -7,7 +7,7 @@ ext {
     loader_version = '0.16.9'
 
     // Mod Properties
-    mod_version = '1.2.0'
+    mod_version = '1.3.0'
     maven_group = 'dev.creesch'
     archives_base_name = 'web-chat'
 
@@ -17,7 +17,7 @@ ext {
     mod_menu_version = '11.0.3'
 
     // Generic java dependencies
-    javalin_version = '6.6.0'
+    javalin_version = '6.7.0'
     lombok_version = '1.18.38'
-    xerial_version = '3.49.1.0'
+    xerial_version = '3.50.3.0'
 }

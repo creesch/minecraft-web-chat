@@ -1,6 +1,7 @@
 // @ts-check
 'use strict';
 
+import { directMessageManager } from './direct_message.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
@@ -8,9 +9,9 @@ import { querySelectorWithAssertion } from '../utils.mjs';
  */
 
 /**
- * Extends PlayerInfo to include the cached player head image and DOM element.
+ * Extends PlayerInfo to include their DOM element.
  * @typedef {PlayerInfo & {
- *   element?: HTMLElement, // Cached reference to the player's DOM element.
+ *   element: HTMLLIElement, // Player's element in the player list.
  * }} StoredPlayerInfo
  */
 
@@ -62,20 +63,15 @@ class PlayerList {
     /** @type {HTMLElement} */
     #playerListElement;
 
-    /** @type {HTMLTextAreaElement} */
-    #chatInput;
-
     /** @type {HTMLSpanElement} */
     #playerCountElement;
 
     /**
      * @param {HTMLElement} playerListElement
-     * @param {HTMLTextAreaElement} chatInput
      * @param {HTMLSpanElement} playerCountElement
      */
-    constructor(playerListElement, chatInput, playerCountElement) {
+    constructor(playerListElement, playerCountElement) {
         this.#playerListElement = playerListElement;
-        this.#chatInput = chatInput;
         this.#playerCountElement = playerCountElement;
     }
 
@@ -117,23 +113,16 @@ class PlayerList {
         const fragment = document.createDocumentFragment();
         for (const player of updatedPlayers) {
             const existingPlayer = this.#players.get(player.playerId);
-
-            // Create or update the player element.
-            /** @type {HTMLElement | undefined} */
-            let element;
-            if (!existingPlayer?.element) {
-                element = this.#createPlayerElement(player);
-                fragment.appendChild(element);
-            } else {
-                element = existingPlayer.element;
-                this.#updatePlayerElement(element, player, existingPlayer);
-            }
+            const element = existingPlayer
+                ? this.#updatePlayerElement(existingPlayer)
+                : fragment.appendChild(this.#createPlayerElement(player));
 
             this.#players.set(player.playerId, {
                 ...player,
                 element,
             });
         }
+
         // Append all new elements to the DOM in one operation.
         if (fragment.childNodes.length > 0) {
             this.#playerListElement.appendChild(fragment);
@@ -151,67 +140,54 @@ class PlayerList {
     /**
      * Updates a player's DOM element.
      *
-     * @param {HTMLElement} element - The element to update.
      * @param {StoredPlayerInfo} player - The player data to update.
-     * @param {StoredPlayerInfo} [existingPlayer] - The previous state of the player (if any).
+     * @returns {HTMLLIElement} The updated element.
      */
-    #updatePlayerElement(element, player, existingPlayer) {
+    #updatePlayerElement(player) {
         // Update the existing element if properties have changed.
         const headContainer = /** @type {HTMLDivElement | null} */ (
-            element.querySelector('.player-head-container')
+            player.element.querySelector('.player-head-container')
         );
         if (headContainer) {
-            if (
-                existingPlayer?.playerDisplayName !== player.playerDisplayName
-            ) {
-                headContainer.title = `${player.playerDisplayName}'s head`;
-            }
+            headContainer.title = `${player.playerDisplayName}'s head`;
         }
 
         const headImg = /** @type {HTMLImageElement | null} */ (
-            element.querySelector('.player-head')
+            player.element.querySelector('.player-head')
         );
         if (headImg) {
-            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
-                headImg.src = player.playerTextureUrl;
-            }
+            headImg.src = player.playerTextureUrl;
         }
 
         const headOverlay = /** @type {HTMLImageElement | null} */ (
-            element.querySelector('.player-head-overlay')
+            player.element.querySelector('.player-head-overlay')
         );
         if (headOverlay) {
-            if (existingPlayer?.playerTextureUrl !== player.playerTextureUrl) {
-                headOverlay.src = player.playerTextureUrl;
-            }
+            headOverlay.src = player.playerTextureUrl;
         }
 
         const nameSpan = /** @type {HTMLSpanElement | null} */ (
-            element.querySelector('.player-name')
+            player.element.querySelector('.player-name')
         );
         if (nameSpan) {
-            if (
-                existingPlayer?.playerDisplayName !== player.playerDisplayName
-            ) {
-                nameSpan.textContent = player.playerDisplayName;
-            }
-
-            if (existingPlayer?.playerName !== player.playerName) {
-                nameSpan.title = player.playerName;
-            }
+            nameSpan.textContent = player.playerDisplayName;
+            nameSpan.title = player.playerName;
         }
+
+        return player.element;
     }
 
     /**
      * Creates a new player element.
-     * @param {StoredPlayerInfo} player
-     * @returns {HTMLElement}
+     * @param {PlayerInfo} player
+     * @returns {HTMLLIElement}
      */
     #createPlayerElement(player) {
         // Create a new DOM element if none exists for the player.
         const playerElement = document.createElement('li');
         playerElement.setAttribute('role', 'listitem');
         playerElement.setAttribute('data-player-id', player.playerId);
+        playerElement.title = `Chat with ${player.playerDisplayName}`;
 
         const headContainer = document.createElement('div');
         headContainer.className = 'player-head-container';
@@ -240,7 +216,6 @@ class PlayerList {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'player-name';
         nameSpan.textContent = player.playerDisplayName;
-        nameSpan.title = player.playerName;
 
         // Specifically for aria labels show both playerDisplayName and playerName if they are different.
         if (player.playerDisplayName !== player.playerName) {
@@ -255,22 +230,44 @@ class PlayerList {
             );
         }
 
-        // Add click event to insert the player name into the chat input
-        playerElement.addEventListener('click', () => {
-            toggleSidebar(false);
+        const chatIcon = document.createElement('img');
+        chatIcon.className = 'player-chat-icon';
+        chatIcon.src = 'img/heroicons/chat-bubble-left-right.svg';
 
-            const cursorPos = this.#chatInput.selectionStart;
-            const textBefore = this.#chatInput.value.substring(0, cursorPos);
-            const textAfter = this.#chatInput.value.substring(cursorPos);
-            this.#chatInput.value = `${textBefore}${player.playerDisplayName}${textAfter}`;
-            this.#chatInput.focus();
-            this.#chatInput.selectionStart = this.#chatInput.selectionEnd =
-                cursorPos + player.playerDisplayName.length;
+        playerElement.addEventListener('click', () => {
+            /**
+             * Selects a player and updates the chat icon.
+             * @param {PlayerInfo} player
+             */
+            function selectPlayer(player) {
+                toggleSidebar(false);
+                directMessageManager.setPlayer(player, deselectPlayer);
+                playerElement.setAttribute(
+                    'aria-label',
+                    'Stop chat with player',
+                );
+                playerElement.title = `Stop chat with ${player.playerDisplayName}`;
+                chatIcon.style.display = 'block';
+            }
+
+            function deselectPlayer() {
+                playerElement.setAttribute('aria-label', 'Chat with player');
+                playerElement.title = `Chat with ${player.playerDisplayName}`;
+                chatIcon.style.display = 'none';
+            }
+
+            const currentPlayer = directMessageManager.getPlayer();
+            if (currentPlayer?.playerId === player.playerId) {
+                directMessageManager.clearPlayer();
+            } else {
+                selectPlayer(player);
+            }
         });
 
         // Assemble the player element.
         playerElement.appendChild(headContainer);
         playerElement.appendChild(nameSpan);
+        playerElement.appendChild(chatIcon);
 
         return playerElement;
     }
@@ -317,6 +314,22 @@ class PlayerList {
     }
 
     /**
+     * Retrieves a player's data by their name.
+     *
+     * @param {string} playerName - The name of the player to retrieve.
+     * @returns {StoredPlayerInfo|null} The player's data, or null if not found.
+     */
+    getPlayerByName(playerName) {
+        for (const player of this.#players.values()) {
+            if (player.playerName.toLowerCase() === playerName.toLowerCase()) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Retrieves all players as an array.
      *
      * @returns {StoredPlayerInfo[]} An array of all players' data.
@@ -339,15 +352,8 @@ class PlayerList {
 const playerListElement = /** @type {HTMLUListElement} */ (
     querySelectorWithAssertion('#player-list')
 );
-const chatInput = /** @type {HTMLTextAreaElement} */ (
-    querySelectorWithAssertion('#message-input')
-);
 const playerCountElement = /** @type {HTMLSpanElement} */ (
     querySelectorWithAssertion('#player-count')
 );
 
-export const playerList = new PlayerList(
-    playerListElement,
-    chatInput,
-    playerCountElement,
-);
+export const playerList = new PlayerList(playerListElement, playerCountElement);

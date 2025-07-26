@@ -10,6 +10,7 @@ import {
 } from './messages/message_parsing.mjs';
 import { serverInfo } from './managers/server_info.mjs';
 import { playerList, toggleSidebar } from './managers/player_list.mjs';
+import { directMessageManager } from './managers/direct_message.mjs';
 import { parseModServerMessage } from './messages/message_types.mjs';
 import { faviconManager } from './managers/favicon_manager.mjs';
 import { tabListManager } from './managers/tab_list_manager.mjs';
@@ -54,11 +55,8 @@ const displayedMessageIds = new Set();
  * ======================
  */
 
-const statusContainerElement = /** @type {HTMLDivElement} */ (
+const statusElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#status')
-);
-const statusTextElement = /** @type {HTMLSpanElement} */ (
-    querySelectorWithAssertion('#status .connection-status')
 );
 const sidebarToggleElement = /** @type {HTMLImageElement} */ (
     querySelectorWithAssertion('#sidebar-toggle')
@@ -78,11 +76,15 @@ const inputAlertElement = /** @type {HTMLDivElement} */ (
     querySelectorWithAssertion('#input-alert')
 );
 
+const clearRecipientElement = /** @type {HTMLImageElement} */ (
+    querySelectorWithAssertion('#direct-message-clear')
+);
+
 const chatInputElement = /** @type {HTMLTextAreaElement} */ (
     querySelectorWithAssertion('#message-input')
 );
 
-const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
+const messageSendButtonElement = /** @type {HTMLImageElement} */ (
     querySelectorWithAssertion('#message-send-button')
 );
 
@@ -94,6 +96,10 @@ const messageSendButtonElement = /** @type {HTMLButtonElement} */ (
 
 sidebarToggleElement.addEventListener('click', () => {
     toggleSidebar();
+});
+
+clearRecipientElement.addEventListener('click', () => {
+    directMessageManager.clearPlayer();
 });
 
 // Clicked send button
@@ -200,10 +206,9 @@ function handleChatMessage(message) {
 
     displayedMessageIds.add(message.payload.uuid);
 
-    faviconManager.handleNewMessage(
-        message.payload.isPing,
-        message.payload.history,
-    );
+    if (!message.payload.history) {
+        faviconManager.handleNewMessage(message.payload.isPing);
+    }
 
     requestAnimationFrame(() => {
         const messageElement = document.createElement('article');
@@ -346,6 +351,7 @@ function handleMinecraftServerConnectionState(message) {
         case 'disconnect':
             console.log('Received disconnect event. Sad to see you go.');
             serverInfo.clear();
+            playerList.clearAll();
             break;
     }
 }
@@ -361,24 +367,21 @@ function handleMinecraftServerConnectionState(message) {
  * @param {'connected' | 'disconnected' | 'error'} connectionStatus
  */
 function updateWebsocketConnectionStatus(connectionStatus) {
-    // Update connection status if provided
-    if (connectionStatus) {
-        switch (connectionStatus) {
-            case 'connected':
-                statusContainerElement.className = 'status-connected';
-                statusTextElement.textContent = 'Connected';
-                break;
-            case 'disconnected':
-                serverInfo.clear();
-                statusContainerElement.className = 'status-disconnected';
-                statusTextElement.textContent = 'Disconnected';
-                break;
-            case 'error':
-                serverInfo.clear();
-                statusContainerElement.className = 'status-disconnected';
-                statusTextElement.textContent = 'Error: see browser console';
-                break;
-        }
+    switch (connectionStatus) {
+        case 'connected':
+            statusElement.textContent = 'Join a server to chat';
+            statusElement.dataset['status'] = 'connected';
+            break;
+        case 'disconnected':
+            serverInfo.clear();
+            statusElement.dataset['status'] = 'disconnected';
+            statusElement.textContent = 'Disconnected from Minecraft';
+            break;
+        case 'error':
+            serverInfo.clear();
+            statusElement.dataset['status'] = 'error';
+            statusElement.textContent = 'Error: See browser console';
+            break;
     }
 }
 
@@ -500,9 +503,14 @@ function setChatInputError(isError) {
 }
 
 function sendChatMessage() {
-    const message = chatInputElement.value;
+    let message = chatInputElement.value;
     if (!message.trim()) {
         return;
+    }
+
+    const player = directMessageManager.getPlayer();
+    if (player) {
+        message = `/w ${player.playerName} ${message}`;
     }
 
     if (message.startsWith('/')) {
@@ -516,6 +524,9 @@ function sendChatMessage() {
 
     sendWebsocketMessage('chat', message);
     chatInputElement.value = '';
+
+    // Keep focus on input to prevent keyboard from disappearing on mobile
+    chatInputElement.focus();
 }
 
 /**

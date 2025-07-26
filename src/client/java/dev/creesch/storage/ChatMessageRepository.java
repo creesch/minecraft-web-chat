@@ -18,8 +18,9 @@ import org.sqlite.SQLiteDataSource;
 public class ChatMessageRepository {
 
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
-    private final SQLiteDataSource dataSource;
+    private SQLiteDataSource dataSource;
     private static final Gson gson = new Gson();
+    private boolean initialized = false;
 
     // DB constants
     private static final String DB_NAME = "chat_messages.db";
@@ -109,23 +110,29 @@ public class ChatMessageRepository {
         """;
 
     public ChatMessageRepository() {
-        Path databasePath = FabricLoader.getInstance()
-            .getGameDir()
-            .resolve(DATA_DIR)
-            .resolve(DB_NAME);
-
         try {
+            Path databasePath = FabricLoader.getInstance()
+                .getGameDir()
+                .resolve(DATA_DIR)
+                .resolve(DB_NAME);
+
             Files.createDirectories(databasePath.getParent());
+
+            dataSource = new SQLiteDataSource();
+            dataSource.setUrl("jdbc:sqlite:" + databasePath);
+            initializeDatabase();
+            initialized = true;
         } catch (IOException e) {
-            throw new RuntimeException(
+            LOGGER.error(
                 "Failed to create data for web-chat database directory",
                 e
             );
+        } catch (RuntimeException e) {
+            LOGGER.error(
+                "A critical error occurred during ChatMessageRepository initialization",
+                e
+            );
         }
-
-        dataSource = new SQLiteDataSource();
-        dataSource.setUrl("jdbc:sqlite:" + databasePath);
-        initializeDatabase();
     }
 
     private void initializeDatabase() {
@@ -142,6 +149,7 @@ public class ChatMessageRepository {
             checkSchemaVersion(conn);
         } catch (SQLException e) {
             LOGGER.error("Failed to initialize chat storage database", e);
+            // Forward the exception to the constructor's try-catch block
             throw new RuntimeException(
                 "Failed to initialize chat storage database",
                 e
@@ -194,6 +202,7 @@ public class ChatMessageRepository {
                     dbVersion,
                     CURRENT_SCHEMA_VERSION
                 );
+                // Forward the exception to the constructor's try-catch block
                 throw new RuntimeException(
                     "Database schema version " +
                     dbVersion +
@@ -213,6 +222,12 @@ public class ChatMessageRepository {
     // TODO: keep eye on performance.
     // If needed implement a queuing mechanism to do messages in chuncks and transactions.
     public void saveMessage(WebsocketJsonMessage message) {
+        if (!initialized || dataSource == null) {
+            LOGGER.error(
+                "Unable to save message, message database not available."
+            );
+            return;
+        }
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement statement = conn.prepareStatement(
@@ -222,9 +237,10 @@ public class ChatMessageRepository {
             // Cast payload to ChatMessagePayload since we need to access some info
             Object rawPayload = message.getPayload();
             if (!(rawPayload instanceof ChatMessagePayload payload)) {
-                throw new IllegalArgumentException(
-                    "Message payload is not a ChatMessagePayload"
+                LOGGER.warn(
+                    "Attempted to save a message with an invalid payload type."
                 );
+                return;
             }
 
             statement.setLong(1, message.getTimestamp());
@@ -238,7 +254,7 @@ public class ChatMessageRepository {
 
             statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save chat message", e);
+            LOGGER.error("Failed to save chat message", e);
         }
     }
 
@@ -251,6 +267,12 @@ public class ChatMessageRepository {
         int limit,
         Long beforeTimestamp
     ) {
+        if (!initialized || dataSource == null) {
+            LOGGER.warn(
+                "ChatMessageRepository not properly initialized, returning empty message list"
+            );
+            return new ArrayList<>();
+        }
         List<WebsocketJsonMessage> messages = new ArrayList<>();
 
         String query = BASE_GET_MESSAGE_QUERY.formatted(

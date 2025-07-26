@@ -1,8 +1,6 @@
 package dev.creesch.model;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
@@ -15,12 +13,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
@@ -50,14 +43,31 @@ public class WebsocketMessageBuilder {
             );
         }
 
-        Map<String, String> translations =
-            ClientTranslationUtils.extractTranslations(message);
-
         // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
-        String minecraftChatJson = Text.Serialization.toJsonString(
-            message,
-            client.world.getRegistryManager()
-        );
+        // The try block is used as there are instances of `Text` that can't be serialized to JSON
+        Map<String, String> translations;
+        String minecraftChatJson;
+
+        try {
+            translations = ClientTranslationUtils.extractTranslations(message);
+
+            minecraftChatJson = Text.Serialization.toJsonString(
+                message,
+                client.world.getRegistryManager()
+            );
+        } catch (JsonParseException exception) {
+            LOGGER.warn(
+                "Failed to serialize chat message: " + message.getString()
+            );
+            LOGGER.warn("Exception info: ", exception);
+
+            // Get plain string message and show as error in chat.
+            minecraftChatJson =
+                "{\"text\":\"Could not convert message: %s\"}".formatted(
+                        message.getString()
+                    );
+            translations = Map.of();
+        }
 
         // Explicitly use UTC time for consistency across different timezones
         long timestamp = Instant.now(Clock.systemUTC()).toEpochMilli();
@@ -70,10 +80,14 @@ public class WebsocketMessageBuilder {
         ).toString();
 
         // Back to objects we go
+        JsonObject jsonObject = gson.fromJson(
+            minecraftChatJson,
+            JsonObject.class
+        );
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(false)
             .uuid(messageUUID)
-            .component(gson.fromJson(minecraftChatJson, JsonObject.class))
+            .component(jsonObject)
             .isPing(!fromSelf && isPing(message, client))
             .translations(translations)
             .build();
