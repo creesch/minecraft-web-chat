@@ -3,7 +3,7 @@
 
 import { directMessageManager } from './direct_message.mjs';
 import {
-    formatChatMessage,
+    formatMessage,
     formatComponentToString,
 } from '../messages/message_parsing.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
@@ -177,7 +177,7 @@ class PlayerList {
         );
         if (nameSpan) {
             nameSpan.replaceChildren(
-                formatChatMessage(player.playerDisplayName, {}),
+                formatMessage(player.playerDisplayName, {}),
             );
             nameSpan.title = player.playerName;
         }
@@ -223,9 +223,7 @@ class PlayerList {
         // Create and configure the player's display name span.
         const nameSpan = document.createElement('span');
         nameSpan.className = 'player-name';
-        nameSpan.replaceChildren(
-            formatChatMessage(player.playerDisplayName, {}),
-        );
+        nameSpan.replaceChildren(formatMessage(player.playerDisplayName, {}));
 
         const displayName = formatComponentToString(player.playerDisplayName);
 

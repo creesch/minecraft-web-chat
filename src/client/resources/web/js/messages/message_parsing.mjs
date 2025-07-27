@@ -1434,7 +1434,7 @@ export function formatComponentToString(component) {
  * @param {Record<string, string>} translations Translation key-value pairs
  * @returns {Element | Text}
  */
-export function formatChatMessage(component, translations) {
+export function formatMessage(component, translations) {
     /** @type {Element} */
     let element;
     try {
