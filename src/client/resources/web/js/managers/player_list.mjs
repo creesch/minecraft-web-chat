@@ -2,10 +2,6 @@
 'use strict';
 
 import { directMessageManager } from './direct_message.mjs';
-import {
-    formatMessage,
-    formatComponentToString,
-} from '../messages/message_parsing.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
@@ -153,9 +149,7 @@ class PlayerList {
             player.element.querySelector('.player-head-container')
         );
         if (headContainer) {
-            headContainer.title = `${formatComponentToString(
-                player.playerDisplayName,
-            )}'s head`;
+            headContainer.title = `${player.playerDisplayName}'s head`;
         }
 
         const headImg = /** @type {HTMLImageElement | null} */ (
@@ -176,9 +170,7 @@ class PlayerList {
             player.element.querySelector('.player-name')
         );
         if (nameSpan) {
-            nameSpan.replaceChildren(
-                formatMessage(player.playerDisplayName, {}),
-            );
+            nameSpan.textContent = player.playerDisplayName;
             nameSpan.title = player.playerName;
         }
 
@@ -223,18 +215,19 @@ class PlayerList {
         // Create and configure the player's display name span.
         const nameSpan = document.createElement('span');
         nameSpan.className = 'player-name';
-        nameSpan.replaceChildren(formatMessage(player.playerDisplayName, {}));
-
-        const displayName = formatComponentToString(player.playerDisplayName);
+        nameSpan.textContent = player.playerDisplayName;
 
         // Specifically for aria labels show both playerDisplayName and playerName if they are different.
-        if (displayName !== player.playerName) {
+        if (player.playerDisplayName !== player.playerName) {
             nameSpan.setAttribute(
                 'aria-label',
-                `Display name: ${displayName}, Username: ${player.playerName}`,
+                `Display name: ${player.playerDisplayName}, Username: ${player.playerName}`,
             );
         } else {
-            nameSpan.setAttribute('aria-label', `Player name: ${displayName}`);
+            nameSpan.setAttribute(
+                'aria-label',
+                `Player name: ${player.playerDisplayName}`,
+            );
         }
 
         const chatIcon = document.createElement('img');
@@ -253,13 +246,13 @@ class PlayerList {
                     'aria-label',
                     'Stop chat with player',
                 );
-                playerElement.title = `Stop chat with ${displayName}`;
+                playerElement.title = `Stop chat with ${player.playerDisplayName}`;
                 chatIcon.style.display = 'block';
             }
 
             function deselectPlayer() {
                 playerElement.setAttribute('aria-label', 'Chat with player');
-                playerElement.title = `Chat with ${displayName}`;
+                playerElement.title = `Chat with ${player.playerDisplayName}`;
                 chatIcon.style.display = 'none';
             }
 

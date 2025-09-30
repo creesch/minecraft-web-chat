@@ -1,7 +1,7 @@
 import { expect, test, beforeAll, beforeEach } from 'vitest';
 import {
     assertIsComponent,
-    formatMessage,
+    formatChatMessage,
 } from '~/messages/message_parsing.mjs';
 /**
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
@@ -708,7 +708,7 @@ for (const [
     test(name, () => {
         expect(() => assertIsComponent(component)).not.toThrow();
 
-        const element = formatMessage(component, translations);
+        const element = formatChatMessage(component, translations);
         if (element instanceof Text) {
             expect(element.textContent).toBe(expected);
         } else {

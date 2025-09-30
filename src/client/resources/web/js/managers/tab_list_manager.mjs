@@ -1,7 +1,6 @@
 // @ts-check
 'use strict';
 
-import { formatComponentToString } from '../messages/message_parsing.mjs';
 import { querySelectorWithAssertion } from '../utils.mjs';
 
 /**
@@ -49,7 +48,7 @@ class TabListManager {
         // Find players that start with the word before the cursor
         const matches = players.filter(
             (player) =>
-                formatComponentToString(player.playerDisplayName)
+                player.playerDisplayName
                     .toLocaleLowerCase()
                     .startsWith(wordBefore) ||
                 player.playerName.toLocaleLowerCase().startsWith(wordBefore),
@@ -165,9 +164,7 @@ class TabListManager {
             ...matches
                 // Show names in alphabetical order.
                 .sort((a, b) =>
-                    formatComponentToString(a.playerDisplayName).localeCompare(
-                        formatComponentToString(b.playerDisplayName),
-                    ),
+                    a.playerDisplayName.localeCompare(b.playerDisplayName),
                 )
                 // Show only first 5 matches.
                 .slice(0, 5)
@@ -181,15 +178,12 @@ class TabListManager {
                         this.#updateSelection(index);
                     });
 
-                    const displayName = formatComponentToString(
-                        match.playerDisplayName,
-                    );
                     const displayNameUnchanged =
-                        displayName.toLocaleLowerCase() ===
+                        match.playerDisplayName.toLocaleLowerCase() ===
                         match.playerName.toLocaleLowerCase();
                     li.textContent = displayNameUnchanged
-                        ? displayName
-                        : `${displayName} (${match.playerName})`;
+                        ? match.playerDisplayName
+                        : `${match.playerDisplayName} (${match.playerName})`;
 
                     return li;
                 }),
@@ -255,7 +249,7 @@ class TabListManager {
         // Use playerName instead of playerDisplayName for direct-message commands
         const playerNameToInsert = beforeCursor.match(/^\/(tell|msg|w)[ ]+\w+$/)
             ? selectedPlayer.playerName
-            : formatComponentToString(selectedPlayer.playerDisplayName);
+            : selectedPlayer.playerDisplayName;
 
         // There is a partial player name before the cursor. Get everything
         // before it and add the full player name after.

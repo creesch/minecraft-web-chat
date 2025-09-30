@@ -359,27 +359,9 @@ public class WebsocketMessageBuilder {
                 GameProfile profile = player.getProfile(); // Contains UUID and name
                 String playerId = profile.getId().toString();
                 String playerName = profile.getName();
-
-                Text playerDisplayName = player.getDisplayName() != null
-                    ? player.getDisplayName()
-                    : Text.literal(playerName);
-                String minecraftChatJson;
-                try {
-                    minecraftChatJson = toJsonString(
-                        playerDisplayName,
-                        client.world.getRegistryManager()
-                    );
-                } catch (JsonParseException exception) {
-                    LOGGER.warn(
-                        "Failed to serialize chat message: " +
-                        playerDisplayName.getString()
-                    );
-                    LOGGER.warn("Exception info: ", exception);
-
-                    minecraftChatJson = "{\"text\":\"%s\"}".formatted(
-                            playerDisplayName.getString()
-                        );
-                }
+                String playerDisplayName = player.getDisplayName() != null
+                    ? player.getDisplayName().getString()
+                    : playerName;
 
                 // To get the texture we need to digg a little bit deeper.
                 // Note: This retrieves the texture URL. In theory, it is possible to fetch player textures from minecraft.
@@ -390,9 +372,7 @@ public class WebsocketMessageBuilder {
                 PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
                     .playerId(playerId)
                     .playerName(playerName)
-                    .playerDisplayName(
-                        gson.fromJson(minecraftChatJson, JsonObject.class)
-                    )
+                    .playerDisplayName(playerDisplayName)
                     .playerTextureUrl(playerTextureUrl)
                     .build();
 
