@@ -288,7 +288,7 @@ public class WebsocketMessageBuilder {
         Pattern.compile("^https?://textures\\.minecraft\\.net/texture/.+");
 
     private static String getPlayerTextureUrl(GameProfile profile) {
-        Collection<Property> textures = profile.getProperties().get("textures");
+        Collection<Property> textures = profile.properties().get("textures");
         if (textures.isEmpty()) {
             return "unknown";
         }
@@ -332,7 +332,7 @@ public class WebsocketMessageBuilder {
             } catch (Exception e) {
                 LOGGER.error(
                     "Error decoding skin texture for player {}",
-                    profile.getName(),
+                    profile.name(),
                     e
                 );
             }
@@ -360,8 +360,8 @@ public class WebsocketMessageBuilder {
             .getPlayerList()
             .forEach(player -> {
                 GameProfile profile = player.getProfile(); // Contains UUID and name
-                String playerId = profile.getId().toString();
-                String playerName = profile.getName();
+                String playerId = profile.id().toString();
+                String playerName = profile.name();
 
                 Text playerDisplayName = player.getDisplayName() != null
                     ? player.getDisplayName()
