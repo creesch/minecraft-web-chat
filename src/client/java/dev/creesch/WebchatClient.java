@@ -57,7 +57,7 @@ public class WebchatClient implements ClientModInitializer {
 
                 boolean fromSelf = sender == null
                     ? false
-                    : sender.getName().equals(selfName);
+                    : sender.name().equals(selfName);
                 try {
                     WebsocketJsonMessage chatMessage =
                         WebsocketMessageBuilder.createLiveChatMessage(
