@@ -68,9 +68,10 @@ public class WebsocketMessageBuilder {
 
             // Get plain string message and show as error in chat.
             minecraftChatJsonObject = new JsonObject();
-            minecraftChatJsonObject.addProperty("text", "Could not convert message: %s".formatted(
-                message.getString()
-            ));
+            minecraftChatJsonObject.addProperty(
+                "text",
+                "Could not convert message: %s".formatted(message.getString())
+            );
             translations = Map.of();
         }
 
@@ -383,9 +384,12 @@ public class WebsocketMessageBuilder {
 
                     // Get plain string displayName and display that.
                     minecraftJsonObjectDisplayName = new JsonObject();
-                    minecraftJsonObjectDisplayName.addProperty("text", "Could not convert message: %s".formatted(
-                        playerDisplayName.getString()
-                    ));
+                    minecraftJsonObjectDisplayName.addProperty(
+                        "text",
+                        "Could not convert message: %s".formatted(
+                                playerDisplayName.getString()
+                            )
+                    );
                 }
 
                 // To get the texture we need to digg a little bit deeper.
