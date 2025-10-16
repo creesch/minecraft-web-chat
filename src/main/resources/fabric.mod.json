@@ -5,7 +5,7 @@
     "name": "Web chat",
     "description": "Chat in minecraft from your browser",
     "authors": ["Creesch"],
-    "contributors": ["teaearlgraycold"],
+    "contributors": ["teaearlgraycold", "talklittle"],
     "contact": {
         "homepage": "https://modrinth.com/mod/web-chat",
         "sources": "https://github.com/creesch/minecraft-web-chat",
