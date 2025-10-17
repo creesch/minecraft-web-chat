@@ -26,9 +26,6 @@ import net.minecraft.text.TextCodecs;
 public class WebsocketMessageBuilder {
 
     private static final Gson gson = new Gson();
-    private static final Gson gsonWithoutHtmlEscaping = new GsonBuilder()
-        .disableHtmlEscaping()
-        .create();
     private static final NamedLogger LOGGER = new NamedLogger("web-chat");
 
     /**
