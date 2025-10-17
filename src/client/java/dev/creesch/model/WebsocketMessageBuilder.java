@@ -52,12 +52,11 @@ public class WebsocketMessageBuilder {
         // Can't use GSON for Text serialization easily, using Minecraft's own serializer.
         // The try block is used as there are instances of `Text` that can't be serialized to JSON
         Map<String, String> translations;
-        String minecraftChatJson;
+        JsonObject minecraftChatJsonObject;
 
         try {
             translations = ClientTranslationUtils.extractTranslations(message);
-
-            minecraftChatJson = toJsonString(
+            minecraftChatJsonObject = toJsonObject(
                 message,
                 client.world.getRegistryManager()
             );
@@ -68,10 +67,11 @@ public class WebsocketMessageBuilder {
             LOGGER.warn("Exception info: ", exception);
 
             // Get plain string message and show as error in chat.
-            minecraftChatJson =
-                "{\"text\":\"Could not convert message: %s\"}".formatted(
-                        message.getString()
-                    );
+            minecraftChatJsonObject = new JsonObject();
+            minecraftChatJsonObject.addProperty(
+                "text",
+                "Could not convert message: %s".formatted(message.getString())
+            );
             translations = Map.of();
         }
 
@@ -80,20 +80,15 @@ public class WebsocketMessageBuilder {
         WebsocketJsonMessage.ChatServerInfo serverInfo =
             MinecraftServerIdentifier.getCurrentServerInfo();
         String minecraftVersion = SharedConstants.getGameVersion().name();
-        // UUID used to prevent duplicates when doing
+        // UUID used to prevent duplicates
         String messageUUID = UUID.nameUUIDFromBytes(
-            (timestamp + minecraftChatJson).getBytes()
+            (timestamp + gson.toJson(minecraftChatJsonObject)).getBytes()
         ).toString();
 
-        // Back to objects we go
-        JsonObject jsonObject = gson.fromJson(
-            minecraftChatJson,
-            JsonObject.class
-        );
         ChatMessagePayload messageObject = ChatMessagePayload.builder()
             .history(false)
             .uuid(messageUUID)
-            .component(jsonObject)
+            .component(minecraftChatJsonObject)
             .isPing(!fromSelf && isPing(message, client))
             .translations(translations)
             .build();
@@ -111,9 +106,9 @@ public class WebsocketMessageBuilder {
      *
      * @param message The minecraft text message to process
      * @param registries Minecraft registries used to map the message to Json.
-     * @return JsonString representation of the message
+     * @return JsonObject representation of the message
      */
-    private static String toJsonString(
+    private static JsonObject toJsonObject(
         Text message,
         RegistryWrapper.WrapperLookup registries
     ) {
@@ -121,7 +116,18 @@ public class WebsocketMessageBuilder {
             registries.getOps(JsonOps.INSTANCE),
             message
         ).getOrThrow(JsonParseException::new);
-        return gsonWithoutHtmlEscaping.toJson(jsonElement);
+
+        if (jsonElement.isJsonObject()) {
+            return jsonElement.getAsJsonObject();
+        } else if (jsonElement.isJsonPrimitive()) {
+            // Wrap primitives in a usable object, assuming they are simple text.
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("text", jsonElement.getAsString());
+            return jsonObject;
+        } else {
+            // For anything else assume it isn't Minecraft chat format that can be parsed down the line.
+            throw new JsonParseException("Cannot create JSON object from Text");
+        }
     }
 
     /**
@@ -363,9 +369,9 @@ public class WebsocketMessageBuilder {
                 Text playerDisplayName = player.getDisplayName() != null
                     ? player.getDisplayName()
                     : Text.literal(playerName);
-                String minecraftChatJson;
+                JsonObject minecraftJsonObjectDisplayName;
                 try {
-                    minecraftChatJson = toJsonString(
+                    minecraftJsonObjectDisplayName = toJsonObject(
                         playerDisplayName,
                         client.world.getRegistryManager()
                     );
@@ -376,9 +382,14 @@ public class WebsocketMessageBuilder {
                     );
                     LOGGER.warn("Exception info: ", exception);
 
-                    minecraftChatJson = "{\"text\":\"%s\"}".formatted(
-                            playerDisplayName.getString()
-                        );
+                    // Get plain string displayName and display that.
+                    minecraftJsonObjectDisplayName = new JsonObject();
+                    minecraftJsonObjectDisplayName.addProperty(
+                        "text",
+                        "Could not convert message: %s".formatted(
+                                playerDisplayName.getString()
+                            )
+                    );
                 }
 
                 // To get the texture we need to digg a little bit deeper.
@@ -390,9 +401,7 @@ public class WebsocketMessageBuilder {
                 PlayerListInfoEntry playerInfo = PlayerListInfoEntry.builder()
                     .playerId(playerId)
                     .playerName(playerName)
-                    .playerDisplayName(
-                        gson.fromJson(minecraftChatJson, JsonObject.class)
-                    )
+                    .playerDisplayName(minecraftJsonObjectDisplayName)
                     .playerTextureUrl(playerTextureUrl)
                     .build();
 
