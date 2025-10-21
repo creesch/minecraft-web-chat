@@ -142,7 +142,7 @@ class TabListManager {
     }
 
     /**
-     * Returns true if the tab list is hidden.
+     * Returns true if the tab list is visible.
      * @returns {boolean}
      */
     visible() {
