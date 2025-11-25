@@ -8,6 +8,7 @@ classes/
 # eclipse
 
 *.launch
+.factorypath
 
 # idea
 
@@ -42,3 +43,7 @@ replay_*.log
 # node
 
 node_modules/
+
+# scripts
+
+build.sh
