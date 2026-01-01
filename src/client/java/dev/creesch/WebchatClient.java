@@ -6,6 +6,7 @@ import dev.creesch.model.WebsocketMessageBuilder;
 import dev.creesch.storage.ChatMessageRepository;
 import dev.creesch.util.NamedLogger;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -25,6 +26,7 @@ public class WebchatClient implements ClientModInitializer {
     private int tickCounter = 0;
     private static WebchatClient INSTANCE;
     private static String MOD_VERSION = "unknown";
+    private static AtomicBoolean hasJoined = new AtomicBoolean(false);
 
     @Override
     public void onInitializeClient() {
@@ -57,7 +59,7 @@ public class WebchatClient implements ClientModInitializer {
 
                 boolean fromSelf = sender == null
                     ? false
-                    : sender.getName().equals(selfName);
+                    : sender.name().equals(selfName);
                 try {
                     WebsocketJsonMessage chatMessage =
                         WebsocketMessageBuilder.createLiveChatMessage(
@@ -120,12 +122,20 @@ public class WebchatClient implements ClientModInitializer {
                     WebsocketMessageBuilder.createPlayerList(client)
                 );
 
+                boolean wasJoined = hasJoined.getAndSet(true);
+                if (wasJoined) {
+                    // JOIN event can occur multiple times per server connection.
+                    // Ensure the web address is only shown once per connection.
+                    return;
+                }
+
                 showWebAddress(client);
             });
         });
 
         // Send state to client
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            hasJoined.set(false);
             webInterface.broadcastMessage(
                 WebsocketMessageBuilder.createConnectionStateMessage(
                     WebsocketJsonMessage.ServerConnectionStates.DISCONNECT
