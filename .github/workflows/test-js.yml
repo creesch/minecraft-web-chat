@@ -1,10 +1,11 @@
 name: Test (JavaScript)
-on: [pull_request, push]
+on:
+    pull_request:
+    push:
+        branches: [main]
 
 jobs:
     test:
-        # Skip if it's a PR from the same repo (as push will handle it)
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
         runs-on: ubuntu-22.04
         steps:
             - name: Checkout repository

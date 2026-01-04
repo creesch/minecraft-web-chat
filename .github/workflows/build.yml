@@ -4,12 +4,13 @@
 # against bad commits.
 
 name: Build
-on: [pull_request, push]
+on:
+    pull_request:
+    push:
+        branches: [main]
 
 jobs:
     build:
-        # Skip if it's a PR from the same repo (as push will handle it)
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
         strategy:
             matrix:
                 # Use these Java versions
