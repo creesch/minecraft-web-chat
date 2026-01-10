@@ -1,11 +1,27 @@
 import { expect, test, beforeAll, beforeEach } from 'vitest';
 import {
+    MAX_CHAT_DEPTH,
     assertIsComponent,
     formatMessage,
 } from '~/messages/message_parsing.mjs';
 /**
  * @typedef {import('~/messages/message_parsing.mjs').Component} Component
  */
+
+/**
+ * Create a deeply nested component for testing.
+ * @param {number} depth
+ * @returns {Component}
+ */
+function nestedComponent(depth) {
+    if (depth <= 1) {
+        return { text: `level ${depth}` };
+    }
+
+    // Depth is measured by JSON path, so subtract 2 because the sub-path
+    // we're adding is ["extra"][0]
+    return { text: `level ${depth}`, extra: [nestedComponent(depth - 2)] };
+}
 
 // Save copy of the DOM before any tests run
 /** @type {Document} */
@@ -261,53 +277,16 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
 
-    // Component is too deep
+    // Component depth
     [
         'component is too deep',
-        {
-            text: 'level 1',
-            extra: [
-                {
-                    text: 'level 2',
-                    extra: [
-                        {
-                            text: 'level 3',
-                            extra: [
-                                {
-                                    text: 'level 4',
-                                    extra: [
-                                        {
-                                            text: 'level 5',
-                                            extra: [
-                                                {
-                                                    text: 'level 6',
-                                                    extra: [
-                                                        {
-                                                            text: 'level 7',
-                                                            extra: [
-                                                                {
-                                                                    text: 'level 8',
-                                                                    extra: [
-                                                                        {
-                                                                            text: 'level 9',
-                                                                        },
-                                                                    ],
-                                                                },
-                                                            ],
-                                                        },
-                                                    ],
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        },
+        nestedComponent(MAX_CHAT_DEPTH + 2),
         'Maximum chat depth exceeded',
+    ],
+    [
+        'component is deep but not too deep :D',
+        nestedComponent(MAX_CHAT_DEPTH),
+        undefined,
     ],
 ];
 

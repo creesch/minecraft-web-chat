@@ -9,8 +9,9 @@ import { querySelectorWithAssertion } from '../utils.mjs';
 // A lot of the code below has been inspired (though not directly copied) by prismarine-chat: https://github.com/PrismarineJS/prismarine-chat
 
 // These limits prevent DoS attacks and stack overflow issues from maliciously crafted messages
-const MAX_CHAT_LENGTH = 4096;
-const MAX_CHAT_DEPTH = 8;
+export const MAX_CHAT_LENGTH = 4096;
+// Maximum length of a JSON path in a chat component object
+export const MAX_CHAT_DEPTH = 32;
 
 // Minecraft's standard color palette - used for legacy color code compatibility
 /** @type {Record<string, string>} */
