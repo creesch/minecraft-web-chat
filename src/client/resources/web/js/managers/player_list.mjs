@@ -191,15 +191,17 @@ class PlayerList {
      * @returns {HTMLLIElement}
      */
     #createPlayerElement(player) {
+        const displayName = formatComponentToString(player.playerDisplayName);
+
         // Create a new DOM element if none exists for the player.
         const playerElement = document.createElement('li');
         playerElement.setAttribute('role', 'listitem');
         playerElement.setAttribute('data-player-id', player.playerId);
-        playerElement.title = `Chat with ${player.playerDisplayName}`;
+        playerElement.title = `Chat with ${displayName}`;
 
         const headContainer = document.createElement('div');
         headContainer.className = 'player-head-container';
-        headContainer.title = `${player.playerDisplayName}'s head`;
+        headContainer.title = `${displayName}'s head`;
 
         // Create and configure the player's head image.
         const headImg = document.createElement('img');
@@ -224,8 +226,6 @@ class PlayerList {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'player-name';
         nameSpan.replaceChildren(formatMessage(player.playerDisplayName, {}));
-
-        const displayName = formatComponentToString(player.playerDisplayName);
 
         // Specifically for aria labels show both playerDisplayName and playerName if they are different.
         if (displayName !== player.playerName) {
