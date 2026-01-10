@@ -14,7 +14,7 @@ public class ModConfig {
     public static ConfigClassHandler<ModConfig> HANDLER =
         ConfigClassHandler.createBuilder(ModConfig.class)
             .id(Identifier.of("web-chat", "web-config"))
-            .serializer(config ->
+            .serializer((config) ->
                 GsonConfigSerializerBuilder.create(config)
                     .setPath(
                         FabricLoader.getInstance()

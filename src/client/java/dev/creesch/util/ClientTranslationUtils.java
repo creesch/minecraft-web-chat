@@ -32,7 +32,7 @@ public class ClientTranslationUtils {
     ) {
         if (
             text.getContent() instanceof
-            TranslatableTextContent translatableContent
+                TranslatableTextContent translatableContent
         ) {
             String key = translatableContent.getKey();
             keys.putIfAbsent(key, null);
@@ -67,13 +67,13 @@ public class ClientTranslationUtils {
 
         if (
             hoverEvent instanceof
-            HoverEvent.ShowEntity(
-                HoverEvent.EntityContent hoverEventEntityContent
-            )
+                HoverEvent.ShowEntity(
+                    HoverEvent.EntityContent hoverEventEntityContent
+                )
         ) {
             if (hoverEventEntityContent != null) {
                 Optional<Text> entityName = hoverEventEntityContent.name;
-                entityName.ifPresent(value ->
+                entityName.ifPresent((value) ->
                     collectTranslationKeys(value, keys)
                 );
             }

@@ -358,14 +358,15 @@ public class WebsocketMessageBuilder {
         }
         networkHandler
             .getPlayerList()
-            .forEach(player -> {
+            .forEach((player) -> {
                 GameProfile profile = player.getProfile(); // Contains UUID and name
                 String playerId = profile.id().toString();
                 String playerName = profile.name();
 
-                Text playerDisplayName = player.getDisplayName() != null
-                    ? player.getDisplayName()
-                    : Text.literal(playerName);
+                Text playerDisplayName =
+                    player.getDisplayName() != null
+                        ? player.getDisplayName()
+                        : Text.literal(playerName);
                 JsonObject minecraftJsonObjectDisplayName;
                 try {
                     minecraftJsonObjectDisplayName = toJsonObject(
@@ -375,7 +376,7 @@ public class WebsocketMessageBuilder {
                 } catch (JsonParseException exception) {
                     LOGGER.warn(
                         "Failed to serialize chat message: " +
-                        playerDisplayName.getString()
+                            playerDisplayName.getString()
                     );
                     LOGGER.warn("Exception info: ", exception);
 
@@ -384,8 +385,8 @@ public class WebsocketMessageBuilder {
                     minecraftJsonObjectDisplayName.addProperty(
                         "text",
                         "Could not convert message: %s".formatted(
-                                playerDisplayName.getString()
-                            )
+                            playerDisplayName.getString()
+                        )
                     );
                 }
 

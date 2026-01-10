@@ -70,9 +70,10 @@ public class MinecraftServerIdentifier {
             }
 
             // It is very unlikely that label is null for servers. But just in case fall back to the server address.
-            String serverName = serverInfo.label != null
-                ? serverInfo.label.getString()
-                : serverInfo.address;
+            String serverName =
+                serverInfo.label != null
+                    ? serverInfo.label.getString()
+                    : serverInfo.address;
             String serverIdentifier = UUID.nameUUIDFromBytes(
                 serverInfo.address.getBytes()
             ).toString();

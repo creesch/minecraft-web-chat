@@ -82,7 +82,7 @@ public class WebInterface {
     }
 
     private Javalin createServer() {
-        return Javalin.create(config -> {
+        return Javalin.create((config) -> {
             staticFilesPath = WebInterface.config.staticFilesPath;
 
             if (staticFilesPath.equals("")) {
@@ -93,7 +93,7 @@ public class WebInterface {
 
             config.http.defaultContentType = "text/plain";
             config.showJavalinBanner = false;
-        }).before(ctx -> {
+        }).before((ctx) -> {
             // Note, most things that are set here are overkill as users are _supposed_ to only uses this on their local machine through localhost.
             // Or if we are being generous through a device on their own network.
             // But, as we can't be sure that someone doesn't (accidentally) opens this up to the internet we take the better safe than sorry route.
@@ -120,11 +120,11 @@ public class WebInterface {
             ctx.header(
                 "Content-Security-Policy",
                 "default-src 'self'; " +
-                "font-src 'self'; " +
-                "script-src 'self' 'unsafe-inline'; " +
-                "style-src 'self' 'unsafe-inline'; " +
-                "img-src 'self' data: https://textures.minecraft.net; " + // Need to fetch player textures.
-                "connect-src 'self';"
+                    "font-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data: https://textures.minecraft.net; " + // Need to fetch player textures.
+                    "connect-src 'self';"
             );
             ctx.header("X-Frame-Options", "DENY"); // Prevent clickjacking
             ctx.header("X-Content-Type-Options", "nosniff"); // Prevent MIME type sniffin
@@ -204,7 +204,7 @@ public class WebInterface {
                 // Send the history metadata first
                 ctx.send(gson.toJson(historyMetaDataMessage));
 
-                historyMessages.forEach(historicMessage -> {
+                historyMessages.forEach((historicMessage) -> {
                     ctx.send(gson.toJson(historicMessage));
                 });
             }
@@ -212,8 +212,8 @@ public class WebInterface {
     }
 
     private void setupWebSocket() {
-        server.ws("/chat", ws -> {
-            ws.onConnect(ctx -> {
+        server.ws("/chat", (ws) -> {
+            ws.onConnect((ctx) -> {
                 // For localhost connections pinging likely isn't needed.
                 // But if someone wants to use the mod on their phone or something it might be useful to include it.
                 ctx.enableAutomaticPings(15, TimeUnit.SECONDS);
@@ -265,7 +265,7 @@ public class WebInterface {
                 }
             });
 
-            ws.onClose(ctx -> {
+            ws.onClose((ctx) -> {
                 LOGGER.info(
                     "WebSocket connection closed: {} with status {} and reason: {}",
                     ctx.session.getRemoteAddress(),
@@ -275,9 +275,9 @@ public class WebInterface {
                 removeConnection(ctx);
             });
 
-            ws.onMessage(ctx -> handleReceivedMessages(ctx));
+            ws.onMessage((ctx) -> handleReceivedMessages(ctx));
 
-            ws.onError(ctx -> {
+            ws.onError((ctx) -> {
                 LOGGER.error("WebSocket error: ", ctx.error());
                 removeConnection(ctx);
             });
@@ -331,7 +331,7 @@ public class WebInterface {
 
         connectionsToClose = new AtomicInteger(connections.size());
 
-        connections.forEach(ctx -> {
+        connections.forEach((ctx) -> {
             try {
                 // Initiates an asynchronous close of the connection.
                 ctx.session.close();
@@ -430,7 +430,7 @@ public class WebInterface {
             return;
         }
         String jsonMessage = gson.toJson(message);
-        connections.forEach(ctx -> {
+        connections.forEach((ctx) -> {
             try {
                 ctx.send(jsonMessage);
             } catch (Exception e) {

@@ -53,13 +53,13 @@ public class WebchatClient implements ClientModInitializer {
         ClientReceiveMessageEvents.CHAT.register(
             (message, signedMessage, sender, params, receptionTimestamp) -> {
                 MinecraftClient client = MinecraftClient.getInstance();
-                String selfName = client.player == null
-                    ? ""
-                    : client.player.getName().getString();
+                String selfName =
+                    client.player == null
+                        ? ""
+                        : client.player.getName().getString();
 
-                boolean fromSelf = sender == null
-                    ? false
-                    : sender.name().equals(selfName);
+                boolean fromSelf =
+                    sender == null ? false : sender.name().equals(selfName);
                 try {
                     WebsocketJsonMessage chatMessage =
                         WebsocketMessageBuilder.createLiveChatMessage(
@@ -144,7 +144,7 @@ public class WebchatClient implements ClientModInitializer {
         });
 
         // Properly handle minecraft shutting down.
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+        ClientLifecycleEvents.CLIENT_STOPPING.register((client) -> {
             if (webInterface == null) {
                 return;
             }
@@ -156,7 +156,7 @@ public class WebchatClient implements ClientModInitializer {
         // In order to do that a mixin would be needed to directly access minecraft.
         // Considering that reading the player list is a fairly low impact operation it simply
         // works out to just send clients updates every couple of ticks.
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+        ClientTickEvents.END_CLIENT_TICK.register((client) -> {
             // Only used to send player list updates. So a client is needed and a world (on a server)
             if (client == null || client.world == null) {
                 return;
@@ -215,7 +215,7 @@ public class WebchatClient implements ClientModInitializer {
         Text message = Text.literal("Web chat: ").append(
             Text.literal("http://localhost:" + webchatPort)
                 .formatted(Formatting.BLUE, Formatting.UNDERLINE)
-                .styled(style ->
+                .styled((style) ->
                     style.withClickEvent(
                         new ClickEvent.OpenUrl(
                             URI.create("http://localhost:" + webchatPort)

@@ -28,8 +28,7 @@ public class ChatMessageRepository {
     private static final int CURRENT_SCHEMA_VERSION = 2;
 
     // SQL queries
-    private static final String CREATE_MESSAGES_TABLE_QUERY =
-        """
+    private static final String CREATE_MESSAGES_TABLE_QUERY = """
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp BIGINT NOT NULL,
@@ -43,30 +42,25 @@ public class ChatMessageRepository {
         )
         """;
 
-    private static final String CREATE_INDEX_QUERY =
-        """
+    private static final String CREATE_INDEX_QUERY = """
         CREATE INDEX IF NOT EXISTS idx_server_id_timestamp ON messages(server_id, timestamp DESC)
         """;
 
-    private static final String CREATE_VERSION_TABLE_QUERY =
-        """
+    private static final String CREATE_VERSION_TABLE_QUERY = """
         CREATE TABLE IF NOT EXISTS schema_version (
             version INTEGER PRIMARY KEY
         )
         """;
 
-    private static final String SELECT_SCHEMA_VERSION_QUERY =
-        """
+    private static final String SELECT_SCHEMA_VERSION_QUERY = """
         SELECT version FROM schema_version
         """;
 
-    private static final String INSERT_SCHEMA_VERSION_QUERY =
-        """
+    private static final String INSERT_SCHEMA_VERSION_QUERY = """
         INSERT INTO schema_version (version) VALUES (?)
         """;
 
-    private static final String INSERT_MESSAGE_QUERY =
-        """
+    private static final String INSERT_MESSAGE_QUERY = """
         INSERT INTO messages (
             timestamp,
             server_id,
@@ -80,8 +74,7 @@ public class ChatMessageRepository {
         """;
 
     // Base query, needs formatting
-    private static final String BASE_GET_MESSAGE_QUERY =
-        """
+    private static final String BASE_GET_MESSAGE_QUERY = """
         SELECT
             timestamp,
             server_id,
@@ -102,8 +95,7 @@ public class ChatMessageRepository {
             ?
         """;
 
-    private static final String V2_MIGRATION_QUERY =
-        """
+    private static final String V2_MIGRATION_QUERY = """
         ALTER TABLE messages ADD COLUMN translations_json TEXT NOT NULL DEFAULT '{}';
 
         UPDATE schema_version SET version = 2;
@@ -205,9 +197,9 @@ public class ChatMessageRepository {
                 // Forward the exception to the constructor's try-catch block
                 throw new RuntimeException(
                     "Database schema version " +
-                    dbVersion +
-                    " is newer than supported version " +
-                    CURRENT_SCHEMA_VERSION
+                        dbVersion +
+                        " is newer than supported version " +
+                        CURRENT_SCHEMA_VERSION
                 );
             }
 
