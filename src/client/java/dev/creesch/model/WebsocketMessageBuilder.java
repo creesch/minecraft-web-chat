@@ -169,11 +169,8 @@ public class WebsocketMessageBuilder {
      */
     private static Pattern pingPattern(String pingKeyword) {
         StringBuilder patternBuilder = new StringBuilder();
-        // Eats the standard minecraft chat formatting which starts with <username>.
-        // We don't want to ping based on usernames in that metadata, otherwise users
-        // will be pinged when they send messages because their messages are echoed back
-        // to them.
-        patternBuilder.append("^<[^>]+>");
+        // Eats the beginning part of chat messages
+        patternBuilder.append("^.*?[>:]");
         // Allow for any amount of characters before the ping keyword.
         patternBuilder.append(".*");
         // Check for a word boundary before the ping keyword.
