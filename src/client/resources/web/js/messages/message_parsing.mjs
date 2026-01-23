@@ -104,7 +104,7 @@ const VALID_CLICK_EVENTS = [
  * @property {string} id - The item ID
  * @property {number} [count] - The number of items to show
  * @property {string} [tag] - The tag of the item to show
- * @property {ItemComponents} [components] Extra metadata
+ * @property {Partial<ItemComponents>} [components] Extra metadata
  */
 
 /**
