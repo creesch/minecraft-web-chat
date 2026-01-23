@@ -80,8 +80,16 @@ const VALID_CLICK_EVENTS = [
  * @property {boolean} [strikethrough] - Whether text should be struck through
  * @property {boolean} [obfuscated] - Whether text should be obfuscated (randomly changing characters)
  * @property {string} [insertion] - String to insert when the component is shift-clicked
+ * @property {PlayerComponent} [player] - User data for displaying a player head
+ * @property {boolean} [hat] - Whether to show a player hat for a player head.
  * @property {HoverEvent} [hover_event] - Hover event
  * @property {ClickEvent} [click_event] - Click event
+ */
+
+/**
+ * @typedef {Object} PlayerComponent
+ * @property {string} [name] Player username
+ * @property {string} [id] Player UUID
  */
 
 /**
@@ -656,13 +664,47 @@ export function assertIsComponent(component, path = []) {
         ]);
     }
 
+    /**
+     * Checks if a value is a valid PlayerComponent object.
+     * @param {unknown} player
+     * @param {string[]} path
+     * @returns {asserts player is PlayerComponent}
+     */
+    function assertIsPlayerComponent(player, path) {
+        if (!isObject(player)) {
+            throw new ComponentError('PlayerComponent is not an object', path);
+        }
+
+        if (!('name' in player) && !('id' in player)) {
+            throw new ComponentError(
+                'PlayerComponent does not have a name or id property',
+                path,
+            );
+        }
+
+        if ('name' in player && typeof player.name !== 'string') {
+            throw new ComponentError('PlayerComponent.name is not a string', [
+                ...path,
+                'name',
+            ]);
+        }
+
+        if ('id' in player && typeof player.id !== 'string') {
+            throw new ComponentError('PlayerComponent.id is not a string', [
+                ...path,
+                'id',
+            ]);
+        }
+    }
+
     if (
         !('text' in component) &&
         !('translate' in component) &&
-        !('extra' in component)
+        !('extra' in component) &&
+        !('player' in component)
     ) {
         throw new ComponentError(
-            'Component does not have a text, translate, or extra property',
+            'Component does not have a text, translate, extra, or player property',
             path,
         );
     }
@@ -774,6 +816,16 @@ export function assertIsComponent(component, path = []) {
 
             assertIsComponent(component, [...path, 'with', index.toString()]);
         });
+    }
+
+    if ('player' in component) {
+        assertIsPlayerComponent(component.player, [...path, 'player']);
+    }
+    if ('hat' in component && typeof component.hat !== 'boolean') {
+        throw new ComponentError('Component.hat must be a boolean', [
+            ...path,
+            'hat',
+        ]);
     }
 
     if ('hover_event' in component) {
@@ -1511,6 +1563,30 @@ function buildClickHandler(clickEvent) {
  * @returns {Element}
  */
 function formatComponent(component, translations = {}) {
+<<<<<<< HEAD
+=======
+    if (!hasContent(component)) {
+        return formatComponent({
+            text: '{...}',
+            color: 'red',
+            hover_event: {
+                action: 'show_text',
+                contents: [
+                    'Unsupported component:\n',
+                    {
+                        // Escape CODE_SENTINELs in the JSON content
+                        text: JSON.stringify(component, null, 2).replace(
+                            new RegExp(CODE_SENTINEL, 'g'),
+                            '&',
+                        ),
+                        color: 'red',
+                    },
+                ],
+            },
+        });
+    }
+
+>>>>>>> 41c625c (Fix typo)
     const result =
         component.click_event?.action === 'open_url'
             ? document.createElement('a')
@@ -1634,6 +1710,27 @@ function formatComponent(component, translations = {}) {
                 translations,
             ),
         );
+    } else if (component.player) {
+        // For now, we just render a Steve head.
+        const name = component.player.name || 'Unknown Player';
+        const headContainer = document.createElement('div');
+        headContainer.className = 'player-component-container';
+        headContainer.title = `${name}'s head`;
+
+        // Create and configure the player's head image.
+        const headImg = document.createElement('img');
+        headImg.className = 'player-head';
+        headImg.src = '/img/steve.png';
+        headContainer.appendChild(headImg);
+
+        if (component.hat ?? true) {
+            const headOverlay = document.createElement('img');
+            headOverlay.className = 'player-head-overlay';
+            headOverlay.src = '/img/steve.png';
+            headContainer.appendChild(headOverlay);
+        }
+
+        result.appendChild(headContainer);
     }
 
     if (component.extra) {
