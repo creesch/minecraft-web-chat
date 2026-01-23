@@ -277,6 +277,53 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
 
+    // shadow_color validation
+    [
+        'shadow_color can be positive integer',
+        { text: 'test', shadow_color: 0x7f000000 },
+        undefined,
+    ],
+    [
+        'shadow_color can be negative integer (ARGB format)',
+        { text: 'test', shadow_color: -16777216 },
+        undefined,
+    ],
+    [
+        'shadow_color can be RGBA array',
+        { text: 'test', shadow_color: [1.0, 0.5, 0.0, 0.8] },
+        undefined,
+    ],
+    [
+        'shadow_color integer must be in 32bit range',
+        { text: 'test', shadow_color: 2 ** 32 },
+        'shadow_color is out of range',
+    ],
+    [
+        'shadow_color integer must be an integer',
+        { text: 'test', shadow_color: 1.5 },
+        'shadow_color is not an integer',
+    ],
+    [
+        'shadow_color array must have length 4',
+        { text: 'test', shadow_color: [1.0, 0.5, 0.0] },
+        'shadow_color must have length 4',
+    ],
+    [
+        'shadow_color array values must be numbers',
+        { text: 'test', shadow_color: [1.0, 'red', 0.0, 0.8] },
+        'shadow_color values must be numbers',
+    ],
+    [
+        'shadow_color array values must be in 0..1 range',
+        { text: 'test', shadow_color: [1.0, 2.0, 0.0, 0.8] },
+        'shadow_color values must be in range 0..1',
+    ],
+    [
+        'shadow_color must be number or array',
+        { text: 'test', shadow_color: 'red' },
+        'shadow_color is not a number or array',
+    ],
+
     // Component depth
     [
         'component is too deep',
@@ -378,6 +425,26 @@ const COMPONENT_FORMATTING_TESTS = [
         { text: 'multi', bold: true, italic: true, color: 'blue' },
         {},
         '<span class="mc-blue mc-bold mc-italic">multi</span>',
+    ],
+
+    // Text shadow
+    [
+        'shadow_color as negative integer (opaque black)',
+        { text: 'shadowed', shadow_color: -16777216 },
+        {},
+        '<span style="text-shadow: 0.1rem 0.1rem 0 rgba(0,0,0,1);">shadowed</span>',
+    ],
+    [
+        'shadow_color as RGBA array',
+        { text: 'shadowed', shadow_color: [1.0, 0.5, 0.0, 0.5] },
+        {},
+        '<span style="text-shadow: 0.1rem 0.1rem 0 rgba(255,127.5,0,0.5);">shadowed</span>',
+    ],
+    [
+        'shadow_color with other styles',
+        { text: 'styled', color: 'gold', bold: true, shadow_color: -1 },
+        {},
+        '<span class="mc-gold mc-bold" style="text-shadow: 0.1rem 0.1rem 0 rgba(255,255,255,1);">styled</span>',
     ],
 
     // Extra components
