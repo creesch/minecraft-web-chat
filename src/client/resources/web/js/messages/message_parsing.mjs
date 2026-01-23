@@ -73,6 +73,7 @@ const VALID_CLICK_EVENTS = [
  * @property {(number | string | Component)[]} [with] - Translation parameters
  * @property {(number | string | Component)[]} [extra] - Additional components to append
  * @property {string} [color] - Text color - can be a named color or hex value
+ * @property {number | [number, number, number, number]} [shadow_color] - Either a signed 32bit integer or four numbers in 0-1 range as [R, G, B, A]
  * @property {boolean} [bold] - Whether text should be bold
  * @property {boolean} [italic] - Whether text should be italic
  * @property {boolean} [underlined] - Whether text should be underlined
@@ -601,6 +602,60 @@ export function assertIsComponent(component, path = []) {
         }
     }
 
+    /**
+     * Checks if a value is a valid `shadow_color`
+     * @param {unknown} shadow_color
+     * @param {string[]} path
+     * @returns {asserts shadow_color is Component["shadow_color"]}
+     */
+    function assertIsShadowColor(shadow_color, path) {
+        if (typeof shadow_color === 'number') {
+            if (!Number.isInteger(shadow_color)) {
+                throw new ComponentError('shadow_color is not an integer', [
+                    ...path,
+                ]);
+            }
+
+            if (shadow_color < -(2 ** 31) || shadow_color > 2 ** 31 - 1) {
+                throw new ComponentError('shadow_color is out of range', [
+                    ...path,
+                ]);
+            }
+
+            return;
+        }
+
+        if (Array.isArray(shadow_color)) {
+            if (shadow_color.length !== 4) {
+                throw new ComponentError('shadow_color must have length 4', [
+                    ...path,
+                ]);
+            }
+
+            shadow_color.forEach((value, index) => {
+                if (typeof value !== 'number') {
+                    throw new ComponentError(
+                        'shadow_color values must be numbers',
+                        [...path, index.toString()],
+                    );
+                }
+
+                if (value < 0 || value > 1) {
+                    throw new ComponentError(
+                        'shadow_color values must be in range 0..1',
+                        [...path, index.toString()],
+                    );
+                }
+            });
+
+            return;
+        }
+
+        throw new ComponentError('shadow_color is not a number or array', [
+            ...path,
+        ]);
+    }
+
     if (
         !('text' in component) &&
         !('translate' in component) &&
@@ -631,6 +686,10 @@ export function assertIsComponent(component, path = []) {
             ...path,
             'color',
         ]);
+    }
+
+    if ('shadow_color' in component) {
+        assertIsShadowColor(component.shadow_color, [...path, 'shadow_color']);
     }
 
     if ('bold' in component && typeof component.bold !== 'boolean') {
@@ -776,6 +835,37 @@ function isValidColor(color) {
     }
 
     return /^#[0-9a-fA-F]{6}$/.test(color); // Allow valid hex colors (e.g., #FF0000)
+}
+
+/**
+ * Convert wire-format text shadow color to an `rgba(...)` formatted string.
+ * @param {number | [number, number, number, number]} shadow_color
+ * @returns {string}
+ */
+function shadowColorToCSSColor(shadow_color) {
+    /**
+     * Converts a signed 32bit integer in 0xAARRGGBB format into an RGBA array.
+     * @param {number} n
+     * @returns {[number, number, number, number]}
+     */
+    function intToRGBA(n) {
+        const hex = (n >>> 0).toString(16).padStart(8, '0');
+        return /** @type {[number, number, number, number]} */ (
+            [
+                hex.slice(2, 4),
+                hex.slice(4, 6),
+                hex.slice(6, 8),
+                hex.slice(0, 2),
+            ].map((value) => parseInt(value, 16) / 255)
+        );
+    }
+
+    const [r, g, b, a] =
+        typeof shadow_color === 'number'
+            ? intToRGBA(shadow_color)
+            : shadow_color;
+
+    return `rgba(${r * 255},${g * 255},${b * 255},${a})`;
 }
 
 // Imitates Minecraft's obfuscated text.
@@ -1436,6 +1526,10 @@ function formatComponent(component, translations = {}) {
         } else {
             result.classList.add(`mc-${component.color.replace(/_/g, '-')}`);
         }
+    }
+
+    if (component.shadow_color) {
+        result.style.textShadow = `0.1rem 0.1rem 0 ${shadowColorToCSSColor(component.shadow_color)}`;
     }
 
     if (component.bold) {
