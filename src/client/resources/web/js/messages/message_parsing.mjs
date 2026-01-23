@@ -48,6 +48,12 @@ const FORMATTING_CODES = {
 const TEXT_CODES = { ...COLOR_CODES, ...FORMATTING_CODES };
 export const TEXT_CODES_PATTERN = `§([${Object.keys(TEXT_CODES).join('')}])`;
 
+/**
+ * Arabic to Romain numeral map. Minecraft does not display "I" so it is blank.
+ * @type {string[]}
+ */
+const ROMAN_NUMERALS = ['', '', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+
 const VALID_HOVER_EVENTS = ['show_text', 'show_item', 'show_entity'];
 const VALID_CLICK_EVENTS = [
     'open_url',
@@ -98,6 +104,19 @@ const VALID_CLICK_EVENTS = [
  * @property {string} id - The item ID
  * @property {number} [count] - The number of items to show
  * @property {string} [tag] - The tag of the item to show
+ * @property {ItemComponents} [components] Extra metadata
+ */
+
+/**
+ * @typedef {CustomNameItemComponent & EnchantmentsItemComponent} ItemComponents
+ */
+
+/**
+ * @typedef {{ "minecraft:custom_name": string; }} CustomNameItemComponent
+ */
+
+/**
+ * @typedef {{ "minecraft:enchantments": Record<string, number>; }} EnchantmentsItemComponent
  */
 
 /**
@@ -194,10 +213,19 @@ export class ComponentError extends Error {
 }
 
 /**
+ * Whether a value is a non-array, non-null `object`.
+ * @param {unknown} obj
+ * @returns {obj is object}
+ */
+function isObject(obj) {
+    return typeof obj === 'object' && !Array.isArray(obj) && obj !== null;
+}
+
+/**
  * Type guard to check if a value is a valid Component object.
  * @param {unknown} component - The value to check
  * @param {string[]} path - The current path into the component
- * @throws If the component is not a valid {@link Component} object.
+ * @returns {asserts component is Component}
  */
 export function assertIsComponent(component, path = []) {
     // Depth tracking prevents stack overflow from circular references in malicious messages
@@ -205,7 +233,7 @@ export function assertIsComponent(component, path = []) {
         throw new ComponentError('Maximum chat depth exceeded', path);
     }
 
-    if (!component || typeof component !== 'object') {
+    if (!isObject(component)) {
         throw new ComponentError('Component is not an object', path);
     }
 
@@ -213,10 +241,10 @@ export function assertIsComponent(component, path = []) {
      * Checks if a value is a valid HoverEvent object.
      * @param {unknown} hoverEvent
      * @param {string[]} path
-     * @throws If the hoverEvent is not a valid {@link HoverEvent} object.
+     * @returns {asserts hoverEvent is HoverEvent}
      */
     function assertIsHoverEvent(hoverEvent, path) {
-        if (!hoverEvent || typeof hoverEvent !== 'object') {
+        if (!isObject(hoverEvent)) {
             throw new ComponentError('HoverEvent is not an object', path);
         }
 
@@ -255,7 +283,7 @@ export function assertIsComponent(component, path = []) {
      * Checks if a value is a valid show_text hover event.
      * @param {object} hoverEvent
      * @param {string[]} path
-     * @throws If the hoverEvent is not a valid {@link ShowTextHoverEvent} object.
+     * @returns {asserts hoverEvent is ShowTextHoverEvent}
      */
     function assertIsShowTextHoverEvent(hoverEvent, path) {
         if (!('contents' in hoverEvent) && !('value' in hoverEvent)) {
@@ -298,7 +326,7 @@ export function assertIsComponent(component, path = []) {
      * Checks if a value is a valid show_item hover event.
      * @param {object} hoverEvent
      * @param {string[]} path
-     * @throws If the hoverEvent is not a valid {@link ShowItemHoverEvent} object.
+     * @returns {asserts hoverEvent is ShowItemHoverEvent}
      */
     function assertIsShowItemHoverEvent(hoverEvent, path) {
         if (!('id' in hoverEvent)) {
@@ -328,13 +356,65 @@ export function assertIsComponent(component, path = []) {
                 'tag',
             ]);
         }
+
+        if ('components' in hoverEvent) {
+            assertIsItemComponents(hoverEvent['components'], [
+                ...path,
+                'components',
+            ]);
+        }
+    }
+
+    /**
+     * Checks if a value is a valid item components object.
+     * @param {unknown} components
+     * @param {string[]} path
+     * @returns {asserts components is ItemComponents}
+     */
+    function assertIsItemComponents(components, path) {
+        if (!isObject(components)) {
+            throw new ComponentError('ItemComponents is not an object', [
+                ...path,
+            ]);
+        }
+
+        if (
+            'minecraft:custom_name' in components &&
+            typeof components['minecraft:custom_name'] !== 'string'
+        ) {
+            throw new ComponentError(
+                'ItemComponents.minecraft:custom_name is not a string',
+                [...path, 'minecraft:custom_name'],
+            );
+        }
+
+        if ('minecraft:enchantments' in components) {
+            const enchantments = components['minecraft:enchantments'];
+            if (!isObject(enchantments)) {
+                throw new ComponentError(
+                    'ItemComponents.minecraft:enchantments is not an object',
+                    [...path, 'minecraft:enchantments'],
+                );
+            }
+
+            for (const [enchantment_id, level] of Object.entries(
+                enchantments,
+            )) {
+                if (typeof level !== 'number') {
+                    throw new ComponentError(
+                        'Enchantment level is not a number',
+                        [...path, 'minecraft:enchantments', enchantment_id],
+                    );
+                }
+            }
+        }
     }
 
     /**
      * Checks if a value is a valid show_entity hover event.
      * @param {object} hoverEvent
      * @param {string[]} path
-     * @throws If the hoverEvent is not a valid {@link ShowEntityHoverEvent} object.
+     * @returns {asserts hoverEvent is ShowEntityHoverEvent}
      */
     function assertIsShowEntityHoverEvent(hoverEvent, path) {
         if (!('id' in hoverEvent)) {
@@ -356,7 +436,7 @@ export function assertIsComponent(component, path = []) {
                 return;
             }
 
-            if (typeof hoverEvent.name !== 'object') {
+            if (!isObject(hoverEvent.name)) {
                 throw new ComponentError(
                     'HoverEvent.name is not a string or valid component',
                     [...path, 'name'],
@@ -371,10 +451,10 @@ export function assertIsComponent(component, path = []) {
      * Checks if a value is a valid click event.
      * @param {unknown} clickEvent
      * @param {string[]} path
-     * @throws If the clickEvent is not a valid {@link ClickEvent} object.
+     * @returns {asserts clickEvent is ClickEvent}
      */
     function assertIsClickEvent(clickEvent, path) {
-        if (typeof clickEvent !== 'object' || clickEvent === null) {
+        if (!isObject(clickEvent)) {
             throw new ComponentError('ClickEvent is not an object', path);
         }
 
@@ -653,6 +733,31 @@ export function assertIsComponent(component, path = []) {
             ]);
         }
     }
+}
+
+/**
+ * Map strings from `minecraft:stone` format to `item.minecraft.stone` format.
+ * @param {string} registry_id
+ * @param {Record<string, string>} translations
+ */
+function idToTranslationKey(registry_id, translations) {
+    const [namespace, id] = /** @type {[string, string | undefined]} */ (
+        registry_id.split(':', 2)
+    );
+    if (!id) {
+        // Malformed registry_id
+        return registry_id;
+    }
+
+    const types = ['item', 'block', 'enchantment', 'entity', 'effect'];
+    for (const type of types) {
+        const key = `${type}.${namespace}.${id}`;
+        if (key in translations) {
+            return key;
+        }
+    }
+
+    return registry_id;
 }
 
 /**
@@ -990,6 +1095,120 @@ function formatTranslation(key, args, translations) {
 }
 
 /**
+ * Formats a "show_text" hover event into an array of DOM nodes.
+ * @param {ShowTextHoverEvent} hoverEvent
+ * @param {Record<string, string>} translations
+ * @returns {(Element | Text)[]}
+ */
+function formatShowTextHoverEvent(hoverEvent, translations) {
+    const contents = hoverEvent.contents ?? hoverEvent.value;
+    if (typeof contents === 'undefined') {
+        console.warn('HoverEvent.contents is undefined');
+        return [];
+    }
+
+    if (typeof contents === 'string') {
+        return [document.createTextNode(contents)];
+    }
+    if (typeof contents === 'number') {
+        return [document.createTextNode(String(contents))];
+    }
+
+    if (Array.isArray(contents)) {
+        return contents.map((component) => {
+            if (typeof component === 'string') {
+                return document.createTextNode(component);
+            }
+            if (typeof component === 'number') {
+                return document.createTextNode(String(component));
+            }
+
+            return formatComponent(component, translations);
+        });
+    }
+
+    return [formatComponent(contents, translations)];
+}
+
+/**
+ * Formats a "show_item" hover event into an array of DOM nodes.
+ * @param {ShowItemHoverEvent} hoverEvent
+ * @param {Record<string, string>} translations
+ * @returns {(Element | Text)[]}
+ */
+function formatShowItemHoverEvent(hoverEvent, translations) {
+    /** @type {(Text | Element)[]} */
+    const contents = [];
+
+    const count = hoverEvent.count ?? 1;
+    if (count > 1) {
+        contents.push(document.createTextNode(`${count}x `));
+    }
+
+    const customName = hoverEvent.components?.['minecraft:custom_name'];
+    if (customName) {
+        // Minecraft always shows custom names as aqua and italic in hover text
+        contents.push(
+            formatComponent({
+                text: `${customName}\n`,
+                color: 'aqua',
+                italic: true,
+            }),
+        );
+    } else {
+        contents.push(
+            formatComponent(
+                { translate: idToTranslationKey(hoverEvent.id, translations) },
+                translations,
+            ),
+        );
+    }
+
+    const enchantments = hoverEvent.components?.['minecraft:enchantments'];
+    if (enchantments) {
+        for (const [enchantment_id, level] of Object.entries(enchantments)) {
+            contents.push(
+                formatComponent(
+                    {
+                        translate: idToTranslationKey(
+                            enchantment_id,
+                            translations,
+                        ),
+                        color: 'gray',
+                    },
+                    translations,
+                ),
+            );
+
+            const numeral = ROMAN_NUMERALS[level] ?? '';
+            const numeralText = `${numeral ? ` ${numeral}` : ''}\n`;
+            contents.push(
+                formatComponent({ text: numeralText, color: 'gray' }),
+            );
+        }
+    }
+
+    return contents;
+}
+
+/**
+ * Formats a "show_entity" hover event into an array of DOM nodes.
+ * @param {ShowEntityHoverEvent} hoverEvent
+ * @param {Record<string, string>} translations
+ * @returns {(Element | Text)[]}
+ */
+function formatShowEntityHoverEvent(hoverEvent, translations) {
+    switch (typeof hoverEvent.name) {
+        case 'object':
+            return [formatComponent(hoverEvent.name, translations)];
+        case 'string':
+            return [document.createTextNode(hoverEvent.name)];
+        case 'undefined':
+            return [document.createTextNode('Unnamed Entity')];
+    }
+}
+
+/**
  * Formats a hover event into an array of DOM nodes.
  * @param {HoverEvent} hoverEvent
  * @param {Record<string, string>} translations
@@ -997,56 +1216,12 @@ function formatTranslation(key, args, translations) {
  */
 function formatHoverEvent(hoverEvent, translations) {
     switch (hoverEvent.action) {
-        case 'show_text': {
-            const contents = hoverEvent.contents ?? hoverEvent.value;
-            if (typeof contents === 'undefined') {
-                console.warn('HoverEvent.contents is undefined');
-                return [];
-            }
-
-            if (typeof contents === 'string') {
-                return [document.createTextNode(contents)];
-            }
-            if (typeof contents === 'number') {
-                return [document.createTextNode(String(contents))];
-            }
-
-            if (Array.isArray(contents)) {
-                return contents.map((component) => {
-                    if (typeof component === 'string') {
-                        return document.createTextNode(component);
-                    }
-                    if (typeof component === 'number') {
-                        return document.createTextNode(String(component));
-                    }
-
-                    return formatComponent(component, translations);
-                });
-            }
-
-            return [formatComponent(contents, translations)];
-        }
-        case 'show_item': {
-            if (hoverEvent.count) {
-                return [
-                    document.createTextNode(
-                        `${hoverEvent.count}x ${hoverEvent.id}`,
-                    ),
-                ];
-            }
-
-            return [document.createTextNode(hoverEvent.id)];
-        }
-
-        case 'show_entity': {
-            if (typeof hoverEvent.name === 'object') {
-                return [formatComponent(hoverEvent.name, translations)];
-            }
-
-            return [
-                document.createTextNode(hoverEvent.name || 'Unnamed Entity'),
-            ];
-        }
+        case 'show_text':
+            return formatShowTextHoverEvent(hoverEvent, translations);
+        case 'show_item':
+            return formatShowItemHoverEvent(hoverEvent, translations);
+        case 'show_entity':
+            return formatShowEntityHoverEvent(hoverEvent, translations);
     }
 }
 
@@ -1242,10 +1417,10 @@ function buildClickHandler(clickEvent) {
 /**
  * Transforms component structure into HTML.
  * @param {Component} component
- * @param {Record<string, string>} translations
+ * @param {Record<string, string>} [translations]
  * @returns {Element}
  */
-function formatComponent(component, translations) {
+function formatComponent(component, translations = {}) {
     const result =
         component.click_event?.action === 'open_url'
             ? document.createElement('a')
@@ -1424,7 +1599,7 @@ export function formatPlainText(element) {
  * @returns {string}
  */
 export function formatComponentToString(component) {
-    const element = formatComponent(component, {});
+    const element = formatComponent(component);
     formatPlainText(element);
     return element.textContent ?? '';
 }
