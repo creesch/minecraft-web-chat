@@ -1142,7 +1142,7 @@ function formatShowItemHoverEvent(hoverEvent, translations) {
 
     const count = hoverEvent.count ?? 1;
     if (count > 1) {
-        contents.push(document.createTextNode(`${count}x `));
+        contents.push(document.createTextNode(`${count}x`));
     }
 
     const customName = hoverEvent.components?.['minecraft:custom_name'];
