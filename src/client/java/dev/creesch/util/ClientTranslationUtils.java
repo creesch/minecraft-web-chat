@@ -3,6 +3,10 @@ package dev.creesch.util;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableTextContent;
@@ -72,10 +76,32 @@ public class ClientTranslationUtils {
                 )
         ) {
             if (hoverEventEntityContent != null) {
+                // Collect entity type translation key (e.g., "entity.minecraft.player")
+                String entityKey =
+                    hoverEventEntityContent.entityType.getTranslationKey();
+                keys.putIfAbsent(entityKey, null);
+
                 Optional<Text> entityName = hoverEventEntityContent.name;
                 entityName.ifPresent((value) ->
                     collectTranslationKeys(value, keys)
                 );
+            }
+        }
+
+        // Collect translation keys from show_item hover events
+        if (hoverEvent instanceof HoverEvent.ShowItem(ItemStack itemStack)) {
+            // Collect item translation key (e.g., "item.minecraft.bow")
+            String itemKey = itemStack.getItem().getTranslationKey();
+            keys.putIfAbsent(itemKey, null);
+
+            // Collect enchantment translation keys
+            ItemEnchantmentsComponent enchantments =
+                itemStack.getEnchantments();
+            for (RegistryEntry<
+                Enchantment
+            > enchantment : enchantments.getEnchantments()) {
+                Text desc = enchantment.value().description();
+                collectTranslationKeys(desc, keys);
             }
         }
     }

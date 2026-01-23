@@ -462,8 +462,8 @@ const COMPONENT_FORMATTING_TESTS = [
                 count: 64,
             },
         },
-        {},
-        '<span aria-label="64x minecraft:diamond">items</span>',
+        { 'item.minecraft.diamond': 'Diamond' },
+        '<span aria-label="64x Diamond">items</span>',
     ],
     [
         'hover entity',
@@ -571,7 +571,7 @@ const COMPONENT_FORMATTING_TESTS = [
                     translate: 'argument.item.id.invalid',
                     with: [
                         {
-                            text: 'diamond_pickaxe',
+                            text: 'Diamond Pickaxe',
                             color: 'aqua',
                             hover_event: {
                                 action: 'show_item',
@@ -584,13 +584,16 @@ const COMPONENT_FORMATTING_TESTS = [
                 },
             ],
         },
-        { 'argument.item.id.invalid': "Unknown item '%s'" },
+        {
+            'argument.item.id.invalid': "Unknown item '%s'",
+            'item.minecraft.diamond_pickaxe': 'Diamond Pickaxe',
+        },
         '<span class="mc-yellow">' +
             'Found item: ' +
             '<span class="mc-italic">' +
             "Unknown item '" +
-            '<span class="mc-aqua" aria-label="1x minecraft:diamond_pickaxe">' +
-            'diamond_pickaxe' +
+            '<span class="mc-aqua" aria-label="Diamond Pickaxe">' +
+            'Diamond Pickaxe' +
             "</span>'" +
             '</span>' +
             '</span>',
