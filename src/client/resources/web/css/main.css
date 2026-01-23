@@ -441,8 +441,13 @@ body {
         padding: 3rem 0 0 0; /* Make room for status bar */
     }
 
+    #load-more-container {
+        margin-top: 4rem; /* Otherwise it is not visible for android chrome users */
+    }
+
     #messages {
         padding: 0.5rem;
+        overflow-anchor: none;
     }
 
     #chat-area {
