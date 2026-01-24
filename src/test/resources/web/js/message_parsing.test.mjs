@@ -37,11 +37,7 @@ beforeAll(() => {
  */
 const COMPONENT_VALIDATION_TESTS = [
     // Basic validation
-    [
-        'empty object is not a component',
-        {},
-        'Component does not have a text, translate, extra, or player property',
-    ],
+    ['empty object is a valid component', {}, undefined],
     ['object with text is a component', { text: 'test' }, undefined],
     ['object with translate is a component', { translate: 'test' }, undefined],
     ['object with extra is a component', { extra: ['test'] }, undefined],
@@ -114,9 +110,9 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
     [
-        'extra cannot contain invalid components',
+        'extra can contain objects without content properties',
         { text: 'test', extra: [{ invalid: true }] },
-        'Component does not have a text, translate, extra, or player property',
+        undefined,
     ],
     ['extra can contain numbers', { text: 'test', extra: [42] }, undefined],
 
@@ -137,9 +133,9 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
     [
-        'with cannot contain invalid components',
+        'with can contain objects without content properties',
         { translate: 'test', with: [{ invalid: true }] },
-        'Component does not have a text, translate, extra, or player property',
+        undefined,
     ],
     ['with can contain numbers', { translate: 'test', with: [42] }, undefined],
 
@@ -404,7 +400,13 @@ beforeEach(() => {
  */
 const COMPONENT_FORMATTING_TESTS = [
     // Basic text formatting
-    ['empty component', { text: '' }, {}, '<span></span>'],
+    [
+        'empty object component',
+        {},
+        {},
+        '<span class="mc-red" aria-label="Unsupported component:\n {}">{...}</span>',
+    ],
+    ['empty text component', { text: '' }, {}, '<span></span>'],
     ['component with text', { text: 'test' }, {}, '<span>test</span>'],
     [
         'component with translation',

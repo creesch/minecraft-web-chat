@@ -46,7 +46,8 @@ const FORMATTING_CODES = {
 
 /** @type {Record<string, string>} */
 const TEXT_CODES = { ...COLOR_CODES, ...FORMATTING_CODES };
-export const TEXT_CODES_PATTERN = `§([${Object.keys(TEXT_CODES).join('')}])`;
+const CODE_SENTINEL = '§';
+export const TEXT_CODES_PATTERN = `${CODE_SENTINEL}([${Object.keys(TEXT_CODES).join('')}])`;
 
 /**
  * Arabic to Romain numeral map. Minecraft does not display "I" so it is blank.
@@ -65,6 +66,9 @@ const VALID_CLICK_EVENTS = [
     'show_dialog',
     'custom',
 ];
+
+/** @type {(keyof Component)[]} */
+const CONTENT_ATTRIBUTES = ['text', 'translate', 'extra', 'player'];
 
 /**
  * @typedef {Object} Component
@@ -228,6 +232,15 @@ export class ComponentError extends Error {
  */
 function isObject(obj) {
     return typeof obj === 'object' && !Array.isArray(obj) && obj !== null;
+}
+
+/**
+ * Whether a component contains a content attribute.
+ * @param {Component} component
+ * @returns {boolean}
+ */
+function hasContent(component) {
+    return CONTENT_ATTRIBUTES.some((attribute) => attribute in component);
 }
 
 /**
@@ -695,18 +708,6 @@ export function assertIsComponent(component, path = []) {
                 'id',
             ]);
         }
-    }
-
-    if (
-        !('text' in component) &&
-        !('translate' in component) &&
-        !('extra' in component) &&
-        !('player' in component)
-    ) {
-        throw new ComponentError(
-            'Component does not have a text, translate, extra, or player property',
-            path,
-        );
     }
 
     if ('text' in component && typeof component.text !== 'string') {
@@ -1563,8 +1564,6 @@ function buildClickHandler(clickEvent) {
  * @returns {Element}
  */
 function formatComponent(component, translations = {}) {
-<<<<<<< HEAD
-=======
     if (!hasContent(component)) {
         return formatComponent({
             text: '{...}',
@@ -1574,7 +1573,7 @@ function formatComponent(component, translations = {}) {
                 contents: [
                     'Unsupported component:\n',
                     {
-                        // Escape CODE_SENTINELs in the JSON content
+                        // Excape CODE_SENTINELs in the JSON content
                         text: JSON.stringify(component, null, 2).replace(
                             new RegExp(CODE_SENTINEL, 'g'),
                             '&',
@@ -1586,7 +1585,6 @@ function formatComponent(component, translations = {}) {
         });
     }
 
->>>>>>> 41c625c (Fix typo)
     const result =
         component.click_event?.action === 'open_url'
             ? document.createElement('a')
