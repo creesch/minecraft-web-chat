@@ -798,9 +798,7 @@ const COMPONENT_FORMATTING_TESTS = [
     // Player component rendering
     [
         'player with name only',
-        { player: { name: 'Steve' }, extra: [
-            "test",
-        ] },
+        { player: { name: 'Steve' }, extra: ['test'] },
         {},
         '<span><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
     ],
@@ -808,9 +806,7 @@ const COMPONENT_FORMATTING_TESTS = [
         'player with id only',
         {
             player: { id: '12345678-1234-1234-1234-123456789abc' },
-            extra: [
-                "test",
-            ]
+            extra: ['test'],
         },
         {},
         '<span><div class="player-component-container" title="Unknown Player\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
@@ -822,9 +818,7 @@ const COMPONENT_FORMATTING_TESTS = [
                 name: 'Steve',
                 id: '12345678-1234-1234-1234-123456789abc',
             },
-            extra: [
-                "test",
-            ]
+            extra: ['test'],
         },
         {},
         '<span><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
@@ -835,9 +829,7 @@ const COMPONENT_FORMATTING_TESTS = [
             color: 'gold',
             bold: true,
             player: { name: 'Steve' },
-            extra: [
-                "test",
-            ]
+            extra: ['test'],
         },
         {},
         '<span class="mc-gold mc-bold"><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
