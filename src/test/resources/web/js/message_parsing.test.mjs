@@ -37,11 +37,7 @@ beforeAll(() => {
  */
 const COMPONENT_VALIDATION_TESTS = [
     // Basic validation
-    [
-        'empty object is not a component',
-        {},
-        'Component does not have a text, translate, or extra property',
-    ],
+    ['empty object is a valid component', {}, undefined],
     ['object with text is a component', { text: 'test' }, undefined],
     ['object with translate is a component', { translate: 'test' }, undefined],
     ['object with extra is a component', { extra: ['test'] }, undefined],
@@ -114,9 +110,9 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
     [
-        'extra cannot contain invalid components',
+        'extra can contain objects without content properties',
         { text: 'test', extra: [{ invalid: true }] },
-        'Component does not have a text, translate, or extra property',
+        undefined,
     ],
     ['extra can contain numbers', { text: 'test', extra: [42] }, undefined],
 
@@ -137,9 +133,9 @@ const COMPONENT_VALIDATION_TESTS = [
         undefined,
     ],
     [
-        'with cannot contain invalid components',
+        'with can contain objects without content properties',
         { translate: 'test', with: [{ invalid: true }] },
-        'Component does not have a text, translate, or extra property',
+        undefined,
     ],
     ['with can contain numbers', { translate: 'test', with: [42] }, undefined],
 
@@ -324,6 +320,52 @@ const COMPONENT_VALIDATION_TESTS = [
         'shadow_color is not a number or array',
     ],
 
+    // PlayerComponent validation
+    [
+        'player must be object',
+        { text: 'test', player: 'not object' },
+        'PlayerComponent is not an object',
+    ],
+    [
+        "player can't be an empty object",
+        { text: 'test', player: {} },
+        'PlayerComponent does not have a name or id property',
+    ],
+    [
+        'player.name must be string',
+        { text: 'test', player: { name: 42 } },
+        'PlayerComponent.name is not a string',
+    ],
+    [
+        'player.id must be string',
+        { text: 'test', player: { id: 42 } },
+        'PlayerComponent.id is not a string',
+    ],
+    [
+        'player can have name',
+        { text: 'test', player: { name: 'Steve' } },
+        undefined,
+    ],
+    [
+        'player can have id',
+        {
+            text: 'test',
+            player: { id: '12345678-1234-1234-1234-123456789abc' },
+        },
+        undefined,
+    ],
+    [
+        'player can have both name and id',
+        {
+            text: 'test',
+            player: {
+                name: 'Steve',
+                id: '12345678-1234-1234-1234-123456789abc',
+            },
+        },
+        undefined,
+    ],
+
     // Component depth
     [
         'component is too deep',
@@ -358,7 +400,13 @@ beforeEach(() => {
  */
 const COMPONENT_FORMATTING_TESTS = [
     // Basic text formatting
-    ['empty component', { text: '' }, {}, '<span></span>'],
+    [
+        'empty object component',
+        {},
+        {},
+        '<span class="mc-red" aria-label="Unsupported component:\n {}">{...}</span>',
+    ],
+    ['empty text component', { text: '' }, {}, '<span></span>'],
     ['component with text', { text: 'test' }, {}, '<span>test</span>'],
     [
         'component with translation',
@@ -745,6 +793,46 @@ const COMPONENT_FORMATTING_TESTS = [
         },
         { 'argument.item.id.invalid': "Unknown item '%s'" },
         '<span class="mc-red">Unknown item \'<span class="mc-blue"><span class="mc-bold mc-dark-red">test</span></span>\'</span>',
+    ],
+
+    // Player component rendering
+    [
+        'player with name only',
+        { player: { name: 'Steve' }, extra: ['test'] },
+        {},
+        '<span><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
+    ],
+    [
+        'player with id only',
+        {
+            player: { id: '12345678-1234-1234-1234-123456789abc' },
+            extra: ['test'],
+        },
+        {},
+        '<span><div class="player-component-container" title="Unknown Player\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
+    ],
+    [
+        'player with name and id uses name for title',
+        {
+            player: {
+                name: 'Steve',
+                id: '12345678-1234-1234-1234-123456789abc',
+            },
+            extra: ['test'],
+        },
+        {},
+        '<span><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
+    ],
+    [
+        'player with other styles',
+        {
+            color: 'gold',
+            bold: true,
+            player: { name: 'Steve' },
+            extra: ['test'],
+        },
+        {},
+        '<span class="mc-gold mc-bold"><div class="player-component-container" title="Steve\'s head"><img class="player-head" src="/img/steve.png"><img class="player-head-overlay" src="/img/steve.png"></div>test</span>',
     ],
 ];
 
