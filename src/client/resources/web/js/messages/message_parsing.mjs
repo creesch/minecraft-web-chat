@@ -74,6 +74,7 @@ const CONTENT_ATTRIBUTES = ['text', 'translate', 'extra', 'player'];
  * @typedef {Object} Component
  * @property {string} [text] - Text content
  * @property {string} [translate] - Translation key
+ * @property {string} [fallback] - Fallback value for translation.
  * @property {(number | string | Component)[]} [with] - Translation parameters
  * @property {(number | string | Component)[]} [extra] - Additional components to append
  * @property {string} [color] - Text color - can be a named color or hex value
@@ -724,6 +725,13 @@ export function assertIsComponent(component, path = []) {
         ]);
     }
 
+    if ('fallback' in component && typeof component.fallback !== 'string') {
+        throw new ComponentError('Component.fallback is not a string', [
+            ...path,
+            'fallback',
+        ]);
+    }
+
     if ('color' in component && typeof component.color !== 'string') {
         throw new ComponentError('Component.color is not a string', [
             ...path,
@@ -1192,9 +1200,10 @@ function simpleSubstitution(template, args, translations) {
  * @param {string} key
  * @param {(number | string | Component)[]} args
  * @param {Record<string, string>} translations
+ * @param {string} [fallback]
  * @returns {(Element | Text)[]}
  */
-function formatTranslation(key, args, translations) {
+function formatTranslation(key, args, translations, fallback) {
     if (!key) {
         console.warn('Translation key is missing');
         return [document.createTextNode(key)];
@@ -1222,7 +1231,7 @@ function formatTranslation(key, args, translations) {
     const template = translations[key];
     if (!template) {
         console.warn(`Missing translation for key: ${key}`);
-        return [document.createTextNode(key)];
+        return [document.createTextNode(fallback ?? key)];
     }
 
     try {
@@ -1706,6 +1715,7 @@ function formatComponent(component, translations = {}) {
                 component.translate,
                 component.with ?? [],
                 translations,
+                component.fallback,
             ),
         );
     } else if (component.player) {

@@ -54,6 +54,18 @@ const COMPONENT_VALIDATION_TESTS = [
     ],
     ['translate can be empty string', { translate: '' }, undefined],
 
+    // Fallback property validation
+    [
+        'fallback must be a string',
+        { translate: 'missing.key', fallback: 42 },
+        'Component.fallback is not a string',
+    ],
+    [
+        'fallback can be a string',
+        { translate: 'missing.key', fallback: 'Fallback Text' },
+        undefined,
+    ],
+
     // Color validation
     [
         'color must be string',
@@ -521,6 +533,43 @@ const COMPONENT_FORMATTING_TESTS = [
         '<span>main<span class="mc-bold">1</span><span class="mc-italic">2</span></span>',
     ],
     ['extra number', { text: 'main', extra: [42] }, {}, '<span>main42</span>'],
+
+    // Translation fallback
+    [
+        'fallback used when translation key missing',
+        { translate: 'missing.key', fallback: 'Fallback Text' },
+        {},
+        '<span>Fallback Text</span>',
+    ],
+    [
+        'fallback not used when translation exists',
+        { translate: 'existing.key', fallback: 'Fallback Text' },
+        { 'existing.key': 'Existing Translation' },
+        '<span>Existing Translation</span>',
+    ],
+    [
+        'empty fallback used when translation key missing',
+        { translate: 'missing.key', fallback: '' },
+        {},
+        '<span></span>',
+    ],
+    [
+        'translation key used when no fallback and key missing',
+        { translate: 'missing.key' },
+        {},
+        '<span>missing.key</span>',
+    ],
+    [
+        'fallback with styling',
+        {
+            translate: 'missing.key',
+            fallback: 'Styled Fallback',
+            color: 'red',
+            bold: true,
+        },
+        {},
+        '<span class="mc-red mc-bold">Styled Fallback</span>',
+    ],
 
     // Translation with parameters
     [
