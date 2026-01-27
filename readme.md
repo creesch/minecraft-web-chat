@@ -2,24 +2,29 @@
 
 ![Mod Icon](src/main/resources/assets/web-chat/icon.png)
 
-Web chat is a **client only** mod giving you access to the chat of the server you are in through a browser. Allowing you to chat with other players while having minecraft in the background. Great for things like semi-afk farming and similar things!
+**Downloads**: [[Modrinth]](https://modrinth.com/mod/web-chat) [[GitHub]](https://github.com/creesch/minecraft-web-chat/releases)
+
+Web chat is a **client only** mod that gives you access to the Minecraft chat of your running game window. This allows you to chat with other players while having minecraft in the background. Great for things like semi-afk farming and similar things!
 
 # Features
 - Access chat through any web browser.
-- Full support for Minecraft's text formatting (colors, bold, italic, etc.)
-- Clickable URLs in chat messages.
 - Chat history is stored and available when you are on a server and open chat in a browser.
-- Tab notification for new messages when the browser isn't focused.
-- Fully client side, should work on any server.
+- Tab completion of usernames.
+- Tab icon notification for new messages when the browser isn't focused.
+- Fully client side, works on any server.
 - Ping support for your username & configurable keywords. 
 - Support for `/tell`, `/msg`, `/w` and `/me` commands.
-- Tab completion of usernames.
+- Full support for Minecraft's text formatting (colors, bold, italic, translation, etc.)
+- Support for official click and hover interactions (opening URLs, achievement details, etc.)
 
 ![Demo screenshot](media/demo_screenshot.png)
 
 # Availability 
 
-- Minecraft version: 1.21.8 and up
+- Minecraft version: 
+  - 1.21.11 supported by Web Chat v1.5.0
+  - 1.21.8 supported by Web Chat v1.4.0
+  - 1.21.1 - 1.21.4 are supported up to Web Chat v1.3.0 and not further. 
 - Mod loader: Fabric only
 
 There are no plans to support other mod loaders.
@@ -52,7 +57,7 @@ There are no plans to support other mod loaders.
 
 # Security & Privacy
 
-This mod turns minecraft into a small web server on your computer that's only accessible locally (`localhost`) on your network. This means that you can access it on a different device on your network, but not from outside the internet. 
+This mod turns minecraft into a small web server on your computer that's only accessible (using `localhost` or your local IP) on your home network. This means that you can access Web Chat on a different device on your network, but not over the internet.
 No data is sent over the internet beyond your normal Minecraft traffic. 
 
-**Important:** This mod is designed for local use only. **Do not** expose the web chat port to the internet. If you need remote access, setup a VPN to your home network instead.
+**Important:** This mod is designed for local use only. **Do not** expose the web chat port to the internet. If you need remote access, setup a VPN (such as [Tailscale](https://tailscale.com/)).
