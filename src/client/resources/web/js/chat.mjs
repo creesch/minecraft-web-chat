@@ -65,11 +65,12 @@ const sidebarToggleElement = /** @type {HTMLImageElement} */ (
 const messagesElement = /** @type {HTMLElement} */ (
     querySelectorWithAssertion('#messages')
 );
-const loadMoreContainerElement = /** @type {HTMLDivElement} */ (
-    querySelectorWithAssertion('#load-more-container')
+const historyLoaderElement = /** @type {HTMLDivElement} */ (
+    querySelectorWithAssertion('#history-loader')
 );
-const loadMoreButtonElement = /** @type {HTMLButtonElement} */ (
-    querySelectorWithAssertion('#load-more-button')
+
+const skipToPresentButton = /** @type {HTMLButtonElement} */ (
+    querySelectorWithAssertion('#skip-to-present')
 );
 
 const inputAlertElement = /** @type {HTMLDivElement} */ (
@@ -143,24 +144,51 @@ chatInputElement.addEventListener('blur', function () {
     tabListManager.hide();
 });
 
-// Load more button clicked
-loadMoreButtonElement.addEventListener('click', () => {
-    // No matter what, always hide the element.
-    loadMoreContainerElement.style.display = 'none';
+// Scroll-based history loading
+/** @type {number | null} */
+let scrollDebounceTimer = null;
+messagesElement.addEventListener('scroll', () => {
+    skipToPresentButton.style.display =
+        messagesElement.scrollTop < -200 ? 'block' : 'none';
 
-    // If set to true it means we haven't received new history meta data yet.
+    if (scrollDebounceTimer) {
+        clearTimeout(scrollDebounceTimer);
+    }
+
+    scrollDebounceTimer = setTimeout(() => {
+        checkScrollAndLoadHistory();
+    }, 100);
+});
+
+skipToPresentButton.addEventListener('click', () => {
+    messagesElement.scrollTop = 0;
+});
+
+/**
+ * Check if the user has scrolled near the top and load more history if needed
+ */
+function checkScrollAndLoadHistory() {
     if (isLoadingHistory) {
         return;
     }
 
-    // Make sure we have a number and everything.
+    // Check if there's more history to load
     const maybeTimestamp = Number(
-        loadMoreContainerElement.dataset['oldestMessageTimestamp'] ?? '',
+        historyLoaderElement.dataset['oldestMessageTimestamp'] ?? '',
     );
-    if (isFinite(maybeTimestamp)) {
+    if (!isFinite(maybeTimestamp)) {
+        return;
+    }
+
+    const scrollThreshold = 300; // pixels from top to trigger load
+    const maxScroll =
+        messagesElement.scrollHeight - messagesElement.clientHeight;
+    const currentScrollFromTop = maxScroll + messagesElement.scrollTop;
+
+    if (currentScrollFromTop <= scrollThreshold) {
         requestHistory(messageHistoryLimit, maybeTimestamp);
     }
-});
+}
 
 /**
  * ======================
@@ -186,6 +214,7 @@ function requestHistory(limit, before) {
     }
 
     isLoadingHistory = true;
+    historyLoaderElement.style.display = 'flex';
 
     sendWebsocketMessage('history', {
         serverId,
@@ -271,8 +300,8 @@ function handleChatMessage(message) {
         const scrolledFromTop = messagesElement.scrollTop;
 
         if (message.payload.history) {
-            // Insert the message after the load-more button
-            loadMoreContainerElement.before(messageElement);
+            // Insert the message before the history loader
+            historyLoaderElement.before(messageElement);
         } else {
             // For new messages, insert at the start
             messagesElement.insertBefore(
@@ -294,11 +323,11 @@ function clearMessageHistory() {
     console.log('clearing history.');
     // empty previously seen messages.
     displayedMessageIds.clear();
-    // Reset the load more button
-    loadMoreContainerElement.style.display = 'none';
-    loadMoreContainerElement.dataset['oldestMessageTimestamp'] = '';
+    // Reset the history loader
+    historyLoaderElement.style.display = 'none';
+    historyLoaderElement.dataset['oldestMessageTimestamp'] = '';
 
-    // Only remove messages, leaving the load more button alone.
+    // Only remove messages, leaving the history loader alone.
     const messageElements = messagesElement.querySelectorAll('.message');
     messageElements.forEach((element) => {
         element.remove();
@@ -311,16 +340,14 @@ function clearMessageHistory() {
  */
 function handleHistoryMetaData(message) {
     isLoadingHistory = false;
+    historyLoaderElement.style.display = 'none';
 
     if (message.payload.moreHistoryAvailable) {
-        loadMoreContainerElement.dataset['oldestMessageTimestamp'] =
+        historyLoaderElement.dataset['oldestMessageTimestamp'] =
             message.payload.oldestMessageTimestamp.toString();
-        // Show button after delay so people can't spam it and cause issue.
-        setTimeout(() => {
-            loadMoreContainerElement.style.display = 'block';
-        }, 200);
     } else {
-        loadMoreContainerElement.style.display = 'none';
+        // Clear timestamp to prevent further load attempts
+        historyLoaderElement.dataset['oldestMessageTimestamp'] = '';
     }
 }
 

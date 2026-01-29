@@ -53,15 +53,52 @@
                     aria-live="polite"
                     aria-label="Chat messages"
                 >
-                    <div id="load-more-container">
-                        <button
-                            id="load-more-button"
-                            aria-label="Load more messages"
-                        >
-                            Load More
-                        </button>
+                    <div id="history-loader" aria-label="Loading messages">
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 15%"
+                            ></div>
+                        </div>
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 25%"
+                            ></div>
+                        </div>
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 15%"
+                            ></div>
+                        </div>
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 25%"
+                            ></div>
+                        </div>
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 30%"
+                            ></div>
+                        </div>
+                        <div class="message-placeholder">
+                            <div class="placeholder-time"></div>
+                            <div
+                                class="placeholder-content"
+                                style="width: 15%"
+                            ></div>
+                        </div>
                     </div>
                 </section>
+                <button id="skip-to-present">Skip to Present</button>
                 <section id="input-area" aria-label="Message input">
                     <div id="input-alert" aria-hidden="true">
                         <span></span>

@@ -253,27 +253,66 @@ body {
     scrollbar-gutter: stable;
 }
 
-#load-more-container {
+#history-loader {
     display: none;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.message-placeholder {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    text-align: center;
+    gap: 0.5rem;
 }
 
-#load-more-button {
-    padding: 0.4rem 1rem;
-    border: none;
-    border-radius: 0.3rem;
-    background-color: #4caf50;
+.placeholder-time {
+    width: 2.25rem;
+    height: 0.85rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.2rem;
+    animation: placeholder-pulse 1.2s ease-in-out infinite;
+}
+
+.placeholder-content {
+    height: 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.2rem;
+    animation: placeholder-pulse 1.2s ease-in-out infinite;
+    animation-delay: 0.1s;
+}
+
+@keyframes placeholder-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+#skip-to-present {
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    position: absolute;
+    bottom: 6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1rem;
+    border: 1px solid white;
+    border-radius: 0.5rem;
+    background-color: rgb(80, 80, 80);
     color: #ffffff;
+    font-size: 0.85rem;
     cursor: pointer;
-    font-size: 0.9rem;
+    z-index: 100;
     transition: background-color 0.2s ease;
-    display: inline-block;
 }
 
-#load-more-button:hover {
-    background-color: #45a049;
+#skip-to-present:hover {
+    background-color: rgb(100, 100, 100);
 }
 
 .message {
