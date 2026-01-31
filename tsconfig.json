@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "lib": ["dom", "ES2021"],
-        "types": ["node"],
+        "types": [],
 
         // JavaScript Support
         "allowJs": true,
