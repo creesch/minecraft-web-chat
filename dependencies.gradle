@@ -17,7 +17,7 @@ ext {
     mod_menu_version = '20.0.0-beta.4'
 
     // Generic java dependencies
-    javalin_version = '7.2.2'
+    javalin_version = '7.2.3'
     lombok_version = '1.18.46'
     xerial_version = '3.53.2.0'
 }
